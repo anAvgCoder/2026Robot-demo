@@ -16,7 +16,6 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
-import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
@@ -40,8 +39,8 @@ public class ModuleIOSpark implements ModuleIO {
   private final Rotation2d zeroRotation;
 
   // Hardware objects
-  private final SparkBase driveSpark;
-  private final SparkBase turnSpark;
+  private final SparkFlex driveSpark;
+  private final SparkMax turnSpark;
   private final RelativeEncoder driveEncoder;
   private final AbsoluteEncoder turnEncoder;
 
