@@ -36,8 +36,10 @@ public class RobotContainer {
   private final Drive drive;
 
   // Controller
-  private final Joystick leftJoy = new Joystick(0);
-  private final Joystick rightJoy = new Joystick(1);
+  // Joysticks
+  private static final Joystick leftJoy = new Joystick(0);
+  private static final Joystick rightJoy = new Joystick(1);
+  private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
   private final JoystickButton gyroButton = new JoystickButton(leftJoy, 12);
