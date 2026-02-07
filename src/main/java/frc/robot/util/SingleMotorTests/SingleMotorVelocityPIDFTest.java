@@ -1,18 +1,15 @@
 package frc.robot.util.SingleMotorTests;
 
 import com.revrobotics.PersistMode;
-import com.revrobotics.ResetMode;
 import com.revrobotics.RelativeEncoder;
-
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
-
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class SingleMotorVelocityPIDFTest extends SubsystemBase {
@@ -21,7 +18,7 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
 
   // Tune these using Daniel's PID Tuning Guide:
   /*
-    For the shooter used in 2024, I tuned a PIDF shooter with these values: 
+    For the shooter used in 2024, I tuned a PIDF shooter with these values:
       KV: 0.096
       P: 2.08 (increased until oscillations)
       I: 0 (My FF value was accurate enough that I was unnecessary)
@@ -52,33 +49,34 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
     ** This Feed forward is very important for velocity control, but NOT OFTEN USED for position control like an arm **
   */
 
-
   private static final double kP = 0.0002;
   private static final double kI = 0.0;
   private static final double kD = 0.0;
 
-  private static final double kS = 0.0; // volts the minimum voltage needed to overcome static friction and start the motor moving, important for velocity control as it is the y-intercept of the graph and thus determines how much voltage is applied at low speeds
-  private static final double kV = 0.0; // volts per RPM (by default) most important for velocity control, as it is the slope of the graph and thus determines how much voltage is applied at a given speed
-  private static final double kA = 0.0; // volts per (RPM/s) (by default) likely unnecessary as it is for acceleration
+  private static final double kS =
+      0.0; // volts the minimum voltage needed to overcome static friction and start the motor
+  // moving, important for velocity control as it is the y-intercept of the graph and thus
+  // determines how much voltage is applied at low speeds
+  private static final double kV =
+      0.0; // volts per RPM (by default) most important for velocity control, as it is the slope of
+  // the graph and thus determines how much voltage is applied at a given speed
+  private static final double kA =
+      0.0; // volts per (RPM/s) (by default) likely unnecessary as it is for acceleration
 
   private final SparkFlex motor = new SparkFlex(kMotorCanId, MotorType.kBrushless);
   private final SparkClosedLoopController controller = motor.getClosedLoopController();
   private final RelativeEncoder encoder = motor.getEncoder();
 
   public SingleMotorVelocityPIDFTest() {
-    var cfg = new SparkFlexConfig()
-        .idleMode(IdleMode.kBrake)
-        .inverted(kInverted);
+    var cfg = new SparkFlexConfig().idleMode(IdleMode.kBrake).inverted(kInverted);
 
-    cfg.closedLoop
-        .pid(kP, kI, kD, ClosedLoopSlot.kSlot0)
-        .outputRange(-1.0, 1.0);
+    cfg.closedLoop.pid(kP, kI, kD, ClosedLoopSlot.kSlot0).outputRange(-1.0, 1.0);
 
     cfg.closedLoop
         .feedForward
-          .kS(kS, ClosedLoopSlot.kSlot0)
-          .kV(kV, ClosedLoopSlot.kSlot0)
-          .kA(kA, ClosedLoopSlot.kSlot0);
+        .kS(kS, ClosedLoopSlot.kSlot0)
+        .kV(kV, ClosedLoopSlot.kSlot0)
+        .kA(kA, ClosedLoopSlot.kSlot0);
 
     motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
