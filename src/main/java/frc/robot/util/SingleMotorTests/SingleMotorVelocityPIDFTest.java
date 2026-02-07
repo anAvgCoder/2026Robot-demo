@@ -21,6 +21,12 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
 
   // Tune these using Daniel's PID Tuning Guide:
   /*
+    For the shooter used in 2024, I tuned a PIDF shooter with these values: 
+      KV: 0.096
+      P: 2.08 (increased until oscillations)
+      I: 0 (My FF value was accurate enough that I was unnecessary)
+      D: 0.047 (started with 1/1000 of P so 0.00208, then increased until it reduced error without causing oscillation)
+
     Set:
       kA = 0
       kS = 0 (for now)
