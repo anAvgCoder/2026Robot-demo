@@ -9,7 +9,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class SingleMotorSpeedTest extends SubsystemBase {
+public class SingleMotorVelocityTest extends SubsystemBase {
   private static final int kMotorCanId = 15; /** Change to CAN ID of motor being tested */
   private static final boolean kInverted = true;
 
@@ -17,7 +17,7 @@ public class SingleMotorSpeedTest extends SubsystemBase {
   // private final SparkMax motor = new SparkMax(kMotorCanId, MotorType.kBrushless); // Neo and Neo550
 
 
-  public SingleMotorSpeedTest() {
+  public SingleMotorVelocityTest() {
     /* Neo flex smart current values are set in client*/
     var motorCfg = 
       new SparkFlexConfig()
