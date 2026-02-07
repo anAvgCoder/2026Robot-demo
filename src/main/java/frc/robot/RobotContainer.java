@@ -23,6 +23,8 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSparkCANCoder;
+import frc.robot.util.SingleMotorTests.SingleMotorVeocityPIDFTest.SingleMotorVelocityPIDFTest;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -34,6 +36,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
+  private final SingleMotorVelocityPIDFTest singleMotorPIDFTest;
 
   // Controller
   // Joysticks
@@ -42,8 +45,15 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
-  private final JoystickButton gyroButton = new JoystickButton(leftJoy, 12);
-
+  private final JoystickButton gyroButton = new JoystickButton(buttonPanel, 1);
+  private final JoystickButton stopMotorButton = new JoystickButton(buttonPanel, 2);
+  private final JoystickButton motor30Button = new JoystickButton(buttonPanel, 3);
+  private final JoystickButton motor40Button = new JoystickButton(buttonPanel, 4);
+  private final JoystickButton motor50Button = new JoystickButton(buttonPanel, 5);
+  private final JoystickButton motor60Button = new JoystickButton(buttonPanel, 6);
+  private final JoystickButton motor70Button = new JoystickButton(buttonPanel, 7);
+  private final JoystickButton motor80Button = new JoystickButton(buttonPanel, 8);
+  private final JoystickButton motor90 = new JoystickButton(buttonPanel, 9);
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
@@ -84,6 +94,8 @@ public class RobotContainer {
         break;
     }
 
+    singleMotorPIDFTest = new SingleMotorVelocityPIDFTest();
+
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
@@ -108,6 +120,31 @@ public class RobotContainer {
         Commands.runOnce(
                 () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)))
             .ignoringDisable(true));
+
+    stopMotorButton.onTrue(
+        // Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0))
+        Commands.run(() -> System.out.println(" iran ")));
+
+    // motor30Button.onTrue(
+    //   Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0.3)));
+
+    // motor40Button.onTrue(
+    //   Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0.4)));
+
+    // motor50Button.onTrue(
+    //   Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0.5)));
+
+    // motor60Button.onTrue(
+    //   Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0.6)));
+
+    // motor70Button.onTrue(
+    //   Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0.7)));
+
+    // motor80Button.onTrue(
+    //   Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0.8)));
+
+    // motor90.onTrue(
+    //   Commands.runOnce(() -> singleMotorPIDFTest.setVelocity(0.9)));
   }
 
   /**

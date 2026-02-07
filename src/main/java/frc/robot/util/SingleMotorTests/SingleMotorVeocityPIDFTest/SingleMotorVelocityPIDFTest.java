@@ -1,4 +1,4 @@
-package frc.robot.util.SingleMotorTests;
+package frc.robot.util.SingleMotorTests.SingleMotorVeocityPIDFTest;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
@@ -81,8 +81,8 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
     motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
-  public void setVelocityRpm(double rpm) {
-    controller.setSetpoint(rpm, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+  public void setVelocity(double speed) {
+    controller.setSetpoint(speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
   }
 
   public double getRpm() {
