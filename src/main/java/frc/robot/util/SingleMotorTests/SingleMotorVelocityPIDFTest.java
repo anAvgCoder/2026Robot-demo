@@ -35,6 +35,39 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
   private final LoggedTunableNumber maxAccelRpmPerSec =
       new LoggedTunableNumber("SingleMotorTest/MaxAccelRPMperSec", 20000.0);
 
+    // Tune these using Daniel's PID Tuning Guide:
+  /*
+    For the shooter used in 2026, I tuned a PIDF shooter with less than 1rpm oscilation and a 0.1 ms speed correction with these values:
+      KV: 0.00183
+      P: 0.00006 (increased until oscillations)
+      I: 0 (My FF value was accurate enough that I was unnecessary)
+      D: 0.0 (it was more than stable enough with just P, don't overtune)
+
+    Set:
+      kA = 0
+      kS = 0 (for now)
+      Use only kV to get close to target RPM (this is called steady state)
+
+    How to Tune kV:
+      Command a few setpoints (example: 2000, 3000, 4000 RPM). (neo vortex max RPM is 6784, so stay below that)
+      Adjust kV until the motor holds close to the target RPM with P = 0 (or very small P like 0.0002).
+      -If it always runs below target, increase kV.
+      -If it always runs above target, decrease kV.
+
+    Then tune PID (start with P only):
+      Make sure to set kI = 0, kD = 0
+
+    Increase kP until it recovers quickly when a ball hits the wheel, without oscillating.
+      I recommend using the doubling/halving method to get the right value
+
+
+    Optional improvements:
+      If it struggles to hold low RPM accurately, add a small kS.
+      If you want faster, more consistent spin-up, add a little kA.
+
+    ** This Feed forward is very important for velocity control, but NOT OFTEN USED for position control like an arm **
+  */
+
   private final LoggedTunableNumber kP = new LoggedTunableNumber("SingleMotorTest/kP", 0.00006);
   private final LoggedTunableNumber kI = new LoggedTunableNumber("SingleMotorTest/kI", 0.0);
   private final LoggedTunableNumber kD = new LoggedTunableNumber("SingleMotorTest/kD", 0.0);
