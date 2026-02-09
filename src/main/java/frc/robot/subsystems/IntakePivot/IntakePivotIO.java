@@ -1,5 +1,3 @@
 package frc.robot.subsystems.IntakePivot;
 
-public class IntakePivotIO {
-    
-}
+public class IntakePivotIO {}

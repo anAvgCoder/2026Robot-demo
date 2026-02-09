@@ -1,5 +1,3 @@
 package frc.robot.subsystems.BeltLeft;
 
-public class BeltLeftIOSim {
-    
-}
+public class BeltLeftIOSim {}

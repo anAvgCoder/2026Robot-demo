@@ -1,5 +1,3 @@
 package frc.robot.subsystems.TurretLeft.TLShooter;
 
-public class TLShooter {
-    
-}
+public class TLShooter {}

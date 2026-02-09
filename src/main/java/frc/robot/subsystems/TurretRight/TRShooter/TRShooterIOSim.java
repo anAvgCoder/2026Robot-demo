@@ -1,5 +1,3 @@
 package frc.robot.subsystems.TurretRight.TRShooter;
 
-public class TRShooterIOSim {
-    
-}
+public class TRShooterIOSim {}

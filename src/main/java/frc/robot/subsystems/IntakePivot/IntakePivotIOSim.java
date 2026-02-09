@@ -1,5 +1,3 @@
 package frc.robot.subsystems.IntakePivot;
 
-public class IntakePivotIOSim {
-    
-}
+public class IntakePivotIOSim {}

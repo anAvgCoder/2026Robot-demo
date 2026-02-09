@@ -1,5 +1,3 @@
 package frc.robot.subsystems.TurretLeft.TLRotater;
 
-public class TLRotaterIOReal {
-    
-}
+public class TLRotaterIOReal {}

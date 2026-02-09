@@ -1,5 +1,3 @@
 package frc.robot.subsystems.TurretRight.TRRotater;
 
-public class TRRotaterIO {
-    
-}
+public class TRRotaterIO {}

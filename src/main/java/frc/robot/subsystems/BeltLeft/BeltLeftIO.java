@@ -1,5 +1,3 @@
 package frc.robot.subsystems.BeltLeft;
 
-public class BeltLeftIO {
-    
-}
+public class BeltLeftIO {}

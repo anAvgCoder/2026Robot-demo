@@ -1,5 +1,3 @@
 package frc.robot.subsystems.TurretLeft.TLHood;
 
-public class TLHoodConstants {
-    
-}
+public class TLHoodConstants {}

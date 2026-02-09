@@ -1,5 +1,3 @@
 package frc.robot.subsystems.BeltRight;
 
-public class BeltRight {
-    
-}
+public class BeltRight {}
