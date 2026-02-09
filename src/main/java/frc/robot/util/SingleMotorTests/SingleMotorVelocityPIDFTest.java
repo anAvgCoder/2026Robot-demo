@@ -35,7 +35,7 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
   private final LoggedTunableNumber maxAccelRpmPerSec =
       new LoggedTunableNumber("SingleMotorTest/MaxAccelRPMperSec", 20000.0);
 
-    // Tune these using Daniel's PID Tuning Guide:
+  // Tune these using Daniel's PID Tuning Guide:
   /*
     For the shooter used in 2026, I tuned a PIDF shooter with less than 1rpm oscilation and a 0.1 ms speed correction with these values:
       KV: 0.00183
