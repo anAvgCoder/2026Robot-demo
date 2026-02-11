@@ -58,7 +58,7 @@ public class ModuleIOSparkCANCoder implements ModuleIO {
   private final SparkClosedLoopController driveController;
   // private final SparkClosedLoopController turnController;
 
-  private final PIDController turnMotorPIDController = new PIDController(.05, 0, 0);
+  private final PIDController turnMotorPIDController = new PIDController(.38, 0, 0);
 
   // Queue inputs from odometry thread
   private final Queue<Double> timestampQueue;
@@ -177,12 +177,12 @@ public class ModuleIOSparkCANCoder implements ModuleIO {
         .positionConversionFactor(turnEncoderPositionFactor)
         .velocityConversionFactor(turnEncoderVelocityFactor)
         .averageDepth(2);
-    turnConfig
-        .closedLoop
-        .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-        .positionWrappingEnabled(true)
-        .positionWrappingInputRange(turnPIDMinInput, turnPIDMaxInput)
-        .pid(turnKp, 0.0, turnKd);
+    // turnConfig
+    //     .closedLoop
+    //     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
+    //     .positionWrappingEnabled(true)
+    //     .positionWrappingInputRange(turnPIDMinInput, turnPIDMaxInput)
+    //     .pid(turnKp, 0.0, turnKd);
     turnConfig
         .signals
         .absoluteEncoderPositionAlwaysOn(true)
