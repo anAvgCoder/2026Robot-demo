@@ -38,7 +38,7 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
   }
 
   @Override
-  public void outtake() {
+  public void outake() {
     motor.set(-0.5);
   }
 
@@ -46,7 +46,6 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
   public void updateInputs(IntakeRollerIOInputs inputs) {
     inputs.supplyCurrent = motor.getOutputCurrent();
     inputs.VelocityRPM = motor.getEncoder().getVelocity();
-    ;
     inputs.tempCelcius = motor.getMotorTemperature();
   }
 }

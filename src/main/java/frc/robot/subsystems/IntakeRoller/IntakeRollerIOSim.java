@@ -23,7 +23,7 @@ public class IntakeRollerIOSim implements IntakeRollerIO {
   }
 
   @Override
-  public void outtake() {
+  public void outake() {
     motorSim.setInputVoltage(12.0 * -0.5);
     inputs.supplyCurrent = -0.5;
     inputs.VelocityRPM = -100.0;

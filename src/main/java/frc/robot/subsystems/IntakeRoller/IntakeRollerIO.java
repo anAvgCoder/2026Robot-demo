@@ -16,5 +16,5 @@ public interface IntakeRollerIO {
 
   public default void intake() {}
 
-  public default void outtake() {}
+  public default void outake() {}
 }

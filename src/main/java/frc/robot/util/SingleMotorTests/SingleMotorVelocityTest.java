@@ -8,6 +8,8 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+// Meant to be used if trying multiple motors as Rev Hardware Client 2 can do this as well
+
 public class SingleMotorVelocityTest extends SubsystemBase {
   private static final int kMotorCanId = 15;
   /** Change to CAN ID of motor being tested */
