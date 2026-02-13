@@ -118,7 +118,7 @@ public class ModuleIOSparkCANCoder implements ModuleIO {
               case 3 -> backRightCANcoderID;
               default -> 0;
             });
-    turnEncoderDS = () -> ((turnCAN.getAbsolutePosition().getValueAsDouble() + .5) * 2 * 3.14159);
+    turnEncoderDS = () -> ((turnCAN.getAbsolutePosition().getValueAsDouble() + .75) * 2 * 3.14159);
     // Resume and impliment turnCAN interface
 
     driveEncoder = driveSpark.getEncoder();
