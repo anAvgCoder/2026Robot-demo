@@ -119,7 +119,7 @@ public class ModuleIOSparkCANCoder implements ModuleIO {
               default -> 0;
             });
     turnEncoderDS = () -> ((turnCAN.getAbsolutePosition().getValueAsDouble() + .5) * 2 * 3.14159);
-    
+
     driveEncoder = driveSpark.getEncoder();
 
     driveController = driveSpark.getClosedLoopController();
@@ -160,18 +160,14 @@ public class ModuleIOSparkCANCoder implements ModuleIO {
     tryUntilOk(driveSpark, 5, () -> driveEncoder.setPosition(0.0));
 
     // Configure turn motor
-    
+
     var turnConfig = new SparkMaxConfig();
     turnConfig
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit(turnMotorCurrentLimit)
         .voltageCompensation(12.0)
         .inverted(turnInverted);
-    turnConfig
-        .signals
-        .appliedOutputPeriodMs(20)
-        .busVoltagePeriodMs(20)
-        .outputCurrentPeriodMs(20);
+    turnConfig.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
     tryUntilOk(
         turnSpark,
         5,

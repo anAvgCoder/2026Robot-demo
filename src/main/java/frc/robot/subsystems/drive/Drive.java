@@ -38,7 +38,6 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
-// import frc.robot.subsystems.vision.QuestNav;
 import frc.robot.util.LocalADStarAK;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,11 +54,7 @@ public class Drive extends SubsystemBase {
       new Alert("Disconnected gyro, using kinematics as fallback.", AlertType.kError);
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
-  // public static QuestNav questNav = new QuestNav();
-  // private long miso;
-  private Rotation2d rawGyroRotation = new Rotation2d();
-  private Rotation2d rawGyroRotationSub = new Rotation2d();
-
+  private Rotation2d rawGyroRotation = Rotation2d.kZero;
   private SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -68,8 +63,7 @@ public class Drive extends SubsystemBase {
         new SwerveModulePosition()
       };
   private SwerveDrivePoseEstimator poseEstimator =
-      new SwerveDrivePoseEstimator(
-          kinematics, rawGyroRotationSub, lastModulePositions, Pose2d.kZero);
+      new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
   public Drive(
       GyroIO gyroIO,
@@ -165,34 +159,20 @@ public class Drive extends SubsystemBase {
 
       // Update gyro angle
       if (gyroInputs.connected) {
-        // // Use the real gyro angle
-        // rawGyroRotationSub = gyroInputs.odometryYawPositions[i];
-        // we did something weird for quest nav here see 2025 - Daniel
-        // rawGyroRotation = questNav.getQuestPose().getRotation();
+        // Use the real gyro angle
         rawGyroRotation = gyroInputs.odometryYawPositions[i];
-        Logger.processInputs(getName(), gyroInputs);
       } else {
         // Use the angle delta from the kinematics and module deltas
-
-        // !Potential Problems
-        // TODO Fix Twist - Idk maybe for quest here too - Daniel
-        // Twist2d twist = kinematics.toTwist2d(moduleDeltas);
-        // rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
-        // rawGyroRotationSub = rawGyroRotationSub.plus(new Rotation2d(twist.dtheta));
-
         Twist2d twist = kinematics.toTwist2d(moduleDeltas);
         rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
       }
 
       // Apply update
-      // !rawgyroRotSub
-      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotationSub, modulePositions);
+      poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
     }
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
-    // Logger.recordOutput("OculusPosituion", questNav.getQuestPose());
-    // Logger.recordOutput("OculusQuaternion", questNav.getQuaternion());
   }
 
   /**
@@ -302,25 +282,6 @@ public class Drive extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    // getMiso();
-    /*
-     * if questNav; return questNave.getQuestPose()
-     * else return poseEstimator.getEstimatedPosition()
-     */
-    // if (questNav.isConnected()) {
-    //   return questNav.getQuestPose();
-    // }
-    return poseEstimator.getEstimatedPosition();
-  }
-
-  // @AutoLogOutput(key = "Quest/Miso")
-  // public long getMiso() {
-  //   // miso = questNav.questMiso.get();
-  //   return miso;
-  // }
-
-  @AutoLogOutput(key = "Odemetry/subsystemPosePoseEstimator")
-  private Pose2d subsystemPose() {
     return poseEstimator.getEstimatedPosition();
   }
 
@@ -331,7 +292,6 @@ public class Drive extends SubsystemBase {
 
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
-    // questNav.resetPose(pose);
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
   }
 
@@ -352,18 +312,5 @@ public class Drive extends SubsystemBase {
   /** Returns the maximum angular speed in radians per sec. */
   public double getMaxAngularSpeedRadPerSec() {
     return maxSpeedMetersPerSec / driveBaseRadius;
-  }
-
-  public void resetPosition(double xPos, double yPos, Rotation2d angle) {
-    poseEstimator.resetPosition(angle, getModulePositions(), new Pose2d(xPos, yPos, angle));
-    // Angle is Zero until we figure out how to init our angle
-  }
-
-  public SwerveModulePosition[] getModulePositionsPub() {
-    SwerveModulePosition[] states = new SwerveModulePosition[4];
-    for (int i = 0; i < 4; i++) {
-      states[i] = modules[i].getPosition();
-    }
-    return states;
   }
 }

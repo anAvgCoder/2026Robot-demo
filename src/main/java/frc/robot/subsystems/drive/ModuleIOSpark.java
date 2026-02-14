@@ -10,7 +10,7 @@ package frc.robot.subsystems.Drive;
 import static frc.robot.subsystems.Drive.DriveConstants.*;
 import static frc.robot.util.SparkUtil.*;
 
-import com.revrobotics.AbsoluteEncoder;
+import com.ctre.phoenix6.hardware.CANcoder;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -27,10 +27,12 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.geometry.Rotation2d;
 import java.util.Queue;
 import java.util.function.DoubleSupplier;
+import org.littletonrobotics.junction.AutoLogOutputManager;
 
 /**
  * Module IO implementation for Spark Flex drive motor controller, Spark Max turn motor controller,
@@ -43,11 +45,14 @@ public class ModuleIOSpark implements ModuleIO {
   private final SparkBase driveSpark;
   private final SparkBase turnSpark;
   private final RelativeEncoder driveEncoder;
-  private final AbsoluteEncoder turnEncoder;
+
+  private final DoubleSupplier turnEncoderDS;
+  private final CANcoder turnCAN;
+
+  private final PIDController turnMotorPIDController = new PIDController(.38, 0, 0);
 
   // Closed loop controllers
   private final SparkClosedLoopController driveController;
-  private final SparkClosedLoopController turnController;
 
   // Queue inputs from odometry thread
   private final Queue<Double> timestampQueue;
@@ -89,10 +94,19 @@ public class ModuleIOSpark implements ModuleIO {
               default -> 0;
             },
             MotorType.kBrushless);
+    turnCAN =
+        new CANcoder(
+            switch (module) {
+              case 0 -> frontLeftCANcoderID;
+              case 1 -> frontRightCANcoderID;
+              case 2 -> backLeftCANcoderID;
+              case 3 -> backRightCANcoderID;
+              default -> 0;
+            });
     driveEncoder = driveSpark.getEncoder();
-    turnEncoder = turnSpark.getAbsoluteEncoder();
     driveController = driveSpark.getClosedLoopController();
-    turnController = turnSpark.getClosedLoopController();
+
+    turnEncoderDS = () -> ((turnCAN.getAbsolutePosition().getValueAsDouble() + 0.5) * 2 * 3.14159);
 
     // Configure drive motor
     var driveConfig = new SparkFlexConfig();
@@ -166,8 +180,7 @@ public class ModuleIOSpark implements ModuleIO {
     timestampQueue = SparkOdometryThread.getInstance().makeTimestampQueue();
     drivePositionQueue =
         SparkOdometryThread.getInstance().registerSignal(driveSpark, driveEncoder::getPosition);
-    turnPositionQueue =
-        SparkOdometryThread.getInstance().registerSignal(turnSpark, turnEncoder::getPosition);
+    turnPositionQueue = SparkOdometryThread.getInstance().registerSignal(turnSpark, turnEncoderDS);
   }
 
   @Override
@@ -187,9 +200,9 @@ public class ModuleIOSpark implements ModuleIO {
     sparkStickyFault = false;
     ifOk(
         turnSpark,
-        turnEncoder::getPosition,
+        turnEncoderDS,
         (value) -> inputs.turnPosition = new Rotation2d(value).minus(zeroRotation));
-    ifOk(turnSpark, turnEncoder::getVelocity, (value) -> inputs.turnVelocityRadPerSec = value);
+    ifOk(turnSpark, turnEncoderDS, (value) -> inputs.turnVelocityRadPerSec = value);
     ifOk(
         turnSpark,
         new DoubleSupplier[] {turnSpark::getAppliedOutput, turnSpark::getBusVoltage},
@@ -235,9 +248,20 @@ public class ModuleIOSpark implements ModuleIO {
 
   @Override
   public void setTurnPosition(Rotation2d rotation) {
+
     double setpoint =
         MathUtil.inputModulus(
             rotation.plus(zeroRotation).getRadians(), turnPIDMinInput, turnPIDMaxInput);
-    turnController.setSetpoint(setpoint, ControlType.kPosition);
+
+    double maxTurnSpeed = 0.5;
+
+    double encoder = turnEncoderDS.getAsDouble();
+
+    double desiredTurnMotorSpeed =
+        -MathUtil.clamp(
+            turnMotorPIDController.calculate(encoder, setpoint), -maxTurnSpeed, maxTurnSpeed);
+    turnSpark.set(desiredTurnMotorSpeed);
+
+    AutoLogOutputManager.addObject(setpoint);
   }
 }
