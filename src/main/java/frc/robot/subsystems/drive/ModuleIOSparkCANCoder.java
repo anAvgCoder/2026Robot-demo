@@ -118,16 +118,11 @@ public class ModuleIOSparkCANCoder implements ModuleIO {
               case 3 -> backRightCANcoderID;
               default -> 0;
             });
-    turnEncoderDS = () -> ((turnCAN.getAbsolutePosition().getValueAsDouble() + .75) * 2 * 3.14159);
-    // Resume and impliment turnCAN interface
-
+    turnEncoderDS = () -> ((turnCAN.getAbsolutePosition().getValueAsDouble() + .5) * 2 * 3.14159);
+    
     driveEncoder = driveSpark.getEncoder();
 
-    // turnEncoderCAN = turnCAN.getAbsolutePosition().getValueAsDouble();
-
     driveController = driveSpark.getClosedLoopController();
-
-    // turnController = turnSpark.getClosedLoopController();
 
     // Configure drive motor
     var driveConfig = new SparkFlexConfig();
@@ -165,30 +160,15 @@ public class ModuleIOSparkCANCoder implements ModuleIO {
     tryUntilOk(driveSpark, 5, () -> driveEncoder.setPosition(0.0));
 
     // Configure turn motor
+    
     var turnConfig = new SparkMaxConfig();
     turnConfig
-        .inverted(turnInverted)
-        .idleMode(IdleMode.kCoast)
+        .idleMode(IdleMode.kBrake)
         .smartCurrentLimit(turnMotorCurrentLimit)
-        .voltageCompensation(12.0);
-    turnConfig
-        .absoluteEncoder
-        .inverted(turnEncoderInverted)
-        .positionConversionFactor(turnEncoderPositionFactor)
-        .velocityConversionFactor(turnEncoderVelocityFactor)
-        .averageDepth(2);
-    // turnConfig
-    //     .closedLoop
-    //     .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-    //     .positionWrappingEnabled(true)
-    //     .positionWrappingInputRange(turnPIDMinInput, turnPIDMaxInput)
-    //     .pid(turnKp, 0.0, turnKd);
+        .voltageCompensation(12.0)
+        .inverted(turnInverted);
     turnConfig
         .signals
-        .absoluteEncoderPositionAlwaysOn(true)
-        .absoluteEncoderPositionPeriodMs((int) (1000.0 / odometryFrequency))
-        .absoluteEncoderVelocityAlwaysOn(true)
-        .absoluteEncoderVelocityPeriodMs(20)
         .appliedOutputPeriodMs(20)
         .busVoltagePeriodMs(20)
         .outputCurrentPeriodMs(20);
