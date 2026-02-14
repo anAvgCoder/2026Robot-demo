@@ -49,7 +49,7 @@ public class ModuleIOSpark implements ModuleIO {
   private final DoubleSupplier turnEncoderDS;
   private final CANcoder turnCAN;
 
-  private final PIDController turnMotorPIDController = new PIDController(.38, 0, 0);
+  private final PIDController turnMotorPIDController = new PIDController(.3, 0, 0);
 
   // Closed loop controllers
   private final SparkClosedLoopController driveController;
