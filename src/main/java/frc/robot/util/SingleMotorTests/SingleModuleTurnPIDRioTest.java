@@ -2,7 +2,11 @@ package frc.robot.util.SingleMotorTests;
 
 import static frc.robot.util.SparkUtil.tryUntilOk;
 
+import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.revrobotics.PersistMode;
+import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -13,89 +17,115 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
-import java.util.function.DoubleSupplier;
-import org.littletonrobotics.junction.AutoLogOutputManager;
 import org.littletonrobotics.junction.Logger;
 
 public class SingleModuleTurnPIDRioTest extends SubsystemBase {
 
   private final int changeId = System.identityHashCode(this);
 
-  private static final int kTurnMotorCanId = 6;
-  private static final int kAbsCancoderCanId = 23;
+  private static final int kTurnMotorCanId = 8;
+  private static final int kAbsCancoderCanId = 24;
 
   private final SparkBase motor;
 
-  private final DoubleSupplier turnEncoderDS;
   private final CANcoder cancoder;
-
-  private final ProfiledPIDController profiledPid =
-      new ProfiledPIDController(0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(502, 1190));
+  private final StatusSignal<Angle> absPosSig;
 
   private final LoggedTunableNumber enabled = new LoggedTunableNumber("TurnRioTest/Enabled", 0.0);
   private final LoggedTunableNumber setpointDeg =
       new LoggedTunableNumber("TurnRioTest/SetpointDeg", 0.0);
-  private final LoggedTunableNumber kP = new LoggedTunableNumber("TurnRioTest/kP", 0.0);
-  private final LoggedTunableNumber kI = new LoggedTunableNumber("TurnRioTest/kI", 0.0);
-  private final LoggedTunableNumber kD = new LoggedTunableNumber("TurnRioTest/kD", 0.0);
+
+  private final LoggedTunableNumber kP = new LoggedTunableNumber("TurnRioTest/kP", 0.25);
+  private final LoggedTunableNumber kI = new LoggedTunableNumber("TurnRioTest/kI", 0.00);
+  private final LoggedTunableNumber kD = new LoggedTunableNumber("TurnRioTest/kD", 0.00025);
+
+  private final LoggedTunableNumber maxVelRadPerSec =
+      new LoggedTunableNumber("TurnRioTest/MaxVelRadPerSec", 502.0);
+  private final LoggedTunableNumber maxAccelRadPerSec2 =
+      new LoggedTunableNumber("TurnRioTest/MaxAccelRadPerSec2", 1190.0);
+
+  private final LoggedTunableNumber maxOutput =
+      new LoggedTunableNumber("TurnRioTest/MaxOutput", 1.0);
+
+  private final ProfiledPIDController profiledPid;
+
+  private boolean wasEnabled = false;
 
   public SingleModuleTurnPIDRioTest() {
 
     motor = new SparkMax(kTurnMotorCanId, MotorType.kBrushless);
+
     cancoder = new CANcoder(kAbsCancoderCanId);
+    absPosSig = cancoder.getAbsolutePosition();
+
+    BaseStatusSignal.setUpdateFrequencyForAll(100.0, absPosSig);
+    cancoder.optimizeBusUtilization();
 
     var motorConfig = new SparkMaxConfig();
     motorConfig
-        .inverted(false)
+        .inverted(true)
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit(40)
-        .voltageCompensation(12);
-    motorConfig
-        .encoder
-        .inverted(false)
-        .positionConversionFactor(2 * Math.PI)
-        .velocityConversionFactor((2 * Math.PI) / 60.0);
+        .voltageCompensation(12.0);
     motorConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
-        .positionWrappingInputRange(0, 2 * Math.PI);
-    motorConfig.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
+        .positionWrappingInputRange(0.0, 2.0 * Math.PI)
+        .pid(0.1, 0.0, 0.0);
+    motorConfig
+        .signals
+        .absoluteEncoderPositionAlwaysOn(true)
+        .absoluteEncoderPositionPeriodMs(10)
+        .absoluteEncoderVelocityAlwaysOn(true)
+        .absoluteEncoderVelocityPeriodMs(20)
+        .appliedOutputPeriodMs(20)
+        .busVoltagePeriodMs(20)
+        .outputCurrentPeriodMs(20);
     tryUntilOk(
         motor,
         5,
         () ->
             motor.configure(
-                motorConfig,
-                com.revrobotics.ResetMode.kResetSafeParameters,
-                com.revrobotics.PersistMode.kNoPersistParameters));
+                motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
-    turnEncoderDS = () -> ((cancoder.getAbsolutePosition().getValueAsDouble() + 0.5) * 2 * 3.14159);
-    profiledPid.enableContinuousInput(0, 2 * Math.PI);
-  }
+    profiledPid =
+        new ProfiledPIDController(
+            kP.get(),
+            kI.get(),
+            kD.get(),
+            new TrapezoidProfile.Constraints(maxVelRadPerSec.get(), maxAccelRadPerSec2.get()));
 
-  public void setTurnPosition(double radians) {
-
-    double maxTurnSpeed = 0.5;
-
-    double encoder = turnEncoderDS.getAsDouble();
-
-    double desiredTurnMotorSpeed =
-        -MathUtil.clamp(profiledPid.calculate(encoder, radians), -maxTurnSpeed, maxTurnSpeed);
-    motor.set(desiredTurnMotorSpeed);
-
-    AutoLogOutputManager.addObject(radians);
+    profiledPid.enableContinuousInput(0.0, 2.0 * Math.PI);
+    profiledPid.setTolerance(Units.degreesToRadians(1.0), Units.degreesToRadians(20.0));
   }
 
   private double getMeasuredAngleRad() {
-    return ((cancoder.getAbsolutePosition().getValueAsDouble() + .5) * 2 * 3.14159);
+    absPosSig.refresh();
+    double rot = absPosSig.getValueAsDouble();
+    double rad = Units.rotationsToRadians(rot);
+    return MathUtil.inputModulus(rad, 0.0, 2.0 * Math.PI);
   }
 
-  private static double setpointDegToRad(double deg) {
-    return MathUtil.angleModulus(Units.degreesToRadians(deg));
+  public void setTurnPosition(double goalRad) {
+    double meas = getMeasuredAngleRad();
+    double goal = MathUtil.inputModulus(goalRad, 0.0, 2.0 * Math.PI);
+
+    double out = profiledPid.calculate(meas, goal);
+
+    double capped = MathUtil.clamp(out, -maxOutput.get(), maxOutput.get());
+    motor.set(-capped);
+
+    var sp = profiledPid.getSetpoint();
+    Logger.recordOutput("TurnRioTest/GoalRad", goal);
+    Logger.recordOutput("TurnRioTest/MeasRad", meas);
+    Logger.recordOutput("TurnRioTest/ProfilePosRad", sp.position);
+    Logger.recordOutput("TurnRioTest/ProfileVelRadPerSec", sp.velocity);
+    Logger.recordOutput("TurnRioTest/OutputCmd", capped);
   }
 
   private void applyTunablesIfChanged() {
@@ -105,34 +135,44 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
           profiledPid.setP(kP.get());
           profiledPid.setI(kI.get());
           profiledPid.setD(kD.get());
+
+          profiledPid.setConstraints(
+              new TrapezoidProfile.Constraints(maxVelRadPerSec.get(), maxAccelRadPerSec2.get()));
         },
         kP,
         kI,
-        kD);
+        kD,
+        maxVelRadPerSec,
+        maxAccelRadPerSec2);
   }
 
   @Override
   public void periodic() {
     applyTunablesIfChanged();
 
-    double spDeg = SmartDashboard.getNumber("TurnRioTest/SetpointDeg", setpointDeg.get());
+    double spDegLive = SmartDashboard.getNumber("TurnRioTest/SetpointDeg", setpointDeg.get());
+    SmartDashboard.putNumber("TurnRioTest/SetpointDegLive", spDegLive);
 
-    double spRad = setpointDegToRad(spDeg);
+    boolean isEnabled = enabled.get() > 0.5;
+
     double measRad = getMeasuredAngleRad();
+    double goalRad = Units.degreesToRadians(spDegLive);
 
-    if (enabled.get() > 0.5) {
-      setTurnPosition(spRad);
+    if (isEnabled && !wasEnabled) {
+      profiledPid.reset(measRad);
+    }
+
+    if (isEnabled) {
+      setTurnPosition(goalRad);
     } else {
       motor.stopMotor();
     }
 
-    double radians = ((cancoder.getAbsolutePosition().getValueAsDouble() + .5) * 2 * 3.14159);
-    double deg0to360 = Units.radiansToDegrees(radians);
+    double rawRot = absPosSig.getValueAsDouble();
+    Logger.recordOutput("TurnRioTest/AbsRotRaw", rawRot);
+    Logger.recordOutput("TurnRioTest/PositionRadWrapped", measRad);
+    Logger.recordOutput("TurnRioTest/PositionDegWrapped", Units.radiansToDegrees(measRad));
 
-    Logger.recordOutput("TurnRioTest/PositionDeg", deg0to360);
-    Logger.recordOutput("TurnRioTest/PositionRad", radians);
-    SmartDashboard.putNumber("TurnRioTest/SetpointDegLive", spDeg);
-    Logger.recordOutput("TurnRioTest/MeasRad", measRad);
-    Logger.recordOutput("TurnRioTest/SetpointRad", spRad);
+    wasEnabled = isEnabled;
   }
 }
