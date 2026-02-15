@@ -1,6 +1,5 @@
 package frc.robot.util.SingleMotorTests;
 
-import static frc.robot.subsystems.Drive.DriveConstants.odometryFrequency;
 import static frc.robot.util.SparkUtil.tryUntilOk;
 
 import com.ctre.phoenix6.hardware.CANcoder;
@@ -11,11 +10,14 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
+import java.util.function.DoubleSupplier;
+import org.littletonrobotics.junction.AutoLogOutputManager;
 import org.littletonrobotics.junction.Logger;
 
 public class SingleModuleTurnPIDRioTest extends SubsystemBase {
@@ -26,10 +28,12 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
   private static final int kAbsCancoderCanId = 23;
 
   private final SparkBase motor;
-  // private final RelativeEncoder motorRelativeEncoder;
+
+  private final DoubleSupplier turnEncoderDS;
   private final CANcoder cancoder;
 
-  private final PIDController pid = new PIDController(0.0, 0.0, 0.0);
+  private final ProfiledPIDController profiledPid =
+      new ProfiledPIDController(0.0, 0.0, 0.0, new TrapezoidProfile.Constraints(502, 1190));
 
   private final LoggedTunableNumber enabled = new LoggedTunableNumber("TurnRioTest/Enabled", 0.0);
   private final LoggedTunableNumber setpointDeg =
@@ -42,8 +46,6 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
 
     motor = new SparkMax(kTurnMotorCanId, MotorType.kBrushless);
     cancoder = new CANcoder(kAbsCancoderCanId);
-
-    // motorRelativeEncoder = motor.getEncoder();
 
     var motorConfig = new SparkMaxConfig();
     motorConfig
@@ -61,11 +63,7 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
         .positionWrappingEnabled(true)
         .positionWrappingInputRange(0, 2 * Math.PI);
-    motorConfig
-        .signals
-        .appliedOutputPeriodMs(20)
-        .busVoltagePeriodMs(20)
-        .outputCurrentPeriodMs(20);
+    motorConfig.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
     tryUntilOk(
         motor,
         5,
@@ -73,20 +71,23 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
             motor.configure(
                 motorConfig,
                 com.revrobotics.ResetMode.kResetSafeParameters,
-                com.revrobotics.PersistMode.kPersistParameters));
+                com.revrobotics.PersistMode.kNoPersistParameters));
 
-    pid.enableContinuousInput(-Math.PI, Math.PI);
+    turnEncoderDS = () -> ((cancoder.getAbsolutePosition().getValueAsDouble() + 0.5) * 2 * 3.14159);
+    profiledPid.enableContinuousInput(0, 2 * Math.PI);
   }
 
   public void setTurnPosition(double radians) {
-    double setpoint = MathUtil.angleModulus(radians);
 
     double maxTurnSpeed = 0.5;
-    double encoderValue = ((cancoder.getAbsolutePosition().getValueAsDouble() + .5) * 2 * 3.14159);
+
+    double encoder = turnEncoderDS.getAsDouble();
+
     double desiredTurnMotorSpeed =
-        -MathUtil.clamp(pid.calculate(encoderValue, setpoint), -maxTurnSpeed, maxTurnSpeed);
+        -MathUtil.clamp(profiledPid.calculate(encoder, radians), -maxTurnSpeed, maxTurnSpeed);
     motor.set(desiredTurnMotorSpeed);
-    System.out.println(desiredTurnMotorSpeed);
+
+    AutoLogOutputManager.addObject(radians);
   }
 
   private double getMeasuredAngleRad() {
@@ -101,9 +102,9 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
     LoggedTunableNumber.ifChanged(
         changeId,
         () -> {
-          pid.setP(kP.get());
-          pid.setI(kI.get());
-          pid.setD(kD.get());
+          profiledPid.setP(kP.get());
+          profiledPid.setI(kI.get());
+          profiledPid.setD(kD.get());
         },
         kP,
         kI,
