@@ -52,11 +52,10 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
         .smartCurrentLimit(40)
         .voltageCompensation(12);
     motorConfig
-        .absoluteEncoder
+        .encoder
         .inverted(false)
         .positionConversionFactor(2 * Math.PI)
-        .velocityConversionFactor((2 * Math.PI) / 60.0)
-        .averageDepth(2);
+        .velocityConversionFactor((2 * Math.PI) / 60.0);
     motorConfig
         .closedLoop
         .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
@@ -64,9 +63,6 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
         .positionWrappingInputRange(0, 2 * Math.PI);
     motorConfig
         .signals
-        .absoluteEncoderPositionAlwaysOn(true)
-        .absoluteEncoderPositionPeriodMs((int) (1000.0 / odometryFrequency))
-        .absoluteEncoderPositionAlwaysOn(true)
         .appliedOutputPeriodMs(20)
         .busVoltagePeriodMs(20)
         .outputCurrentPeriodMs(20);
