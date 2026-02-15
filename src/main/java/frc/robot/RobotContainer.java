@@ -102,8 +102,8 @@ public class RobotContainer {
         DriveCommands.joystickDrive(
             drive,
             () -> getClampedDrive(rightJoy) ? rightJoy.getX() : 0.0,
-            () -> getClampedDrive(rightJoy) ? rightJoy.getY() : 0.0,
-            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
 
     // // Reset gyro to 0 on press
     gyroButton.onTrue(
