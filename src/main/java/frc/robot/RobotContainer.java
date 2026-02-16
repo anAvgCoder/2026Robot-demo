@@ -41,8 +41,7 @@ public class RobotContainer {
   private static final Joystick rightJoy = new Joystick(1);
   private static final Joystick buttonPanel = new Joystick(2);
 
-  // Buttons
-  private final JoystickButton gyroButton = new JoystickButton(leftJoy, 12);
+  private static final JoystickButton gyroButton = new JoystickButton(buttonPanel, 1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -101,13 +100,24 @@ public class RobotContainer {
     // Default command, normal field-relative drive
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
-            drive, () -> -rightJoy.getY(), () -> rightJoy.getX(), () -> -leftJoy.getX()));
+            drive,
+            () -> getClampedDrive(rightJoy) ? rightJoy.getX() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
 
-    // Reset gyro to 0 on press
+    // // Reset gyro to 0 on press
     gyroButton.onTrue(
         Commands.runOnce(
                 () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)))
             .ignoringDisable(true));
+  }
+
+  public boolean getClampedTurn(Joystick joy) {
+    return Math.abs(joy.getX()) >= 0.1;
+  }
+
+  public boolean getClampedDrive(Joystick joy) {
+    return (Math.abs(joy.getY()) > 0.1) || (Math.abs(joy.getX()) > 0.1);
   }
 
   /**
