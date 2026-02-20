@@ -20,5 +20,13 @@ public interface GyroIO {
     public Rotation2d[] odometryYawPositions = new Rotation2d[] {};
   }
 
+  public default boolean isWorking() {
+    return false;
+  }
+
   public default void updateInputs(GyroIOInputs inputs) {}
+
+  public default void resetGyro() {}
+
+  public default void setYaw(Rotation2d heading) {}
 }

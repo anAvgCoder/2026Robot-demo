@@ -23,6 +23,10 @@ import frc.robot.subsystems.Drive.GyroIOPigeon2;
 import frc.robot.subsystems.Drive.ModuleIO;
 import frc.robot.subsystems.Drive.ModuleIOSim;
 import frc.robot.subsystems.Drive.ModuleIOSpark;
+import frc.robot.subsystems.QuestNav.QuestNavSystem;
+import frc.robot.subsystems.QuestNav.QuestNavSystemConstants;
+import frc.robot.subsystems.QuestNav.QuestNavSystemIO;
+import frc.robot.subsystems.QuestNav.QuestNavSystemIOReal;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -42,6 +46,8 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   private static final JoystickButton gyroButton = new JoystickButton(buttonPanel, 1);
+  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 2);
+  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 5);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -54,6 +60,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIOPigeon2(),
+                new QuestNavSystem(new QuestNavSystemIOReal()),
                 new ModuleIOSpark(0),
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
@@ -65,6 +72,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIO() {},
+                new QuestNavSystem(new QuestNavSystemIO() {}),
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim(),
@@ -76,6 +84,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIO() {},
+                new QuestNavSystem(new QuestNavSystemIO() {}),
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {},
@@ -101,14 +110,26 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> getClampedDrive(rightJoy) ? rightJoy.getX() : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+            () -> getClampedDrive(rightJoy) ? rightJoy.getY() : 0.0,
             () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
 
-    // // Reset gyro to 0 on press
+    // Reset gyro to 0 on press
     gyroButton.onTrue(
         Commands.runOnce(
-                () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)))
+                () ->
+                    drive.setPose(
+                        new Pose2d(
+                            drive.getPose().getTranslation(),
+                            Rotation2d.kZero.plus(new Rotation2d(90)))))
+            .ignoringDisable(true));
+
+    resetQuestPoseRedButton.onTrue(
+        Commands.runOnce(() -> drive.resetQuestPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
+            .ignoringDisable(true));
+
+    resetQuestPoseRedButton.onTrue(
+        Commands.runOnce(() -> drive.resetQuestPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
   }
 

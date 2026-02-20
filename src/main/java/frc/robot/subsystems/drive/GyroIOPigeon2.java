@@ -28,9 +28,11 @@ public class GyroIOPigeon2 implements GyroIO {
   private final Queue<Double> yawTimestampQueue;
   private final StatusSignal<AngularVelocity> yawVelocity = pigeon.getAngularVelocityZWorld();
 
+  private boolean pigeonIsConnected;
+
   public GyroIOPigeon2() {
     pigeon.getConfigurator().apply(new Pigeon2Configuration());
-    pigeon.getConfigurator().setYaw(-90.0);
+    pigeon.getConfigurator().setYaw(0);
     yaw.setUpdateFrequency(odometryFrequency);
     yawVelocity.setUpdateFrequency(50.0);
     pigeon.optimizeBusUtilization();
@@ -42,8 +44,15 @@ public class GyroIOPigeon2 implements GyroIO {
   }
 
   @Override
+  public boolean isWorking() {
+    return pigeonIsConnected;
+  }
+
+  @Override
   public void updateInputs(GyroIOInputs inputs) {
-    inputs.connected = BaseStatusSignal.refreshAll(yaw, yawVelocity).equals(StatusCode.OK);
+    pigeonIsConnected = BaseStatusSignal.refreshAll(yaw, yawVelocity).equals(StatusCode.OK);
+
+    inputs.connected = pigeonIsConnected;
     inputs.yawPosition = Rotation2d.fromDegrees(yaw.getValueAsDouble());
     inputs.yawVelocityRadPerSec = Units.degreesToRadians(yawVelocity.getValueAsDouble());
 
@@ -55,5 +64,15 @@ public class GyroIOPigeon2 implements GyroIO {
             .toArray(Rotation2d[]::new);
     yawTimestampQueue.clear();
     yawPositionQueue.clear();
+  }
+
+  @Override
+  public void resetGyro() {
+    pigeon.reset();
+  }
+
+  @Override
+  public void setYaw(Rotation2d heading) {
+    pigeon.setYaw(heading.getMeasure());
   }
 }

@@ -9,6 +9,8 @@ package frc.robot.subsystems.Drive;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.Drive.DriveConstants.*;
+import static frc.robot.subsystems.QuestNav.QuestNavSystemConstants.ROBOT_TO_QUEST;
+import static frc.robot.subsystems.QuestNav.QuestNavSystemConstants.questNavStdDevs;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -21,6 +23,7 @@ import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -38,7 +41,10 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
+import frc.robot.subsystems.QuestNav.QuestNavSystem;
+import frc.robot.subsystems.QuestNav.QuestNavSystemIO;
 import frc.robot.util.LocalADStarAK;
+import gg.questnav.questnav.PoseFrame;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -46,6 +52,7 @@ import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase {
   static final Lock odometryLock = new ReentrantLock();
+  private final QuestNavSystemIO questNavIO;
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
@@ -67,11 +74,14 @@ public class Drive extends SubsystemBase {
 
   public Drive(
       GyroIO gyroIO,
+      QuestNavSystem questNavSystem,
       ModuleIO flModuleIO,
       ModuleIO frModuleIO,
       ModuleIO blModuleIO,
       ModuleIO brModuleIO) {
+
     this.gyroIO = gyroIO;
+    this.questNavIO = questNavSystem.getIO();
     modules[0] = new Module(flModuleIO, 0);
     modules[1] = new Module(frModuleIO, 1);
     modules[2] = new Module(blModuleIO, 2);
@@ -169,10 +179,13 @@ public class Drive extends SubsystemBase {
 
       // Apply update
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+      getQuestSwerveUpdates();
     }
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
+
+    Logger.recordOutput("QuestBotPosition", questNavIO.getLastRobotPose());
   }
 
   /**
@@ -282,6 +295,16 @@ public class Drive extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
+    // return questpose if working
+    if (questNavIO.isWorking()) {
+      return questNavIO.getLastRobotPose().toPose2d();
+    } else {
+      return poseEstimator.getEstimatedPosition();
+    }
+  }
+
+  @AutoLogOutput(key = "Odometry/subsystemPosePoseEstimator")
+  private Pose2d subsystemPose() {
     return poseEstimator.getEstimatedPosition();
   }
 
@@ -292,7 +315,30 @@ public class Drive extends SubsystemBase {
 
   /** Resets the current odometry pose. */
   public void setPose(Pose2d pose) {
+    gyroIO.setYaw(pose.getRotation());
+    questNavIO.setRobotPose(new Pose3d(pose));
     poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+  }
+
+  public void resetQuestPose(Pose3d pose) {
+    questNavIO.resetQuestPoseZero(pose);
+  }
+
+  public void getQuestSwerveUpdates() {
+    PoseFrame[] poseFrames = questNavIO.getLatestPoseFrames();
+
+    if (questNavIO.isWorking()) {
+      for (PoseFrame frame : poseFrames) {
+        // update quest pose
+        questNavIO.setQuestPose(frame.questPose3d());
+
+        // contribute to robot pose
+        poseEstimator.addVisionMeasurement(
+            frame.questPose3d().transformBy(ROBOT_TO_QUEST.inverse()).toPose2d(),
+            frame.dataTimestamp(),
+            questNavStdDevs);
+      }
+    }
   }
 
   /** Adds a new timestamped vision measurement. */
