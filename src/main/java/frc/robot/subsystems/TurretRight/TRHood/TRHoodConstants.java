@@ -1,3 +1,3 @@
-package frc.robot.subsystems.TurretRight.TRHood;
+package frc.robot.subsystems.turretright.trhood;
 
 public class TRHoodConstants {}

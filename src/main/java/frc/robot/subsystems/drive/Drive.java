@@ -5,12 +5,12 @@
 // license that can be found in the LICENSE file
 // at the root directory of this project.
 
-package frc.robot.subsystems.Drive;
+package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
-import static frc.robot.subsystems.Drive.DriveConstants.*;
-import static frc.robot.subsystems.QuestNav.QuestNavSystemConstants.ROBOT_TO_QUEST;
-import static frc.robot.subsystems.QuestNav.QuestNavSystemConstants.questNavStdDevs;
+import static frc.robot.subsystems.drive.DriveConstants.*;
+import static frc.robot.subsystems.questnav.QuestNavSystemConstants.ROBOT_TO_QUEST;
+import static frc.robot.subsystems.questnav.QuestNavSystemConstants.questNavStdDevs;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -41,8 +41,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
-import frc.robot.subsystems.QuestNav.QuestNavSystem;
-import frc.robot.subsystems.QuestNav.QuestNavSystemIO;
+import frc.robot.subsystems.questnav.QuestNavSystem;
+import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.util.LocalADStarAK;
 import gg.questnav.questnav.PoseFrame;
 import java.util.concurrent.locks.Lock;

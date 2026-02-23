@@ -1,5 +1,6 @@
-package frc.robot.subsystems.IntakeRoller;
+package frc.robot.subsystems.intakeroller;
 
 public class IntakeRollerConstants {
-  public static final int CanId = 18; // TODO: get value
+  // Spark Max + NEO 550
+  public static final int CanId = 10;
 }

@@ -1,3 +1,3 @@
-package frc.robot.subsystems.IntakePivot;
+package frc.robot.subsystems.intakepivot;
 
 public class IntakePivot {}

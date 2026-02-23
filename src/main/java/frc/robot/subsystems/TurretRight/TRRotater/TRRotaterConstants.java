@@ -1,3 +1,3 @@
-package frc.robot.subsystems.TurretRight.TRRotater;
+package frc.robot.subsystems.turretright.trrotater;
 
 public class TRRotaterConstants {}

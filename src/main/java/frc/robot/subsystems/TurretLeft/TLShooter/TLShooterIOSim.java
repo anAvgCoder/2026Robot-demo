@@ -1,3 +1,30 @@
-package frc.robot.subsystems.TurretLeft.TLShooter;
+package frc.robot.subsystems.turretleft.tlshooter;
 
-public class TLShooterIOSim {}
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.system.plant.LinearSystemId;
+import edu.wpi.first.wpilibj.simulation.DCMotorSim;
+
+public class TLShooterIOSim implements TLShooterIO {
+  private TLShooterIOInputs inputs = new TLShooterIOInputs();
+
+  private final DCMotorSim motorSim;
+  private static final DCMotor gearbox = DCMotor.getNeoVortex(1);
+
+  public TLShooterIOSim() {
+    motorSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(gearbox, 0.025, 1), gearbox);
+  }
+
+  @Override
+  public void setSpeed(double speed) {}
+
+  @Override
+  public void hubAdaptiveAiming() {}
+
+  @Override
+  public void storageAdaptiveAiming() {}
+
+  @Override
+  public void updateInputs(TLShooterIOInputs inputs) {
+    this.inputs = inputs;
+  }
+}

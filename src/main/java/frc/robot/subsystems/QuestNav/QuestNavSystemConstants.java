@@ -1,4 +1,4 @@
-package frc.robot.subsystems.QuestNav;
+package frc.robot.subsystems.questnav;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;

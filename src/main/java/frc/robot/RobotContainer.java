@@ -17,16 +17,16 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
-import frc.robot.subsystems.Drive.Drive;
-import frc.robot.subsystems.Drive.GyroIO;
-import frc.robot.subsystems.Drive.GyroIOPigeon2;
-import frc.robot.subsystems.Drive.ModuleIO;
-import frc.robot.subsystems.Drive.ModuleIOSim;
-import frc.robot.subsystems.Drive.ModuleIOSpark;
-import frc.robot.subsystems.QuestNav.QuestNavSystem;
-import frc.robot.subsystems.QuestNav.QuestNavSystemConstants;
-import frc.robot.subsystems.QuestNav.QuestNavSystemIO;
-import frc.robot.subsystems.QuestNav.QuestNavSystemIOReal;
+import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.drive.GyroIO;
+import frc.robot.subsystems.drive.GyroIOPigeon2;
+import frc.robot.subsystems.drive.ModuleIO;
+import frc.robot.subsystems.drive.ModuleIOSim;
+import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.questnav.QuestNavSystem;
+import frc.robot.subsystems.questnav.QuestNavSystemConstants;
+import frc.robot.subsystems.questnav.QuestNavSystemIO;
+import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**

@@ -1,6 +1,6 @@
-package frc.robot.subsystems.QuestNav;
+package frc.robot.subsystems.questnav;
 
-import static frc.robot.subsystems.QuestNav.QuestNavSystemConstants.*;
+import static frc.robot.subsystems.questnav.QuestNavSystemConstants.*;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;

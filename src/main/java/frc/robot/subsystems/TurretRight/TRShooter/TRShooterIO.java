@@ -1,3 +1,21 @@
-package frc.robot.subsystems.TurretRight.TRShooter;
+package frc.robot.subsystems.turretright.trshooter;
 
-public class TRShooterIO {}
+import org.littletonrobotics.junction.AutoLog;
+
+public interface TRShooterIO {
+  @AutoLog
+  public static class TRShooterIOInputs {
+    public double supplyCurrent;
+    public double motorEncoderValue;
+    public double velocityRPM;
+    public double tempCelcius;
+  }
+
+  public default void setSpeed(double speed) {}
+
+  public default void hubAdaptiveAiming() {}
+
+  public default void storageAdaptiveAiming() {}
+
+  public default void updateInputs(TRShooterIOInputs inputs) {}
+}

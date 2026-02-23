@@ -1,14 +1,11 @@
-package frc.robot.subsystems.TurretLeft.TLShooter;
-
-import frc.robot.util.LoggedTunableNumber;
+package frc.robot.subsystems.turretleft.tlshooter;
 
 public class TLShooterConstants {
+  // Spark Flex + NEO Vortex
+  public static final int CanId = 45;
 
-  private final LoggedTunableNumber kP = new LoggedTunableNumber("SingleMotorTest/kP", 0.00006);
-  private final LoggedTunableNumber kI = new LoggedTunableNumber("SingleMotorTest/kI", 0.0);
-  private final LoggedTunableNumber kD = new LoggedTunableNumber("SingleMotorTest/kD", 0.0);
+  public static final int shooterMotorCurrentLimit = 40;
 
-  private final LoggedTunableNumber kS = new LoggedTunableNumber("SingleMotorTest/kS", 0.0);
-  private final LoggedTunableNumber kV = new LoggedTunableNumber("SingleMotorTest/kV", 0.00183);
-  private final LoggedTunableNumber kA = new LoggedTunableNumber("SingleMotorTest/kA", 0.0);
+  public static final double kP = 0.00006;
+  public static final double kV = 0.00183;
 }

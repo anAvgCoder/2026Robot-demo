@@ -1,16 +1,16 @@
-package frc.robot.subsystems.intakeroller;
+package frc.robot.subsystems.belt;
 
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
-public class IntakeRollerIOSim implements IntakeRollerIO {
-  private IntakeRollerIOInputs inputs = new IntakeRollerIOInputs();
+public class BeltIOSim implements BeltIO {
+  private BeltIOInputs inputs = new BeltIOInputs();
 
   private final DCMotorSim motorSim;
   private static final DCMotor gearbox = DCMotor.getNEO(1);
 
-  public IntakeRollerIOSim() {
+  public BeltIOSim() {
     motorSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(gearbox, 0.025, 1), gearbox);
   }
 
@@ -39,7 +39,7 @@ public class IntakeRollerIOSim implements IntakeRollerIO {
   }
 
   @Override
-  public void updateInputs(IntakeRollerIOInputs inputs) {
+  public void updateInputs(BeltIOInputs inputs) {
     this.inputs = inputs;
   }
 }

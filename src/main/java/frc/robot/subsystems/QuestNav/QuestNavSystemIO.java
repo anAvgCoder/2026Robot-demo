@@ -1,4 +1,4 @@
-package frc.robot.subsystems.QuestNav;
+package frc.robot.subsystems.questnav;
 
 import edu.wpi.first.math.geometry.Pose3d;
 import gg.questnav.questnav.PoseFrame;

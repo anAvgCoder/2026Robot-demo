@@ -1,18 +1,17 @@
-package frc.robot.subsystems.intakeroller;
+package frc.robot.subsystems.belt;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface IntakeRollerIO {
-
+public interface BeltIO {
   @AutoLog
-  public static class IntakeRollerIOInputs {
+  public static class BeltIOInputs {
     public boolean motorConnected = true;
     public double supplyCurrent;
     public double velocityRPM;
     public double tempCelcius;
   }
 
-  public default void updateInputs(IntakeRollerIOInputs inputs) {}
+  public default void updateInputs(BeltIOInputs inputs) {}
 
   public default void intake() {}
 
