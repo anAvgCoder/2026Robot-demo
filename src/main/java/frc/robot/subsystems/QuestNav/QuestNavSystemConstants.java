@@ -16,8 +16,13 @@ public class QuestNavSystemConstants {
       new Transform3d(
           Units.inchesToMeters(-10.75), 0, Units.inchesToMeters(-13.5), new Rotation3d(0, 0, 0));
 
+  // FIELD IS 651.22 INCHES WIDE and 317.69 INCHES LONG
   public static final Pose3d ROBOT_TO_QUEST_RED =
-      new Pose3d(Units.inchesToMeters(0), 0, Units.inchesToMeters(0), new Rotation3d(0, 0, 0))
+      new Pose3d(
+              Units.inchesToMeters(651.22 - 17.125),
+              Units.inchesToMeters(317.69 - 17),
+              Units.inchesToMeters(-13.5),
+              new Rotation3d(0, 0, Units.degreesToRadians(-90)))
           .transformBy(ROBOT_TO_QUEST);
 
   public static final Pose3d ROBOT_TO_QUEST_BLUE =
@@ -25,7 +30,7 @@ public class QuestNavSystemConstants {
               Units.inchesToMeters(17.125), // 27/2 + 3.25 (bumpers) + 6/16 (brackets)
               Units.inchesToMeters(17), // 27/2 + 3.125 (bumpers) + 6/16 (brackets)
               Units.inchesToMeters(-13.5),
-              new Rotation3d(0, 0, 0))
+              new Rotation3d(0, 0, Units.degreesToRadians(90)))
           .transformBy(ROBOT_TO_QUEST);
 
   public static final Matrix<N3, N1> questNavStdDevs =

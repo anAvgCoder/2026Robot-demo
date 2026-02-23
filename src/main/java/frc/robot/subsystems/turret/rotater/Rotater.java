@@ -1,3 +1,19 @@
 package frc.robot.subsystems.turret.rotater;
 
-public class Rotater {}
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.Logger;
+
+public class Rotater extends SubsystemBase {
+  private final RotaterIO io;
+  private final RotaterIOInputsAutoLogged inputs = new RotaterIOInputsAutoLogged();
+
+  public Rotater(RotaterIO io) {
+    this.io = io;
+  }
+
+  @Override
+  public void periodic() {
+    io.updateInputs(inputs);
+    Logger.processInputs("IntakeRoller", inputs);
+  }
+}
