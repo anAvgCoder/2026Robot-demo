@@ -1,10 +1,10 @@
-package frc.robot.subsystems.turretright.trshooter;
+package frc.robot.subsystems.turret.shooter;
 
 import org.littletonrobotics.junction.AutoLog;
 
-public interface TRShooterIO {
+public interface ShooterIO {
   @AutoLog
-  public static class TRShooterIOInputs {
+  public static class ShooterIOInputs {
     public double supplyCurrent;
     public double motorEncoderValue;
     public double velocityRPM;
@@ -17,5 +17,5 @@ public interface TRShooterIO {
 
   public default void storageAdaptiveAiming() {}
 
-  public default void updateInputs(TRShooterIOInputs inputs) {}
+  public default void updateInputs(ShooterIOInputs inputs) {}
 }

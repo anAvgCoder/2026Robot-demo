@@ -17,6 +17,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
+import frc.robot.subsystems.belt.Belt;
+import frc.robot.subsystems.belt.BeltConstants;
+import frc.robot.subsystems.belt.BeltIOReal;
+import frc.robot.subsystems.belt.BeltIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -38,6 +42,8 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
+  private final Belt leftBelt;
+  private final Belt rightBelt;
 
   // Controller
   // Joysticks
@@ -65,6 +71,8 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
+        leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft));
+        rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight));
         break;
 
       case SIM:
@@ -77,6 +85,8 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
+        leftBelt = new Belt(new BeltIOSim());
+        rightBelt = new Belt(new BeltIOSim());
         break;
 
       default:
@@ -89,6 +99,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
+        leftBelt = new Belt(new BeltIOSim() {});
+        rightBelt = new Belt(new BeltIOSim() {});
         break;
     }
 

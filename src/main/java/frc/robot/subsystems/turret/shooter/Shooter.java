@@ -1,20 +1,20 @@
-package frc.robot.subsystems.turretright.trshooter;
+package frc.robot.subsystems.turret.shooter;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
 
-public class TRShooter extends SubsystemBase implements TRShooterIO {
-  private final TRShooterIO io;
+public class Shooter extends SubsystemBase implements ShooterIO {
+  private final ShooterIO io;
   private boolean isHubAdaptive = false;
   private boolean isStorageAdaptive = false;
 
-  private final TRShooterIOInputsAutoLogged inputs = new TRShooterIOInputsAutoLogged();
+  private final ShooterIOInputsAutoLogged inputs = new ShooterIOInputsAutoLogged();
 
-  public TRShooter(TRShooterIO io) {
+  public Shooter(ShooterIO io) {
     this.io = io;
   }
 
-  public TRShooterIO getIO() {
+  public ShooterIO getIO() {
     return this.io;
   }
 
@@ -32,6 +32,6 @@ public class TRShooter extends SubsystemBase implements TRShooterIO {
     // Todo: logic to have adaptive hub and storage aiming
 
     io.updateInputs(inputs);
-    Logger.processInputs("TRShooter", inputs);
+    Logger.processInputs("Shooter", inputs);
   }
 }

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.turretright.trshooter;
+package frc.robot.subsystems.turret.shooter;
 
 import static frc.robot.util.SparkUtil.tryUntilOk;
 
@@ -12,7 +12,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 
-public class TRShooterIOReal implements TRShooterIO {
+public class ShooterIOReal implements ShooterIO {
   private final SparkBase motor;
 
   private final SparkFlexConfig sparkConfig;
@@ -21,9 +21,9 @@ public class TRShooterIOReal implements TRShooterIO {
 
   private static final boolean kInverted = true;
 
-  public TRShooterIOReal() {
+  public ShooterIOReal(int CanId) {
     super();
-    motor = new SparkFlex(TRShooterConstants.CanId, MotorType.kBrushless);
+    motor = new SparkFlex(CanId, MotorType.kBrushless);
 
     cl = motor.getClosedLoopController();
     enc = motor.getEncoder();
@@ -32,17 +32,17 @@ public class TRShooterIOReal implements TRShooterIO {
 
     sparkConfig
         .idleMode(IdleMode.kCoast)
-        .smartCurrentLimit(TRShooterConstants.shooterMotorCurrentLimit)
+        .smartCurrentLimit(ShooterConstants.shooterMotorCurrentLimit)
         .voltageCompensation(12.0);
     sparkConfig
         .closedLoop
-        .pid(TRShooterConstants.kP, 0.0, 0.0, ClosedLoopSlot.kSlot0)
+        .pid(ShooterConstants.kP, 0.0, 0.0, ClosedLoopSlot.kSlot0)
         .outputRange(-1, 1, ClosedLoopSlot.kSlot0);
     sparkConfig
         .closedLoop
         .feedForward
         .kS(0.0, ClosedLoopSlot.kSlot0)
-        .kV(TRShooterConstants.kV, ClosedLoopSlot.kSlot0);
+        .kV(ShooterConstants.kV, ClosedLoopSlot.kSlot0);
     sparkConfig
         .signals
         .primaryEncoderPositionAlwaysOn(true)
@@ -73,7 +73,7 @@ public class TRShooterIOReal implements TRShooterIO {
   public void storageAdaptiveAiming() {}
 
   @Override
-  public void updateInputs(TRShooterIOInputs inputs) {
+  public void updateInputs(ShooterIOInputs inputs) {
     inputs.supplyCurrent = motor.getOutputCurrent();
     inputs.motorEncoderValue = motor.getEncoder().getPosition();
     inputs.velocityRPM = motor.getEncoder().getVelocity();
