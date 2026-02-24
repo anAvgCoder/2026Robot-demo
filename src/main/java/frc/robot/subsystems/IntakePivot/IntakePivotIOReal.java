@@ -114,8 +114,8 @@ public class IntakePivotIOReal implements IntakePivotIO {
 
   @Override
   public void updateInputs(IntakePivotIOInputs inputs) {
-    inputs.positionRad = enc.getPosition();
-    inputs.velocityRadPerSec = enc.getVelocity();
+    inputs.position = enc.getPosition();
+    inputs.velocityRPM = enc.getVelocity();
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.supplyCurrentAmps = motor.getOutputCurrent();
     inputs.tempC = motor.getMotorTemperature();

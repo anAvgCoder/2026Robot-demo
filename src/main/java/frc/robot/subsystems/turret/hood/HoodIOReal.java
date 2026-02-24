@@ -94,8 +94,8 @@ public class HoodIOReal implements HoodIO {
 
   @Override
   public void updateInputs(HoodIOInputs inputs) {
-    inputs.positionRad = enc.getPosition();
-    inputs.velocityRadPerSec = enc.getVelocity();
+    inputs.position = enc.getPosition();
+    inputs.velocityRPM = enc.getVelocity();
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.supplyCurrentAmps = motor.getOutputCurrent();
     inputs.tempC = motor.getMotorTemperature();
