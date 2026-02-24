@@ -12,8 +12,8 @@ public class RotaterConstants {
   public static final double kGearRatio = 100.0;
 
   // Soft limits (degrees)
-  public static final double kMinAngleDeg = -175.0;
-  public static final double kMaxAngleDeg = 175.0;
+  public static final double kMinAngleDeg = -180.0;
+  public static final double kMaxAngleDeg = 180.0;
 
   // Motion constraints for the trapezoidal pid thing from wpilib
   public static final double kMaxVelDegPerSec = 240.0;

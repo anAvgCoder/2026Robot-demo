@@ -3,7 +3,7 @@ package frc.robot.subsystems.turret.rotater;
 import org.littletonrobotics.junction.AutoLog;
 
 public interface RotaterIO {
-  
+
   @AutoLog
   public static class RotaterIOInputs {
     public double positionRad = 0.0;
