@@ -4,16 +4,16 @@ import edu.wpi.first.math.util.Units;
 
 public class IntakePivotConstants {
   // Hardware
-  public static final int kCanId = 50; // TODO
+  public static final int kCanId = 11;
   public static final boolean kInverted = false;
-  public static final int kCurrentLimitAmps = 30;
+  public static final int kCurrentLimitAmps = 60;
 
   // Mechanism conversion
-  public static final double kGearRatio = 100.0; // TODO
+  public static final double kGearRatio = 5.0;
 
   // Positions
-  public static final double kStoragePosition = 0.0; // TODO
-  public static final double kIntakePosition = 30.0; // TODO
+  public static final double kStoragePosition = 0.0;
+  public static final double kIntakePosition = 2.214075;
 
   // Trapezoid constraints
   public static final double kMaxVelDegPerSec = 180.0;

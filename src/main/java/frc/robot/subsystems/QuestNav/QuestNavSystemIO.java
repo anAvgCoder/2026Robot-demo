@@ -17,6 +17,12 @@ public interface QuestNavSystemIO {
 
   public default void resetQuestPose(Pose3d pose3d) {}
 
+  public default double getQuestVelocity() {
+    return 0;
+  }
+
+  public default void getQuestVector(Pose3d pose3d) {}
+
   public default void resetQuestPoseZero(Pose3d pose3d) {}
 
   public default void updateLatestPoseFrames() {}

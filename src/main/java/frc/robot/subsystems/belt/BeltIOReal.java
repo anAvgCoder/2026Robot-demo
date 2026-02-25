@@ -17,10 +17,20 @@ public class BeltIOReal implements BeltIO {
     motor = new SparkMax(canId, MotorType.kBrushless);
     sparkConfig = new SparkMaxConfig();
 
-    sparkConfig
-        .idleMode(SparkMaxConfig.IdleMode.kBrake)
-        .smartCurrentLimit(40)
-        .voltageCompensation(12.0);
+    if (canId == BeltConstants.CanIdLeft) {
+      sparkConfig
+          .idleMode(SparkMaxConfig.IdleMode.kBrake)
+          .inverted(BeltConstants.kLeftInverted)
+          .smartCurrentLimit(40)
+          .voltageCompensation(12.0);
+    } else {
+      sparkConfig
+          .idleMode(SparkMaxConfig.IdleMode.kBrake)
+          .inverted(BeltConstants.kRightInverted)
+          .smartCurrentLimit(40)
+          .voltageCompensation(12.0);
+    }
+
     sparkConfig.signals.appliedOutputPeriodMs(20);
 
     SparkUtil.tryUntilOk(

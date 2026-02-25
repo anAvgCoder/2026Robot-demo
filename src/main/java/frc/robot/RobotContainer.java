@@ -16,7 +16,8 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.commands.DriveCommands;
+import frc.robot.commands.belt.BeltIntakeCommand;
+import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
 import frc.robot.subsystems.belt.BeltIOReal;
@@ -27,10 +28,14 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.intakeroller.IntakeRoller;
+import frc.robot.subsystems.intakeroller.IntakeRollerIO;
+import frc.robot.subsystems.intakeroller.IntakeRollerIOReal;
 import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
+import frc.robot.util.SingleMotorTests.IntakePivotPIDRioTest;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -44,16 +49,25 @@ public class RobotContainer {
   private final Drive drive;
   private final Belt leftBelt;
   private final Belt rightBelt;
+  // private final IntakePivot intakePivot;
+  private final IntakeRoller intakeRoller;
+  private final IntakePivotPIDRioTest intakePivotTest;
 
-  // Controller
+  // Commands
+  private static BeltIntakeCommand beltIntakeCommand;
+  private static IRIntakeCommand irIntakeCommand;
+
   // Joysticks
   private static final Joystick leftJoy = new Joystick(0);
   private static final Joystick rightJoy = new Joystick(1);
   private static final Joystick buttonPanel = new Joystick(2);
 
+  // Buttons
   private static final JoystickButton gyroButton = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 2);
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 5);
+
+  private static final JoystickButton intakeButton = new JoystickButton(buttonPanel, 3);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -73,6 +87,8 @@ public class RobotContainer {
                 new ModuleIOSpark(3));
         leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft));
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight));
+        // intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
+        intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
         break;
 
       case SIM:
@@ -87,6 +103,8 @@ public class RobotContainer {
                 new ModuleIOSim());
         leftBelt = new Belt(new BeltIOSim());
         rightBelt = new Belt(new BeltIOSim());
+        // intakePivot = new IntakePivot(new IntakePivotIO() {});
+        intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
         break;
 
       default:
@@ -101,8 +119,11 @@ public class RobotContainer {
                 new ModuleIO() {});
         leftBelt = new Belt(new BeltIOSim() {});
         rightBelt = new Belt(new BeltIOSim() {});
+        // intakePivot = new IntakePivot(new IntakePivotIO() {});
+        intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
         break;
     }
+    intakePivotTest = new IntakePivotPIDRioTest();
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -119,12 +140,19 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-            () -> getClampedDrive(rightJoy) ? rightJoy.getY() : 0.0,
-            () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
+    // drive.setDefaultCommand(
+    //     DriveCommands.joystickDrive(
+    //         drive,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+    //         () -> getClampedDrive(rightJoy) ? rightJoy.getY() : 0.0,
+    //         () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
+
+    // intakeButton.whileTrue(
+    //     Commands.parallel(
+    //         new IRIntakeCommand(intakeRoller),
+    //         new BeltIntakeCommand(rightBelt),
+    //         new BeltIntakeCommand(leftBelt),
+    //         new IPIntakeCommand(intakePivot)));
 
     // Reset gyro to 0 on press
     gyroButton.onTrue(

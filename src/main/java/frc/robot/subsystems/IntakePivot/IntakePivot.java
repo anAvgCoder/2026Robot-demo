@@ -11,6 +11,10 @@ public class IntakePivot extends SubsystemBase {
     this.io = io;
   }
 
+  public IntakePivotIO getIO() {
+    return this.io;
+  }
+
   @Override
   public void periodic() {
     io.updateInputs(inputs);

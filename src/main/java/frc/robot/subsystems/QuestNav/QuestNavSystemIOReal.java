@@ -71,6 +71,12 @@ public class QuestNavSystemIOReal implements QuestNavSystemIO {
   }
 
   @Override
+  public double getQuestVelocity() {
+    // Implementation for getting quest velocity
+    return 0;
+  }
+
+  @Override
   public Pose3d getLastRobotPose() {
     Logger.recordOutput("QuestNavTest/questWorking", questWorking);
     Logger.recordOutput("QuestNavTest/latestPoseFrames", latestPoseFrames);

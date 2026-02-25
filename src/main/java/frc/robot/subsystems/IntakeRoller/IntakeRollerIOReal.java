@@ -14,7 +14,7 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
 
   public IntakeRollerIOReal() {
     super();
-    motor = new SparkMax(IntakeRollerConstants.CanId, MotorType.kBrushless);
+    motor = new SparkMax(IntakeRollerConstants.KCanId, MotorType.kBrushless);
 
     sparkConfig = new SparkMaxConfig();
 

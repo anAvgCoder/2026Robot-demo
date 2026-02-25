@@ -4,7 +4,10 @@ import edu.wpi.first.math.util.Units;
 
 public class RotaterConstants {
   // Hardware
-  public static final int kCanId = 43;
+  public static final int kCanIdLeft = 43;
+  public static final int kCanIdRight = 42;
+  public static final int kCanIdLeftCoder = 25;
+  public static final int kCanIdRightCoder = 26;
   public static final boolean kInverted = false;
   public static final int kCurrentLimitAmps = 30;
 
