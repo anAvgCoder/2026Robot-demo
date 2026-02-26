@@ -1,19 +1,15 @@
 package frc.robot.commands.turret;
 
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.intakeroller.IntakeRoller;
-import frc.robot.subsystems.intakeroller.IntakeRollerIO;
 import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.turret.ShotTimeTable;
-import frc.robot.subsystems.turret.TurretConstants;
 import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
 import frc.robot.subsystems.turret.hood.Hood;
@@ -62,12 +58,13 @@ public class AdaptiveHubAiming extends Command {
         ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(calculateAdjustedTurretPose(true)));
         hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
         shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
-        rotaterIORight.setTurnPosition(calculateAdjustedTurretPose(true).getRotation().getZ());
+        rotaterIORight.setTurnPosition(calculateTurretDegrees(calculateAdjustedTurretPose(true)));
 
         ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(calculateAdjustedTurretPose(false)));
         hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
         shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
-        rotaterIOLeft.setTurnPosition(calculateAdjustedTurretPose(false).getRotation().getZ());
+        rotaterIOLeft.setTurnPosition(calculateTurretDegrees(calculateAdjustedTurretPose(false)));
+
         runCounter++;
         if (runCounter > 24) {
             runCounter = 0;
@@ -75,8 +72,7 @@ public class AdaptiveHubAiming extends Command {
     }
 
     @Override
-    public void end(boolean interrupted) {
-        
+    public void end(boolean interrupted) {    
     }
 
     @Override
