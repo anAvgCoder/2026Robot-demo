@@ -17,6 +17,7 @@ public class IROutakeCommand extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
+    runCounter = 0;
     intakeRollerIO.outake();
   }
 

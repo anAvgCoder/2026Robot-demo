@@ -4,7 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
-
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.questnav.QuestNavSystem;
@@ -31,7 +31,7 @@ public class AdaptiveHubAiming extends Command {
     private final HoodIO hoodIOLeft;
     private final ShooterIO shooterIOLeft;
     private final QuestNavSystemIO questNavSystemIO;
-    private static boolean isBlue = true;
+    private boolean isBlue = true;
     private int runCounter;
 
     public AdaptiveHubAiming(Rotater rotaterRight, Shooter shooterRight, Hood hoodRight, Rotater rotaterLeft, Shooter shooterLeft, Hood hoodLeft, QuestNavSystem questNavSystem, boolean isBlueCheck) {
@@ -45,25 +45,29 @@ public class AdaptiveHubAiming extends Command {
         
         questNavSystemIO = questNavSystem.getIO();
 
-        addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft, questNavSystem);
+        addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft);
 
         isBlue = isBlueCheck;
     }
 
     @Override
-    public void initialize() {}
+    public void initialize() {
+        runCounter = 0;
+    }
 
     @Override
     public void execute() {
-        ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(calculateAdjustedTurretPose(true)));
+        Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
+        ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
         hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
         shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
-        rotaterIORight.setTurnPosition(calculateTurretDegrees(calculateAdjustedTurretPose(true)));
+        rotaterIORight.setTurnPosition(calculateTurretDegrees(turretPoseRight) - Math.toDegrees(MathUtil.angleModulus(turretPoseRight.getRotation().getZ())));
 
-        ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(calculateAdjustedTurretPose(false)));
+        Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
+        ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
         hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
         shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
-        rotaterIOLeft.setTurnPosition(calculateTurretDegrees(calculateAdjustedTurretPose(false)));
+        rotaterIOLeft.setTurnPosition(calculateTurretDegrees(turretPoseLeft) - Math.toDegrees(MathUtil.angleModulus(turretPoseLeft.getRotation().getZ())));
 
         runCounter++;
         if (runCounter > 24) {
@@ -125,9 +129,9 @@ public class AdaptiveHubAiming extends Command {
         }
 
         if (isRightTurret) {
-            robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
+            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
         } else {
-            robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
+            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
         }
         
             
@@ -138,9 +142,9 @@ public class AdaptiveHubAiming extends Command {
         Pose3d robotPose = questNavSystemIO.getLastRobotPose();
 
         if (isRightTurret) {
-            robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
+            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
         } else {
-            robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
+            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
         }
 
         double dx;
@@ -158,7 +162,7 @@ public class AdaptiveHubAiming extends Command {
     }
 
     public Transform3d pointOnCircleDegCCW(double angleDeg) {
-        double r = 9.37; // radius of the circle 6.5^2 + 6.75^2
+        double r = Units.inchesToMeters(9.37); // radius of the circle 6.5^2 + 6.75^2
         double theta = Math.toRadians(angleDeg);
 
         double x = -r * Math.sin(theta);
