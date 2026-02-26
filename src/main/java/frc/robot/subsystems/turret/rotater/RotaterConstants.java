@@ -3,6 +3,10 @@ package frc.robot.subsystems.turret.rotater;
 import edu.wpi.first.math.util.Units;
 
 public class RotaterConstants {
+  // Turret Locations
+  public static final double turretRightAngleLocation = 46; // TODO: measure with calc
+  public static final double turretLeftAngleLocation = -44;
+
   // Hardware
   public static final int kCanIdLeft = 43;
   public static final int kCanIdRight = 42;

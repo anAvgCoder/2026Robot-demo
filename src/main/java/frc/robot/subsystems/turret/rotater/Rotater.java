@@ -1,6 +1,8 @@
 package frc.robot.subsystems.turret.rotater;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.turret.shooter.ShooterIO;
+
 import org.littletonrobotics.junction.Logger;
 
 public class Rotater extends SubsystemBase implements RotaterIO {
@@ -9,6 +11,10 @@ public class Rotater extends SubsystemBase implements RotaterIO {
 
   public Rotater(RotaterIO io) {
     this.io = io;
+  }
+
+  public RotaterIO getIO() {
+    return this.io;
   }
 
   @Override
