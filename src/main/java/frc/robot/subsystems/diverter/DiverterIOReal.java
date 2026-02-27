@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakeroller;
+package frc.robot.subsystems.diverter;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
@@ -8,13 +8,13 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import frc.robot.util.SparkUtil;
 
-public class IntakeRollerIOReal implements IntakeRollerIO {
+public class DiverterIOReal implements DiverterIO {
   private final SparkBase motor;
   private final SparkMaxConfig sparkConfig;
 
-  public IntakeRollerIOReal() {
+  public DiverterIOReal() {
     super();
-    motor = new SparkMax(IntakeRollerConstants.KCanId, MotorType.kBrushless);
+    motor = new SparkMax(DiverterConstants.KCanId, MotorType.kBrushless);
 
     sparkConfig = new SparkMaxConfig();
 
@@ -48,7 +48,7 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
   }
 
   @Override
-  public void updateInputs(IntakeRollerIOInputs inputs) {
+  public void updateInputs(DiverterIOInputs inputs) {
     inputs.supplyCurrent = motor.getOutputCurrent();
     inputs.velocityRPM = motor.getEncoder().getVelocity();
     inputs.tempCelcius = motor.getMotorTemperature();

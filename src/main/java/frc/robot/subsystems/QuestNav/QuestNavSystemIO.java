@@ -39,8 +39,8 @@ public interface QuestNavSystemIO {
     return new Pose3d[0];
   }
 
-  public default Pose3d predictPoseFromWindow(Pose3d[] poses, double tSeconds) { 
-    return new Pose3d(); 
+  public default Pose3d predictPoseFromWindow(Pose3d[] poses, double tSeconds) {
+    return new Pose3d();
   }
 
   public default double getQuestBattery() {

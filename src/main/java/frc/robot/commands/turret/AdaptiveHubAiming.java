@@ -9,9 +9,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
-import frc.robot.subsystems.turret.ShotTimeTable;
 import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
+import frc.robot.subsystems.turret.ShotTimeTable;
 import frc.robot.subsystems.turret.hood.Hood;
 import frc.robot.subsystems.turret.hood.HoodIO;
 import frc.robot.subsystems.turret.rotater.Rotater;
@@ -21,153 +21,172 @@ import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.subsystems.turret.shooter.ShooterIO;
 import frc.robot.util.FieldConstants;
 
-
-//new AdaptiveHubAiming(rotater, shooter, hood, questNavSystem).withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
+// new AdaptiveHubAiming(rotater, shooter, hood,
+// questNavSystem).withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
 public class AdaptiveHubAiming extends Command {
-    private final RotaterIO rotaterIORight;
-    private final HoodIO hoodIORight;
-    private final ShooterIO shooterIORight;
-    private final RotaterIO rotaterIOLeft;
-    private final HoodIO hoodIOLeft;
-    private final ShooterIO shooterIOLeft;
-    private final QuestNavSystemIO questNavSystemIO;
-    private boolean isBlue = true;
-    private int runCounter;
+  private final RotaterIO rotaterIORight;
+  private final HoodIO hoodIORight;
+  private final ShooterIO shooterIORight;
+  private final RotaterIO rotaterIOLeft;
+  private final HoodIO hoodIOLeft;
+  private final ShooterIO shooterIOLeft;
+  private final QuestNavSystemIO questNavSystemIO;
+  private boolean isBlue = true;
+  private int runCounter;
 
-    public AdaptiveHubAiming(Rotater rotaterRight, Shooter shooterRight, Hood hoodRight, Rotater rotaterLeft, Shooter shooterLeft, Hood hoodLeft, QuestNavSystem questNavSystem, boolean isBlueCheck) {
-        rotaterIORight = rotaterRight.getIO();
-        hoodIORight = hoodRight.getIO();
-        shooterIORight = shooterRight.getIO();
+  public AdaptiveHubAiming(
+      Rotater rotaterRight,
+      Shooter shooterRight,
+      Hood hoodRight,
+      Rotater rotaterLeft,
+      Shooter shooterLeft,
+      Hood hoodLeft,
+      QuestNavSystem questNavSystem,
+      boolean isBlueCheck) {
+    rotaterIORight = rotaterRight.getIO();
+    hoodIORight = hoodRight.getIO();
+    shooterIORight = shooterRight.getIO();
 
-        rotaterIOLeft = rotaterLeft.getIO();
-        hoodIOLeft = hoodLeft.getIO();
-        shooterIOLeft = shooterLeft.getIO();   
-        
-        questNavSystemIO = questNavSystem.getIO();
+    rotaterIOLeft = rotaterLeft.getIO();
+    hoodIOLeft = hoodLeft.getIO();
+    shooterIOLeft = shooterLeft.getIO();
 
-        addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft);
+    questNavSystemIO = questNavSystem.getIO();
 
-        isBlue = isBlueCheck;
+    addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft);
+
+    isBlue = isBlueCheck;
+  }
+
+  @Override
+  public void initialize() {
+    runCounter = 0;
+  }
+
+  @Override
+  public void execute() {
+    Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
+    ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
+    hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
+    shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
+    rotaterIORight.setTurnPosition(
+        calculateTurretDegrees(turretPoseRight)
+            - Math.toDegrees(MathUtil.angleModulus(turretPoseRight.getRotation().getZ())));
+
+    Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
+    ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
+    hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
+    shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
+    rotaterIOLeft.setTurnPosition(
+        calculateTurretDegrees(turretPoseLeft)
+            - Math.toDegrees(MathUtil.angleModulus(turretPoseLeft.getRotation().getZ())));
+
+    runCounter++;
+    if (runCounter > 24) {
+      runCounter = 0;
+    }
+  }
+
+  @Override
+  public void end(boolean interrupted) {}
+
+  @Override
+  public boolean isFinished() {
+    if (!DriverStation.isAutonomous()) {
+      return false;
+    } else {
+      if (runCounter == 24) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+  }
+
+  public double calculateTurretDegrees(Pose3d turretPose) {
+    Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
+
+    double dx = hubPose.getX() - turretPose.getX();
+    double dy = hubPose.getY() - turretPose.getY();
+
+    double targetRad = Math.atan2(dy, dx);
+
+    return Math.toDegrees(MathUtil.angleModulus(targetRad));
+  }
+
+  public double calculateAdjustedHubDistance(Pose3d turretPose) {
+
+    double dx;
+    double dy;
+
+    if (isBlue) {
+      dx = turretPose.getX() - FieldConstants.BLUE_HUB_POSE3D.getX();
+      dy = turretPose.getY() - FieldConstants.BLUE_HUB_POSE3D.getY();
+    } else {
+      dx = turretPose.getX() - FieldConstants.RED_HUB_POSE3D.getX();
+      dy = turretPose.getY() - FieldConstants.RED_HUB_POSE3D.getY();
     }
 
-    @Override
-    public void initialize() {
-        runCounter = 0;
+    return Math.hypot(dx, dy);
+  }
+
+  public Pose3d calculateAdjustedTurretPose(boolean isRightTurret) {
+    Pose3d robotPose;
+
+    if (isRightTurret) {
+      robotPose =
+          questNavSystemIO.predictPoseFromWindow(
+              questNavSystemIO.getLast6RobotPoses(),
+              ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(true)));
+    } else {
+      robotPose =
+          questNavSystemIO.predictPoseFromWindow(
+              questNavSystemIO.getLast6RobotPoses(),
+              ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(false)));
     }
 
-    @Override
-    public void execute() {
-        Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
-        ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
-        hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
-        shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
-        rotaterIORight.setTurnPosition(calculateTurretDegrees(turretPoseRight) - Math.toDegrees(MathUtil.angleModulus(turretPoseRight.getRotation().getZ())));
-
-        Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
-        ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
-        hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
-        shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
-        rotaterIOLeft.setTurnPosition(calculateTurretDegrees(turretPoseLeft) - Math.toDegrees(MathUtil.angleModulus(turretPoseLeft.getRotation().getZ())));
-
-        runCounter++;
-        if (runCounter > 24) {
-            runCounter = 0;
-        }
+    if (isRightTurret) {
+      robotPose =
+          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
+    } else {
+      robotPose =
+          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
     }
 
-    @Override
-    public void end(boolean interrupted) {    
+    return robotPose;
+  }
+
+  public double calculateTurretDistance(boolean isRightTurret) {
+    Pose3d robotPose = questNavSystemIO.getLastRobotPose();
+
+    if (isRightTurret) {
+      robotPose =
+          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
+    } else {
+      robotPose =
+          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
     }
 
-    @Override
-    public boolean isFinished() {
-        if (!DriverStation.isAutonomous()) {
-            return false;
-        } else {
-            if (runCounter == 24) {
-                return true;
-            } else {
-                return false;
-            }
-        }
+    double dx;
+    double dy;
+
+    if (isBlue) {
+      dx = robotPose.getX() - FieldConstants.BLUE_HUB_POSE3D.getX();
+      dy = robotPose.getY() - FieldConstants.BLUE_HUB_POSE3D.getY();
+    } else {
+      dx = robotPose.getX() - FieldConstants.RED_HUB_POSE3D.getX();
+      dy = robotPose.getY() - FieldConstants.RED_HUB_POSE3D.getY();
     }
+    return Math.hypot(dx, dy);
+  }
 
-    public double calculateTurretDegrees(Pose3d turretPose) {
-        Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
+  public Transform3d pointOnCircleDegCCW(double angleDeg) {
+    double r = Units.inchesToMeters(9.37); // radius of the circle 6.5^2 + 6.75^2
+    double theta = Math.toRadians(angleDeg);
 
-        double dx = hubPose.getX() - turretPose.getX();
-        double dy = hubPose.getY() - turretPose.getY();
+    double x = -r * Math.sin(theta);
+    double y = r * Math.cos(theta);
 
-        double targetRad = Math.atan2(dy, dx);
-
-        return Math.toDegrees(MathUtil.angleModulus(targetRad));
-    }
-
-    public double calculateAdjustedHubDistance(Pose3d turretPose) {
-
-        double dx;
-        double dy;
-
-        if (isBlue) {
-            dx = turretPose.getX() - FieldConstants.BLUE_HUB_POSE3D.getX();
-            dy = turretPose.getY() - FieldConstants.BLUE_HUB_POSE3D.getY();
-        } else {
-            dx = turretPose.getX() - FieldConstants.RED_HUB_POSE3D.getX();
-            dy = turretPose.getY() - FieldConstants.RED_HUB_POSE3D.getY();
-        }
-
-        return Math.hypot(dx, dy);
-    }
-
-    public Pose3d calculateAdjustedTurretPose(boolean isRightTurret) {
-        Pose3d robotPose;
-
-        if (isRightTurret) {
-            robotPose = questNavSystemIO.predictPoseFromWindow(questNavSystemIO.getLast6RobotPoses(), ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(true)));
-        } else {
-            robotPose = questNavSystemIO.predictPoseFromWindow(questNavSystemIO.getLast6RobotPoses(), ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(false)));
-        }
-
-        if (isRightTurret) {
-            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
-        } else {
-            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
-        }
-        
-            
-        return robotPose;
-    }
-
-    public double calculateTurretDistance(boolean isRightTurret) {
-        Pose3d robotPose = questNavSystemIO.getLastRobotPose();
-
-        if (isRightTurret) {
-            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
-        } else {
-            robotPose = robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
-        }
-
-        double dx;
-        double dy;
-
-        if (isBlue) {
-            dx = robotPose.getX() - FieldConstants.BLUE_HUB_POSE3D.getX();
-            dy = robotPose.getY() - FieldConstants.BLUE_HUB_POSE3D.getY();
-        } else {
-            dx = robotPose.getX() - FieldConstants.RED_HUB_POSE3D.getX();
-            dy = robotPose.getY() - FieldConstants.RED_HUB_POSE3D.getY();
-        }
-        return Math.hypot(dx, dy);
-
-    }
-
-    public Transform3d pointOnCircleDegCCW(double angleDeg) {
-        double r = Units.inchesToMeters(9.37); // radius of the circle 6.5^2 + 6.75^2
-        double theta = Math.toRadians(angleDeg);
-
-        double x = -r * Math.sin(theta);
-        double y = r * Math.cos(theta);
-
-        return new Transform3d(x, y, 0.0, new Rotation3d(0.0, 0.0, 0.0));
-    }
+    return new Transform3d(x, y, 0.0, new Rotation3d(0.0, 0.0, 0.0));
+  }
 }

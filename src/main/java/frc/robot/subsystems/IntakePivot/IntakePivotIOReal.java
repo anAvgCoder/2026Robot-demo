@@ -14,6 +14,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 import org.littletonrobotics.junction.AutoLogOutputManager;
 
 public class IntakePivotIOReal implements IntakePivotIO {
@@ -63,8 +64,8 @@ public class IntakePivotIOReal implements IntakePivotIO {
     controller.reset(enc.getPosition(), 0.0);
   }
 
-  private double getMeasuredPosition() {
-    return enc.getPosition();
+  private double getMeasuredPositionRad() {
+    return Units.rotationsToRadians(enc.getPosition());
   }
 
   @Override
@@ -83,10 +84,11 @@ public class IntakePivotIOReal implements IntakePivotIO {
   }
 
   @Override
-  public void setPivotPosition(double position) {
-    double goalPos = position;
+  public void setPivotPosition(double degree) {
 
-    double pidVolts = controller.calculate(getMeasuredPosition(), goalPos);
+    double goalPos = Units.degreesToRadians(degree);
+
+    double pidVolts = controller.calculate(getMeasuredPositionRad(), goalPos);
 
     var sp = controller.getSetpoint();
     double ffVolts = ff.calculate(sp.position, sp.velocity);

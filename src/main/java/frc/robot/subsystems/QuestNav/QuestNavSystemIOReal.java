@@ -101,8 +101,7 @@ public class QuestNavSystemIOReal implements QuestNavSystemIO {
   private void pushPose(Pose3d pose) {
     last6[last6Idx] = pose;
     last6Idx = (last6Idx + 1) % last6.length;
-    if (last6Count < last6.length)
-      last6Count++;
+    if (last6Count < last6.length) last6Count++;
   }
 
   @Override
@@ -116,42 +115,36 @@ public class QuestNavSystemIOReal implements QuestNavSystemIO {
   }
 
   @Override
-public Pose3d predictPoseFromWindow(Pose3d[] poses, double tSeconds) {
-  if (poses == null || poses.length < 2) {
-    return new Pose3d();
+  public Pose3d predictPoseFromWindow(Pose3d[] poses, double tSeconds) {
+    if (poses == null || poses.length < 2) {
+      return new Pose3d();
+    }
+
+    Pose3d first = poses[0];
+    Pose3d last = poses[poses.length - 1];
+
+    final double dtWindow = (poses.length - 1) * 0.02;
+
+    double vx = (last.getX() - first.getX()) / dtWindow; // m/s
+    double vy = (last.getY() - first.getY()) / dtWindow; // m/s
+
+    Rotation3d r0 = first.getRotation();
+    Rotation3d r1 = last.getRotation();
+
+    double dRoll = MathUtil.angleModulus(r1.getX() - r0.getX());
+    double dPitch = MathUtil.angleModulus(r1.getY() - r0.getY());
+    double dYaw = MathUtil.angleModulus(r1.getZ() - r0.getZ());
+
+    double wx = dRoll / dtWindow;
+    double wy = dPitch / dtWindow;
+    double wz = dYaw / dtWindow;
+
+    Rotation3d rPred =
+        new Rotation3d(
+            r1.getX() + wx * tSeconds, r1.getY() + wy * tSeconds, r1.getZ() + wz * tSeconds);
+
+    return new Pose3d(last.getX() + vx * tSeconds, last.getY() + vy * tSeconds, last.getZ(), rPred);
   }
-
-  Pose3d first = poses[0];
-  Pose3d last = poses[poses.length - 1];
-
-  final double dtWindow = (poses.length - 1) * 0.02;
-
-  double vx = (last.getX() - first.getX()) / dtWindow; // m/s
-  double vy = (last.getY() - first.getY()) / dtWindow; // m/s
-
-  Rotation3d r0 = first.getRotation();
-  Rotation3d r1 = last.getRotation();
-
-  double dRoll  = MathUtil.angleModulus(r1.getX() - r0.getX());
-  double dPitch = MathUtil.angleModulus(r1.getY() - r0.getY());
-  double dYaw   = MathUtil.angleModulus(r1.getZ() - r0.getZ());
-
-  double wx = dRoll  / dtWindow;
-  double wy = dPitch / dtWindow;
-  double wz = dYaw   / dtWindow;
-
-  Rotation3d rPred =
-      new Rotation3d(
-          r1.getX() + wx * tSeconds,
-          r1.getY() + wy * tSeconds,
-          r1.getZ() + wz * tSeconds);
-
-  return new Pose3d(
-      last.getX() + vx * tSeconds,
-      last.getY() + vy * tSeconds,
-      last.getZ(),
-      rPred);
-}
 
   @Override
   public double getQuestBattery() {

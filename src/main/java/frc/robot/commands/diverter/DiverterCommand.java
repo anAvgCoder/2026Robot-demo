@@ -1,29 +1,29 @@
-package frc.robot.commands.intakepivot;
+package frc.robot.commands.diverter;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.intakepivot.IntakePivot;
-import frc.robot.subsystems.intakepivot.IntakePivotIO;
+import frc.robot.subsystems.diverter.Diverter;
+import frc.robot.subsystems.diverter.DiverterIO;
 
-public class IPIntakeCommand extends Command {
-  private final IntakePivotIO intakePivotIO;
+public class DiverterCommand extends Command {
+  private final DiverterIO diverterIO;
   private int runCounter;
 
-  public IPIntakeCommand(IntakePivot intakePivot) {
-    intakePivotIO = intakePivot.getIO();
-    addRequirements(intakePivot);
+  public DiverterCommand(Diverter diverter) {
+    diverterIO = diverter.getIO();
+    addRequirements(diverter);
   }
 
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
     runCounter = 0;
+    diverterIO.intake();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    intakePivotIO.setIntakePosition();
     runCounter++;
     if (runCounter > 24) {
       runCounter = 0;
@@ -33,7 +33,7 @@ public class IPIntakeCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    intakePivotIO.setStoragePosition();
+    diverterIO.stop();
   }
 
   // Returns true when the command should end.

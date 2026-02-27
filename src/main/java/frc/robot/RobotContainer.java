@@ -17,17 +17,26 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.belt.BeltIntakeCommand;
+import frc.robot.commands.diverter.DiverterCommand;
+import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
 import frc.robot.subsystems.belt.BeltIOReal;
 import frc.robot.subsystems.belt.BeltIOSim;
+import frc.robot.subsystems.diverter.Diverter;
+import frc.robot.subsystems.diverter.DiverterIOReal;
+import frc.robot.subsystems.diverter.DiverterIOSim;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.intakepivot.IntakePivot;
+import frc.robot.subsystems.intakepivot.IntakePivotConstants;
+import frc.robot.subsystems.intakepivot.IntakePivotIO;
+import frc.robot.subsystems.intakepivot.IntakePivotIOReal;
 import frc.robot.subsystems.intakeroller.IntakeRoller;
 import frc.robot.subsystems.intakeroller.IntakeRollerIO;
 import frc.robot.subsystems.intakeroller.IntakeRollerIOReal;
@@ -35,7 +44,6 @@ import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
-import frc.robot.util.SingleMotorTests.IntakePivotPIDRioTest;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -49,13 +57,15 @@ public class RobotContainer {
   private final Drive drive;
   private final Belt leftBelt;
   private final Belt rightBelt;
-  // private final IntakePivot intakePivot;
+  private final IntakePivot intakePivot;
   private final IntakeRoller intakeRoller;
-  private final IntakePivotPIDRioTest intakePivotTest;
+  private final Diverter diverter;
+  // private final IntakePivotPIDRioTest intakePivotTest;
 
   // Commands
   private static BeltIntakeCommand beltIntakeCommand;
   private static IRIntakeCommand irIntakeCommand;
+  private static DiverterCommand diverterCommand;
 
   // Joysticks
   private static final Joystick leftJoy = new Joystick(0);
@@ -85,9 +95,10 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
+        diverter = new Diverter(new DiverterIOReal());
         leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft));
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight));
-        // intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
+        intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
         intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
         break;
 
@@ -101,9 +112,10 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
+        diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim());
         rightBelt = new Belt(new BeltIOSim());
-        // intakePivot = new IntakePivot(new IntakePivotIO() {});
+        intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
         break;
 
@@ -117,13 +129,14 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
+        diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim() {});
         rightBelt = new Belt(new BeltIOSim() {});
-        // intakePivot = new IntakePivot(new IntakePivotIO() {});
+        intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
         break;
     }
-    intakePivotTest = new IntakePivotPIDRioTest();
+    // intakePivotTest = new IntakePivotPIDRioTest();
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -147,12 +160,13 @@ public class RobotContainer {
     //         () -> getClampedDrive(rightJoy) ? rightJoy.getY() : 0.0,
     //         () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
 
-    // intakeButton.whileTrue(
-    //     Commands.parallel(
-    //         new IRIntakeCommand(intakeRoller),
-    //         new BeltIntakeCommand(rightBelt),
-    //         new BeltIntakeCommand(leftBelt),
-    //         new IPIntakeCommand(intakePivot)));
+    intakeButton.whileTrue(
+        Commands.parallel(
+            new IRIntakeCommand(intakeRoller),
+            new BeltIntakeCommand(rightBelt),
+            new BeltIntakeCommand(leftBelt),
+            new DiverterCommand(diverter)));
+            // new IPIntakeCommand(intakePivot)));
 
     // Reset gyro to 0 on press
     gyroButton.onTrue(
