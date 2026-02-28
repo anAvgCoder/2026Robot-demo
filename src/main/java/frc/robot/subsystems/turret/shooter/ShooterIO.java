@@ -13,6 +13,8 @@ public interface ShooterIO {
 
   public default void setSpeed(double speed) {}
 
+  public default void setOpenSpeed(double speed) {}
+
   public default void hubAdaptiveAiming() {}
 
   public default void storageAdaptiveAiming() {}

@@ -67,6 +67,11 @@ public class ShooterIOReal implements ShooterIO {
   }
 
   @Override
+  public void setOpenSpeed(double speed) {
+    motor.set(kInverted ? -speed : speed);
+  }
+
+  @Override
   public void hubAdaptiveAiming() {}
 
   @Override
