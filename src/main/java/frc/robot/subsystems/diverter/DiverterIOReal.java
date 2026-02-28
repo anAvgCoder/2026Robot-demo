@@ -34,12 +34,12 @@ public class DiverterIOReal implements DiverterIO {
 
   @Override
   public void intake() {
-    motor.set(-0.5);
+    motor.set(0.5);
   }
 
   @Override
   public void outake() {
-    motor.set(0.5);
+    motor.set(-0.5);
   }
 
   @Override

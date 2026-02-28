@@ -4,7 +4,8 @@ import edu.wpi.first.math.util.Units;
 
 public class HoodConstants {
   // Hardware
-  public static final int kCanId = 46; // TODO set
+  public static final int kRightCanId = 40; // TODO set
+  public static final int kLeftCanId = 41; // TODO set
   public static final boolean kInverted = false;
   public static final int kCurrentLimitAmps = 30;
 

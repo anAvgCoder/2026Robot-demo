@@ -16,10 +16,13 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
+import frc.robot.commands.belt.BeltOutakeCommand;
 import frc.robot.commands.diverter.DiverterCommand;
-import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
+import frc.robot.commands.intakeroller.IROutakeCommand;
+import frc.robot.commands.shooter.ShooterSetSpeedCommand;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
 import frc.robot.subsystems.belt.BeltIOReal;
@@ -44,6 +47,9 @@ import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
+import frc.robot.subsystems.turret.shooter.Shooter;
+import frc.robot.subsystems.turret.shooter.ShooterIOReal;
+import frc.robot.subsystems.turret.shooter.ShooterIOSim;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -59,13 +65,12 @@ public class RobotContainer {
   private final Belt rightBelt;
   private final IntakePivot intakePivot;
   private final IntakeRoller intakeRoller;
+  private final Shooter leftShooter;
+  private final Shooter rightShooter;
   private final Diverter diverter;
   // private final IntakePivotPIDRioTest intakePivotTest;
 
   // Commands
-  private static BeltIntakeCommand beltIntakeCommand;
-  private static IRIntakeCommand irIntakeCommand;
-  private static DiverterCommand diverterCommand;
 
   // Joysticks
   private static final Joystick leftJoy = new Joystick(0);
@@ -77,7 +82,8 @@ public class RobotContainer {
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 2);
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 5);
 
-  private static final JoystickButton intakeButton = new JoystickButton(buttonPanel, 3);
+  private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
+  private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -100,6 +106,8 @@ public class RobotContainer {
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight));
         intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
         intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
+        leftShooter = new Shooter(new ShooterIOReal(45));
+        rightShooter = new Shooter(new ShooterIOReal(44));
         break;
 
       case SIM:
@@ -117,6 +125,8 @@ public class RobotContainer {
         rightBelt = new Belt(new BeltIOSim());
         intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
+        leftShooter = new Shooter(new ShooterIOSim());
+        rightShooter = new Shooter(new ShooterIOSim());
         break;
 
       default:
@@ -134,6 +144,8 @@ public class RobotContainer {
         rightBelt = new Belt(new BeltIOSim() {});
         intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
+        leftShooter = new Shooter(new ShooterIOSim());
+        rightShooter = new Shooter(new ShooterIOSim());
         break;
     }
     // intakePivotTest = new IntakePivotPIDRioTest();
@@ -153,20 +165,29 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
-    // drive.setDefaultCommand(
-    //     DriveCommands.joystickDrive(
-    //         drive,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-    //         () -> getClampedDrive(rightJoy) ? rightJoy.getY() : 0.0,
-    //         () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
+    drive.setDefaultCommand(
+        DriveCommands.joystickDrive(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+            () -> getClampedDrive(rightJoy) ? rightJoy.getY() : 0.0,
+            () -> getClampedTurn(leftJoy) ? leftJoy.getX() : 0.0));
 
     intakeButton.whileTrue(
         Commands.parallel(
             new IRIntakeCommand(intakeRoller),
             new BeltIntakeCommand(rightBelt),
             new BeltIntakeCommand(leftBelt),
+            new DiverterCommand(diverter),
+            new ShooterSetSpeedCommand(leftShooter),
+            new ShooterSetSpeedCommand(rightShooter)));
+
+    outakeButton.whileTrue(
+        Commands.parallel(
+            new IROutakeCommand(intakeRoller),
+            new BeltOutakeCommand(rightBelt),
+            new BeltOutakeCommand(leftBelt),
             new DiverterCommand(diverter)));
-            // new IPIntakeCommand(intakePivot)));
+    // new IPIntakeCommand(intakePivot)));
 
     // Reset gyro to 0 on press
     gyroButton.onTrue(
@@ -175,7 +196,7 @@ public class RobotContainer {
                     drive.setPose(
                         new Pose2d(
                             drive.getPose().getTranslation(),
-                            Rotation2d.kZero.plus(new Rotation2d(90)))))
+                            Rotation2d.kZero.plus(new Rotation2d(0)))))
             .ignoringDisable(true));
 
     resetQuestPoseRedButton.onTrue(
