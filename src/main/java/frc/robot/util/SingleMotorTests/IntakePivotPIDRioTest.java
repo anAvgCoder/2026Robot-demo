@@ -5,15 +5,16 @@ import static frc.robot.util.SparkUtil.tryUntilOk;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -25,9 +26,11 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   private final int changeId = System.identityHashCode(this);
 
   private static final int kPivotMotorCanId = IntakePivotConstants.kCanId;
+  private static final ClosedLoopSlot kPidSlot = ClosedLoopSlot.kSlot0;
 
-  private final SparkBase motor;
+  private final SparkMax motor;
   private final RelativeEncoder enc;
+  private final SparkClosedLoopController closedLoop;
 
   private final LoggedTunableNumber enabled =
       new LoggedTunableNumber("IntakePivotRioTest/Enabled", 0.0);
@@ -47,13 +50,6 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   private final LoggedTunableNumber kD =
       new LoggedTunableNumber("IntakePivotRioTest/kD", IntakePivotConstants.kD);
 
-  private final LoggedTunableNumber maxVelRadPerSec =
-      new LoggedTunableNumber(
-          "IntakePivotRioTest/MaxVelRadPerSec", IntakePivotConstants.kMaxVelRadPerSec);
-  private final LoggedTunableNumber maxAccelRadPerSec2 =
-      new LoggedTunableNumber(
-          "IntakePivotRioTest/MaxAccelRadPerSec2", IntakePivotConstants.kMaxAccelRadPerSec2);
-
   private final LoggedTunableNumber kS =
       new LoggedTunableNumber("IntakePivotRioTest/kS", IntakePivotConstants.kS);
   private final LoggedTunableNumber kG =
@@ -69,7 +65,9 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   private final LoggedTunableNumber maxVolts =
       new LoggedTunableNumber("IntakePivotRioTest/MaxVolts", IntakePivotConstants.kMaxVolts);
 
-  private final ProfiledPIDController profiledPid;
+  private final LoggedTunableNumber kSDeadbandDeg =
+      new LoggedTunableNumber("IntakePivotRioTest/kSDeadbandDeg", 1.0);
+
   private ArmFeedforward ff;
 
   private boolean prevEnabled = false;
@@ -78,8 +76,29 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   public IntakePivotPIDRioTest() {
     motor = new SparkMax(kPivotMotorCanId, MotorType.kBrushless);
     enc = motor.getEncoder();
+    closedLoop = motor.getClosedLoopController();
 
+    SmartDashboard.setDefaultNumber("IntakePivotRioTest/SetpointDeg", setpointDeg.get());
+
+    ff = new ArmFeedforward(kS.get(), kG.get(), kV.get(), kA.get());
+
+    configureSpark(true);
+
+    enc.setPosition(0.0);
+    closedLoop.setIAccum(0.0);
+  }
+
+  private double getMeasuredPositionRad() {
+    return enc.getPosition();
+  }
+
+  private double getMeasuredVelocityRadPerSec() {
+    return enc.getVelocity();
+  }
+
+  private void configureSpark(boolean persist) {
     var cfg = new SparkMaxConfig();
+
     cfg.idleMode(IdleMode.kBrake)
         .inverted(IntakePivotConstants.kInverted)
         .smartCurrentLimit(IntakePivotConstants.kCurrentLimitAmps)
@@ -91,48 +110,35 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
 
     cfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
 
+    // Limit the SPARK PID output range (duty cycle). With 12V compensation, duty ~= volts/12.
+    double maxDuty = MathUtil.clamp(maxVolts.get() / 12.0, 0.0, 1.0);
+
+    cfg.closedLoop
+        .pid(kP.get(), kI.get(), kD.get(), kPidSlot)
+        .outputRange(-maxDuty, maxDuty, kPidSlot)
+        .allowedClosedLoopError(IntakePivotConstants.kPosToleranceRad, kPidSlot);
+
     tryUntilOk(
         motor,
         5,
-        () -> motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
-
-    profiledPid =
-        new ProfiledPIDController(
-            kP.get(),
-            kI.get(),
-            kD.get(),
-            new TrapezoidProfile.Constraints(maxVelRadPerSec.get(), maxAccelRadPerSec2.get()));
-
-    profiledPid.setTolerance(
-        IntakePivotConstants.kPosToleranceRad, IntakePivotConstants.kVelToleranceRadPerSec);
-
-    ff = new ArmFeedforward(kS.get(), kG.get(), kV.get(), kA.get());
-
-    enc.setPosition(0.0);
-    profiledPid.reset(enc.getPosition(), 0.0);
-  }
-
-  private double getMeasuredPositionRad() {
-    return Units.rotationsToRadians(enc.getPosition());
+        () ->
+            motor.configure(
+                cfg,
+                ResetMode.kNoResetSafeParameters,
+                persist ? PersistMode.kPersistParameters : PersistMode.kNoPersistParameters));
   }
 
   private void applyTunablesIfChanged() {
     LoggedTunableNumber.ifChanged(
         changeId,
         () -> {
-          profiledPid.setP(kP.get());
-          profiledPid.setI(kI.get());
-          profiledPid.setD(kD.get());
-          profiledPid.setConstraints(
-              new TrapezoidProfile.Constraints(maxVelRadPerSec.get(), maxAccelRadPerSec2.get()));
-
+          configureSpark(false);
           ff = new ArmFeedforward(kS.get(), kG.get(), kV.get(), kA.get());
         },
         kP,
         kI,
         kD,
-        maxVelRadPerSec,
-        maxAccelRadPerSec2,
+        maxVolts,
         kS,
         kG,
         kV,
@@ -140,29 +146,31 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   }
 
   public void setPivotPositionRad(double goalRad) {
-    double measurementRad = getMeasuredPositionRad();
 
-    double pidVolts = profiledPid.calculate(measurementRad, goalRad);
+    double posRad = getMeasuredPositionRad();
+    double errorRad = goalRad - posRad;
 
-    var sp = profiledPid.getSetpoint();
+    double ffAngleRad = posRad + Units.degreesToRadians(ffAngleOffsetDeg.get());
 
-    double ffAngleRad = sp.position;
-    double ffVolts = ff.calculate(ffAngleRad, sp.velocity);
+    double ksDeadbandRad = Units.degreesToRadians(kSDeadbandDeg.get());
+    double velForKsSign =
+        (Math.abs(errorRad) > ksDeadbandRad) ? Math.copySign(1e-3, errorRad) : 0.0;
 
-    double outVolts;
+    double ffVolts = ff.calculate(ffAngleRad, velForKsSign);
+    ffVolts = MathUtil.clamp(ffVolts, -maxVolts.get(), maxVolts.get());
 
-    outVolts = MathUtil.clamp(pidVolts + ffVolts, -maxVolts.get(), maxVolts.get());
-
-    motor.setVoltage(outVolts);
+    closedLoop.setSetpoint(
+        goalRad, SparkBase.ControlType.kPosition, kPidSlot, ffVolts, ArbFFUnits.kVoltage);
 
     Logger.recordOutput("IntakePivotRioTest/GoalRad", goalRad);
     Logger.recordOutput("IntakePivotRioTest/GoalDeg", Units.radiansToDegrees(goalRad));
-    Logger.recordOutput("IntakePivotRioTest/ProfilePosRad", sp.position);
-    Logger.recordOutput("IntakePivotRioTest/ProfilePosDeg", Units.radiansToDegrees(sp.position));
-    Logger.recordOutput("IntakePivotRioTest/ProfileVelRadPerSec", sp.velocity);
-    Logger.recordOutput("IntakePivotRioTest/PIDVolts", pidVolts);
+    Logger.recordOutput("IntakePivotRioTest/PosRad", posRad);
+    Logger.recordOutput("IntakePivotRioTest/PosDeg", Units.radiansToDegrees(posRad));
+    Logger.recordOutput("IntakePivotRioTest/ErrorRad", errorRad);
+    Logger.recordOutput("IntakePivotRioTest/ErrorDeg", Units.radiansToDegrees(errorRad));
+    Logger.recordOutput("IntakePivotRioTest/FFAngleRad", ffAngleRad);
+    Logger.recordOutput("IntakePivotRioTest/FFAngleDeg", Units.radiansToDegrees(ffAngleRad));
     Logger.recordOutput("IntakePivotRioTest/FFVolts", ffVolts);
-    Logger.recordOutput("IntakePivotRioTest/OutVoltsCmd", outVolts);
 
     Logger.recordOutput(
         "IntakePivotRioTest/AppliedVolts", motor.getAppliedOutput() * motor.getBusVoltage());
@@ -183,7 +191,7 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
     boolean zeroNow = zeroEncoder.get() > 0.5;
     if (zeroNow && !prevZero) {
       enc.setPosition(0.0);
-      profiledPid.reset(0.0, 0.0);
+      closedLoop.setIAccum(0.0);
       Logger.recordOutput("IntakePivotRioTest/Zeroed", true);
     } else {
       Logger.recordOutput("IntakePivotRioTest/Zeroed", false);
@@ -191,20 +199,18 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
     prevZero = zeroNow;
 
     if (isEnabled && !prevEnabled) {
-      profiledPid.reset(getMeasuredPositionRad(), enc.getVelocity());
+      closedLoop.setIAccum(0.0);
     }
     prevEnabled = isEnabled;
 
     if (isEnabled) {
-      double goalRad = Units.degreesToRadians(spDegLive);
+      double goalRad = spDegLive;
       setPivotPositionRad(goalRad);
     } else {
       motor.stopMotor();
     }
 
-    Logger.recordOutput("IntakePivotRioTest/PositionRad", getMeasuredPositionRad());
-    Logger.recordOutput(
-        "IntakePivotRioTest/PositionDeg", Units.radiansToDegrees(getMeasuredPositionRad()));
-    Logger.recordOutput("IntakePivotRioTest/VelocityRadPerSec", enc.getVelocity());
+    Logger.recordOutput("IntakePivotRioTest/VelocityRadPerSec", getMeasuredVelocityRadPerSec());
+    Logger.recordOutput("IntakePivotRioTest/PositionDeg", getMeasuredPositionRad());
   }
 }

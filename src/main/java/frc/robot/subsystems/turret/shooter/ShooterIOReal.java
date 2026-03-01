@@ -63,7 +63,7 @@ public class ShooterIOReal implements ShooterIO {
 
   @Override
   public void setSpeed(double speed) {
-    cl.setSetpoint(speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+    cl.setSetpoint(kInverted ? -speed : speed, ControlType.kVelocity, ClosedLoopSlot.kSlot0);
   }
 
   @Override

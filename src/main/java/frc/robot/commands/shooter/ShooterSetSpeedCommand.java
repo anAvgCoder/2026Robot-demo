@@ -22,7 +22,7 @@ public class ShooterSetSpeedCommand extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    shooter.getIO().setOpenSpeed(0.42);
+    shooter.getIO().setSpeed(3200);
     runCounter++;
     if (runCounter > 24) {
       runCounter = 0;
@@ -32,7 +32,7 @@ public class ShooterSetSpeedCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    shooter.getIO().setOpenSpeed(0);
+    shooter.getIO().setSpeed(0);
   }
 
   // Returns true when the command should end.

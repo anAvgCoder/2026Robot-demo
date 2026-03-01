@@ -12,11 +12,12 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.turret.shooter.ShooterConstants;
 import frc.robot.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
 public class SingleMotorVelocityPIDFTest extends SubsystemBase {
-  private static final int kMotorCanId = 15;
+  private static final int kMotorCanId = 44;
   private static final boolean kInverted = true;
 
   private final SparkFlex motor = new SparkFlex(kMotorCanId, MotorType.kBrushless);
@@ -38,7 +39,7 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
   // Tune these using Daniel's PID Tuning Guide:
   /*
     For the shooter used in 2026, I tuned a PIDF shooter with less than 1rpm oscilation and a 0.1 ms speed correction with these values:
-      KV: 0.00183
+      KV: 0.00184
       P: 0.00006 (increased until oscillations)
       I: 0 (My FF value was accurate enough that I was unnecessary)
       D: 0.0 (it was more than stable enough with just P, don't overtune)
@@ -90,6 +91,8 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
   }
 
   private void applyConfig(ResetMode resetMode) {
+    cfg.idleMode(IdleMode.kCoast).smartCurrentLimit(ShooterConstants.shooterMotorCurrentLimit);
+
     cfg.closedLoop
         .pid(kP.get(), kI.get(), kD.get(), ClosedLoopSlot.kSlot0)
         .outputRange(minOut.get(), maxOut.get(), ClosedLoopSlot.kSlot0);
