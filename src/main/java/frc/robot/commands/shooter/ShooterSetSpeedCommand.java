@@ -32,7 +32,7 @@ public class ShooterSetSpeedCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    shooter.getIO().setSpeed(0);
+    shooter.getIO().stopApplyingMotor();
   }
 
   // Returns true when the command should end.

@@ -19,13 +19,13 @@ public class BeltIOReal implements BeltIO {
 
     if (canId == BeltConstants.CanIdLeft) {
       sparkConfig
-          .idleMode(SparkMaxConfig.IdleMode.kBrake)
+          .idleMode(SparkMaxConfig.IdleMode.kCoast)
           .inverted(BeltConstants.kLeftInverted)
           .smartCurrentLimit(40)
           .voltageCompensation(12.0);
     } else {
       sparkConfig
-          .idleMode(SparkMaxConfig.IdleMode.kBrake)
+          .idleMode(SparkMaxConfig.IdleMode.kCoast)
           .inverted(BeltConstants.kRightInverted)
           .smartCurrentLimit(40)
           .voltageCompensation(12.0);

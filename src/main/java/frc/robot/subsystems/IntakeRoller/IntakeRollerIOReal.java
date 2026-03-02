@@ -19,7 +19,7 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
     sparkConfig = new SparkMaxConfig();
 
     sparkConfig
-        .idleMode(SparkMaxConfig.IdleMode.kBrake)
+        .idleMode(SparkMaxConfig.IdleMode.kCoast)
         .smartCurrentLimit(40)
         .voltageCompensation(12.0);
     sparkConfig.signals.appliedOutputPeriodMs(20);

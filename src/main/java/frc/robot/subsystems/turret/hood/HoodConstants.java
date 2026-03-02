@@ -7,7 +7,7 @@ public class HoodConstants {
   public static final int kRightCanId = 40; // TODO set
   public static final int kLeftCanId = 41; // TODO set
   public static final boolean kInverted = false;
-  public static final int kCurrentLimitAmps = 30;
+  public static final int kCurrentLimitAmps = 15;
 
   // Hood range (degrees)
   public static final double kMinAnglePos = 0.0;
@@ -32,7 +32,6 @@ public class HoodConstants {
   public static final double kMaxVolts = 12.0;
 
   // Tolerances
-  public static final double kPosToleranceDeg = 0.75;
   public static final double kVelToleranceDegPerSec = 5.0;
 
   // --- Conversions (radians) ---
@@ -40,7 +39,7 @@ public class HoodConstants {
   public static final double kMaxVelRadPerSec = Units.degreesToRadians(kMaxVelDegPerSec);
   public static final double kMaxAccelRadPerSec2 = Units.degreesToRadians(kMaxAccelDegPerSec2);
 
-  public static final double kPosToleranceRad = Units.degreesToRadians(kPosToleranceDeg);
+  public static final double kPosToleranceRad = 0.03;
   public static final double kVelToleranceRadPerSec =
       Units.degreesToRadians(kVelToleranceDegPerSec);
 

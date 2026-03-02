@@ -9,10 +9,17 @@ public class IntakePivot extends SubsystemBase {
 
   public IntakePivot(IntakePivotIO io) {
     this.io = io;
+
+    // setDefaultCommand(
+    //     Commands.run(() -> io.setStoragePosition(), this).withName("HoldStoragePosition"));
   }
 
   public IntakePivotIO getIO() {
     return this.io;
+  }
+
+  public boolean isAtGoal() {
+    return io.isAtGoal();
   }
 
   @Override

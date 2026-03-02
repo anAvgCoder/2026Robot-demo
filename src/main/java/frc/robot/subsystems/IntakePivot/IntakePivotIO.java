@@ -16,9 +16,15 @@ public interface IntakePivotIO {
 
   public default void setStoragePosition() {}
 
-  public default void setIntakePosition() {}
+  public default void setIntakePrimaryPosition() {}
 
-  public default void setPivotPosition(double degrees) {}
+  public default void setIntakeSecondaryPosition() {}
+
+  public default void setPivotPosition(double positionRad) {}
+
+  public default boolean isAtGoal() {
+    return false;
+  }
 
   public default void zeroToStorage() {}
 

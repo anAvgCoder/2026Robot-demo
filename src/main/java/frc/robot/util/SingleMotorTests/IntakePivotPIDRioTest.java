@@ -14,7 +14,6 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -35,10 +34,10 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   private final LoggedTunableNumber enabled =
       new LoggedTunableNumber("IntakePivotRioTest/Enabled", 0.0);
 
-  private final LoggedTunableNumber setpointDeg =
+  private final LoggedTunableNumber setpointRad =
       new LoggedTunableNumber(
-          "IntakePivotRioTest/SetpointDeg",
-          Units.radiansToDegrees(IntakePivotConstants.kStoragePosition));
+          "IntakePivotRioTest/SetpointRad",
+          Units.degreesToRadians(IntakePivotConstants.kStoragePosition));
 
   private final LoggedTunableNumber zeroEncoder =
       new LoggedTunableNumber("IntakePivotRioTest/ZeroEncoder", 0.0);
@@ -68,8 +67,6 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   private final LoggedTunableNumber kSDeadbandDeg =
       new LoggedTunableNumber("IntakePivotRioTest/kSDeadbandDeg", 1.0);
 
-  private ArmFeedforward ff;
-
   private boolean prevEnabled = false;
   private boolean prevZero = false;
 
@@ -78,9 +75,7 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
     enc = motor.getEncoder();
     closedLoop = motor.getClosedLoopController();
 
-    SmartDashboard.setDefaultNumber("IntakePivotRioTest/SetpointDeg", setpointDeg.get());
-
-    ff = new ArmFeedforward(kS.get(), kG.get(), kV.get(), kA.get());
+    SmartDashboard.setDefaultNumber("IntakePivotRioTest/SetpointRad", setpointRad.get());
 
     configureSpark(true);
 
@@ -110,7 +105,6 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
 
     cfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
 
-    // Limit the SPARK PID output range (duty cycle). With 12V compensation, duty ~= volts/12.
     double maxDuty = MathUtil.clamp(maxVolts.get() / 12.0, 0.0, 1.0);
 
     cfg.closedLoop
@@ -133,7 +127,6 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
         changeId,
         () -> {
           configureSpark(false);
-          ff = new ArmFeedforward(kS.get(), kG.get(), kV.get(), kA.get());
         },
         kP,
         kI,
@@ -150,14 +143,27 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
     double posRad = getMeasuredPositionRad();
     double errorRad = goalRad - posRad;
 
-    double ffAngleRad = posRad + Units.degreesToRadians(ffAngleOffsetDeg.get());
+    // This was my issue before since we are using a relative encoder,
+    // the encoder reads 0 rad at horizontal (outtake) and -1 rad at vertical (storage),
+    // but cos() needs 0 at horizontal and -π/2 at vertical so I add this scale factor to fix
+    // Scale encoder range [0, -1] → physical angle [0, -π/2]
+    double ffAngleRad = posRad * (Math.PI / 2.0);
 
+    double gravityFFVolts = kG.get() * Math.cos(ffAngleRad);
+
+    // Static friction compensation — only applied when error exceeds a small deadband
+    // to avoid oscillation around the setpoint.
     double ksDeadbandRad = Units.degreesToRadians(kSDeadbandDeg.get());
-    double velForKsSign =
-        (Math.abs(errorRad) > ksDeadbandRad) ? Math.copySign(1e-3, errorRad) : 0.0;
+    double ksFFVolts = 0.0;
+    if (Math.abs(errorRad) > ksDeadbandRad) {
+      ksFFVolts = Math.copySign(kS.get(), errorRad);
+    }
 
-    double ffVolts = ff.calculate(ffAngleRad, velForKsSign);
+    double ffVolts = gravityFFVolts + ksFFVolts;
     ffVolts = MathUtil.clamp(ffVolts, -maxVolts.get(), maxVolts.get());
+
+    Logger.recordOutput("IntakePivotRioTest/GravityFFVolts", gravityFFVolts);
+    Logger.recordOutput("IntakePivotRioTest/KsFFVolts", ksFFVolts);
 
     closedLoop.setSetpoint(
         goalRad, SparkBase.ControlType.kPosition, kPidSlot, ffVolts, ArbFFUnits.kVoltage);
@@ -182,9 +188,9 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
   public void periodic() {
     applyTunablesIfChanged();
 
-    double spDegLive =
-        SmartDashboard.getNumber("IntakePivotRioTest/SetpointDeg", setpointDeg.get());
-    SmartDashboard.putNumber("IntakePivotRioTest/SetpointDegLive", spDegLive);
+    double spRadLive =
+        SmartDashboard.getNumber("IntakePivotRioTest/SetpointRad", setpointRad.get());
+    SmartDashboard.putNumber("IntakePivotRioTest/SetpointRadLive", spRadLive);
 
     boolean isEnabled = enabled.get() > 0.5;
 
@@ -204,13 +210,13 @@ public class IntakePivotPIDRioTest extends SubsystemBase {
     prevEnabled = isEnabled;
 
     if (isEnabled) {
-      double goalRad = spDegLive;
+      double goalRad = setpointRad.get();
       setPivotPositionRad(goalRad);
     } else {
       motor.stopMotor();
     }
 
     Logger.recordOutput("IntakePivotRioTest/VelocityRadPerSec", getMeasuredVelocityRadPerSec());
-    Logger.recordOutput("IntakePivotRioTest/PositionDeg", getMeasuredPositionRad());
+    Logger.recordOutput("IntakePivotRioTest/PositionRad", getMeasuredPositionRad());
   }
 }

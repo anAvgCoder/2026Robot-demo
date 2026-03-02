@@ -72,6 +72,11 @@ public class ShooterIOReal implements ShooterIO {
   }
 
   @Override
+  public void stopApplyingMotor() {
+    motor.stopMotor();
+  }
+
+  @Override
   public void hubAdaptiveAiming() {}
 
   @Override

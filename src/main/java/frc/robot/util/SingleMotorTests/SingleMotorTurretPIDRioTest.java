@@ -23,12 +23,12 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
-public class SingleModuleTurnPIDRioTest extends SubsystemBase {
+public class SingleMotorTurretPIDRioTest extends SubsystemBase {
 
   private final int changeId = System.identityHashCode(this);
 
-  private static final int kTurnMotorCanId = 8;
-  private static final int kAbsCancoderCanId = 24;
+  private static final int kTurnMotorCanId = 42;
+  private static final int kAbsCancoderCanId = 26;
 
   private final SparkBase motor;
 
@@ -55,7 +55,7 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
 
   private boolean wasEnabled = false;
 
-  public SingleModuleTurnPIDRioTest() {
+  public SingleMotorTurretPIDRioTest() {
 
     motor = new SparkMax(kTurnMotorCanId, MotorType.kBrushless);
 
@@ -71,12 +71,7 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
         .idleMode(IdleMode.kBrake)
         .smartCurrentLimit(40)
         .voltageCompensation(12.0);
-    motorConfig
-        .closedLoop
-        .feedbackSensor(FeedbackSensor.kAbsoluteEncoder)
-        .positionWrappingEnabled(true)
-        .positionWrappingInputRange(0.0, 2.0 * Math.PI)
-        .pid(0.1, 0.0, 0.0);
+    motorConfig.closedLoop.feedbackSensor(FeedbackSensor.kAbsoluteEncoder).pid(0.1, 0.0, 0.0);
     motorConfig
         .signals
         .absoluteEncoderPositionAlwaysOn(true)
@@ -100,20 +95,19 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
             kD.get(),
             new TrapezoidProfile.Constraints(maxVelRadPerSec.get(), maxAccelRadPerSec2.get()));
 
-    profiledPid.enableContinuousInput(0.0, 2.0 * Math.PI);
     profiledPid.setTolerance(Units.degreesToRadians(1.0), Units.degreesToRadians(20.0));
   }
 
   private double getMeasuredAngleRad() {
     absPosSig.refresh();
     double rot = absPosSig.getValueAsDouble();
-    double rad = Units.rotationsToRadians(rot);
-    return MathUtil.inputModulus(rad, 0.0, 2.0 * Math.PI);
+    return Units.rotationsToRadians(rot);
   }
 
   public void setTurnPosition(double goalRad) {
     double meas = getMeasuredAngleRad();
-    double goal = MathUtil.inputModulus(goalRad, 0.0, 2.0 * Math.PI);
+    // Clamp goal to -90° to +90° range
+    double goal = MathUtil.clamp(goalRad, -125.0 / 180.0 * Math.PI, 125.0 / 180.0 * Math.PI);
 
     double out = profiledPid.calculate(meas, goal);
 
@@ -156,7 +150,7 @@ public class SingleModuleTurnPIDRioTest extends SubsystemBase {
     boolean isEnabled = enabled.get() > 0.5;
 
     double measRad = getMeasuredAngleRad();
-    double goalRad = spDegLive;
+    double goalRad = Units.degreesToRadians(spDegLive);
 
     if (isEnabled && !wasEnabled) {
       profiledPid.reset(measRad);

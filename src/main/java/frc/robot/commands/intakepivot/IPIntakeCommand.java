@@ -7,46 +7,50 @@ import frc.robot.subsystems.intakepivot.IntakePivotIO;
 
 public class IPIntakeCommand extends Command {
   private final IntakePivotIO intakePivotIO;
+  private final IntakePivot intakePivot;
+  private boolean reachedPrimary;
   private int runCounter;
 
   public IPIntakeCommand(IntakePivot intakePivot) {
+    this.intakePivot = intakePivot;
     intakePivotIO = intakePivot.getIO();
     addRequirements(intakePivot);
   }
 
-  // Called when the command is initially scheduled.
   @Override
   public void initialize() {
+    reachedPrimary = false;
     runCounter = 0;
   }
 
-  // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    intakePivotIO.setIntakePosition();
+    if (!reachedPrimary) {
+      intakePivotIO.setIntakePrimaryPosition();
+      if (intakePivot.isAtGoal()) {
+        reachedPrimary = true;
+      }
+    } else {
+      intakePivotIO.setIntakeSecondaryPosition();
+    }
+
     runCounter++;
     if (runCounter > 24) {
       runCounter = 0;
     }
   }
 
-  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
     intakePivotIO.setStoragePosition();
   }
 
-  // Returns true when the command should end.
   @Override
   public boolean isFinished() {
     if (!DriverStation.isAutonomous()) {
       return false;
     } else {
-      if (runCounter == 24) {
-        return true;
-      } else {
-        return false;
-      }
+      return runCounter == 24;
     }
   }
 }

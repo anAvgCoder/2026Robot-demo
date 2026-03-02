@@ -1,155 +1,208 @@
 package frc.robot.util.SingleMotorTests;
 
+import static frc.robot.util.SparkUtil.tryUntilOk;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.SparkBase.ControlType;
+import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
-import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.intakepivot.IntakePivotConstants;
 import frc.robot.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 
-//  Single motor POSITION closed-loop test for turret/turn-wheel style mechanisms.
-
-//  * Notes:
-//   - Setpoints are in encoder position units (default: motor rotations).
-//   - If you set encoder positionConversionFactor, your setpoint becomes "that unit"
-//   - Example: degrees => factor ~ 360/gearRatio.
-
+/**
+ * Generic single-motor position PID test using SPARK onboard PID with RIO-side gravity feedforward.
+ * Mirrors the IntakePivotPIDRioTest pattern but is meant to be easily adapted for any mechanism by
+ * changing the constants at the top.
+ */
 public class SingleMotorPositionPIDTest extends SubsystemBase {
-  private static final int kMotorCanId = 15;
+  private final int changeId = System.identityHashCode(this);
+
+  private static final int kMotorCanId = 41;
   private static final boolean kInverted = true;
+  private static final int kCurrentLimitAmps = 10;
+  private static final ClosedLoopSlot kPidSlot = ClosedLoopSlot.kSlot0;
 
-  /**
-   * Gear ratio definition used here: gearRatio = motorRotations / mechanismRotations Example: 100:1
-   * turret reduction => gearRatio = 100.0
-   */
-  private static final double kGearRatio = 100.0; // TODO: change for mechanism
-
-  private final SparkFlex motor = new SparkFlex(kMotorCanId, MotorType.kBrushless);
-  private final SparkClosedLoopController cl = motor.getClosedLoopController();
-  private final RelativeEncoder enc = motor.getEncoder();
-
-  private final SparkFlexConfig cfg = new SparkFlexConfig();
+  private final SparkMax motor;
+  private final RelativeEncoder enc;
+  private final SparkClosedLoopController closedLoop;
 
   private final LoggedTunableNumber enabled =
       new LoggedTunableNumber("SingleMotorPosTest/Enabled", 0.0);
-  private final LoggedTunableNumber setpointDeg =
-      new LoggedTunableNumber("SingleMotorPosTest/SetpointDeg", 0.0);
 
-  private final LoggedTunableNumber kP = new LoggedTunableNumber("SingleMotorPosTest/kP", 0.00);
-  private final LoggedTunableNumber kI = new LoggedTunableNumber("SingleMotorPosTest/kI", 0.0);
-  private final LoggedTunableNumber kD = new LoggedTunableNumber("SingleMotorPosTest/kD", 0.0);
+  private final LoggedTunableNumber setpointRad =
+      new LoggedTunableNumber(
+          "SingleMotorPosTest/SetpointRad", IntakePivotConstants.kStoragePosition);
 
-  private final LoggedTunableNumber minOut =
-      new LoggedTunableNumber("SingleMotorPosTest/MinOut", -1.0);
-  private final LoggedTunableNumber maxOut =
-      new LoggedTunableNumber("SingleMotorPosTest/MaxOut", 1.0);
+  private final LoggedTunableNumber zeroEncoder =
+      new LoggedTunableNumber("SingleMotorPosTest/ZeroEncoder", 0.0);
 
-  private final LoggedTunableNumber useWrapping =
-      new LoggedTunableNumber("SingleMotorPosTest/UseWrapping", 1.0);
-  private final LoggedTunableNumber wrapMin =
-      new LoggedTunableNumber("SingleMotorPosTest/WrapMin", 0.0);
-  private final LoggedTunableNumber wrapMax =
-      new LoggedTunableNumber("SingleMotorPosTest/WrapMax", 360.0);
+  private final LoggedTunableNumber kP =
+      new LoggedTunableNumber("SingleMotorPosTest/kP", IntakePivotConstants.kP);
+  private final LoggedTunableNumber kI =
+      new LoggedTunableNumber("SingleMotorPosTest/kI", IntakePivotConstants.kI);
+  private final LoggedTunableNumber kD =
+      new LoggedTunableNumber("SingleMotorPosTest/kD", IntakePivotConstants.kD);
 
-  private final LoggedTunableNumber useSoftLimits =
-      new LoggedTunableNumber("SingleMotorPosTest/UseSoftLimits", 0.0);
-  private final LoggedTunableNumber softLimitRevDeg =
-      new LoggedTunableNumber("SingleMotorPosTest/SoftLimitReverseDeg", -90.0);
-  private final LoggedTunableNumber softLimitFwdDeg =
-      new LoggedTunableNumber("SingleMotorPosTest/SoftLimitForwardDeg", 90.0);
+  private final LoggedTunableNumber kS =
+      new LoggedTunableNumber("SingleMotorPosTest/kS", IntakePivotConstants.kS);
+  private final LoggedTunableNumber kG =
+      new LoggedTunableNumber("SingleMotorPosTest/kG", IntakePivotConstants.kG);
+  private final LoggedTunableNumber kV =
+      new LoggedTunableNumber("SingleMotorPosTest/kV", IntakePivotConstants.kV);
+  private final LoggedTunableNumber kA =
+      new LoggedTunableNumber("SingleMotorPosTest/kA", IntakePivotConstants.kA);
 
-  // Optional: arbitrary feedforward in volts (useful for stiction/gravity compensation)
-  private final LoggedTunableNumber arbFFVolts =
-      new LoggedTunableNumber("SingleMotorPosTest/ArbFFVolts", 0.0);
+  private final LoggedTunableNumber maxVolts =
+      new LoggedTunableNumber("SingleMotorPosTest/MaxVolts", IntakePivotConstants.kMaxVolts);
 
-  private final int changeId = System.identityHashCode(this);
+  private final LoggedTunableNumber kSDeadbandRad =
+      new LoggedTunableNumber(
+          "SingleMotorPosTest/kSDeadbandRad", IntakePivotConstants.kPosToleranceRad);
+
+  private boolean prevEnabled = false;
+  private boolean prevZero = false;
 
   public SingleMotorPositionPIDTest() {
-    cfg.idleMode(IdleMode.kBrake).inverted(kInverted);
-    applyConfig(ResetMode.kResetSafeParameters);
+    motor = new SparkMax(kMotorCanId, MotorType.kBrushless);
+    enc = motor.getEncoder();
+    closedLoop = motor.getClosedLoopController();
+
+    SmartDashboard.setDefaultNumber("SingleMotorPosTest/SetpointRad", setpointRad.get());
+
+    configureSpark(true);
+
+    enc.setPosition(IntakePivotConstants.kStoragePosition);
+    closedLoop.setIAccum(0.0);
   }
 
-  private void applyConfig(ResetMode resetMode) {
-    // --- Units setup (we want DEGREES at the mechanism) ---
-    // Encoder native position is motor rotations. Position factor converts to yourdesired unit.
-    double posFactorDegPerMotorRot = 360.0 / kGearRatio;
+  private double getMeasuredPositionRad() {
+    return enc.getPosition();
+  }
 
-    // Encoder native velocity is motor RPM. Velocity factor converts to your desired velocity unit.
-    // mechanismDegPerSec = motorRPM * (360/gearRatio) / 60 = motorRPM * (6/gearRatio)
-    double velFactorDegPerSecPerMotorRPM = 6.0 / kGearRatio;
+  private double getMeasuredVelocityRadPerSec() {
+    return enc.getVelocity();
+  }
+
+  private void configureSpark(boolean persist) {
+    var cfg = new SparkMaxConfig();
+
+    cfg.idleMode(IdleMode.kBrake)
+        .inverted(kInverted)
+        .smartCurrentLimit(kCurrentLimitAmps)
+        .voltageCompensation(12.0);
 
     cfg.encoder
-        .positionConversionFactor(posFactorDegPerMotorRot)
-        .velocityConversionFactor(velFactorDegPerSecPerMotorRPM);
+        .positionConversionFactor(IntakePivotConstants.kPositionFactorRadPerMotorRot)
+        .velocityConversionFactor(IntakePivotConstants.kVelocityFactorRadPerSecPerRPM);
 
-    // PID + output range
+    cfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
+
+    double maxDuty = MathUtil.clamp(maxVolts.get() / 12.0, 0.0, 1.0);
+
     cfg.closedLoop
-        .pid(kP.get(), kI.get(), kD.get(), ClosedLoopSlot.kSlot0)
-        .outputRange(minOut.get(), maxOut.get(), ClosedLoopSlot.kSlot0);
+        .pid(kP.get(), kI.get(), kD.get(), kPidSlot)
+        .outputRange(-maxDuty, maxDuty, kPidSlot)
+        .allowedClosedLoopError(IntakePivotConstants.kPosToleranceRad, kPidSlot);
 
-    // --- Wrapping for continuous mechanisms (shortest-path around wrap range) ---
-    // positionWrappingEnabled + inputRange exist on ClosedLoopConfig.
-    boolean wrapping = useWrapping.get() > 0.5;
-    cfg.closedLoop.positionWrappingEnabled(wrapping);
-    if (wrapping) {
-      cfg.closedLoop.positionWrappingInputRange(wrapMin.get(), wrapMax.get());
+    tryUntilOk(
+        motor,
+        5,
+        () ->
+            motor.configure(
+                cfg,
+                ResetMode.kNoResetSafeParameters,
+                persist ? PersistMode.kPersistParameters : PersistMode.kNoPersistParameters));
+  }
+
+  private void applyTunablesIfChanged() {
+    LoggedTunableNumber.ifChanged(
+        changeId, () -> configureSpark(false), kP, kI, kD, maxVolts, kS, kG, kV, kA);
+  }
+
+  public void setPivotPositionRad(double goalRad) {
+    double posRad = getMeasuredPositionRad();
+    double errorRad = goalRad - posRad;
+
+    // Scale encoder range [0, -1] → physical angle [0, -π/2]
+    double ffAngleRad = posRad * (Math.PI / 2.0);
+    double gravityFFVolts = kG.get() * Math.cos(ffAngleRad);
+
+    // Static friction compensation — only applied when error exceeds deadband
+    double ksFFVolts = 0.0;
+    if (Math.abs(errorRad) > kSDeadbandRad.get()) {
+      ksFFVolts = Math.copySign(kS.get(), errorRad);
     }
 
-    // --- Soft limits
-    boolean softLimits = useSoftLimits.get() > 0.5;
-    cfg.softLimit
-        .reverseSoftLimit(softLimitRevDeg.get())
-        .forwardSoftLimit(softLimitFwdDeg.get())
-        .reverseSoftLimitEnabled(softLimits)
-        .forwardSoftLimitEnabled(softLimits);
+    double ffVolts = gravityFFVolts + ksFFVolts;
+    ffVolts = MathUtil.clamp(ffVolts, -maxVolts.get(), maxVolts.get());
 
-    motor.configure(cfg, resetMode, PersistMode.kNoPersistParameters);
+    Logger.recordOutput("SingleMotorPosTest/GravityFFVolts", gravityFFVolts);
+    Logger.recordOutput("SingleMotorPosTest/KsFFVolts", ksFFVolts);
+
+    closedLoop.setSetpoint(
+        goalRad, SparkBase.ControlType.kPosition, kPidSlot, ffVolts, ArbFFUnits.kVoltage);
+
+    Logger.recordOutput("SingleMotorPosTest/GoalRad", goalRad);
+    Logger.recordOutput("SingleMotorPosTest/GoalDeg", Units.radiansToDegrees(goalRad));
+    Logger.recordOutput("SingleMotorPosTest/PosRad", posRad);
+    Logger.recordOutput("SingleMotorPosTest/PosDeg", Units.radiansToDegrees(posRad));
+    Logger.recordOutput("SingleMotorPosTest/ErrorRad", errorRad);
+    Logger.recordOutput("SingleMotorPosTest/ErrorDeg", Units.radiansToDegrees(errorRad));
+    Logger.recordOutput("SingleMotorPosTest/FFAngleRad", ffAngleRad);
+    Logger.recordOutput("SingleMotorPosTest/FFAngleDeg", Units.radiansToDegrees(ffAngleRad));
+    Logger.recordOutput("SingleMotorPosTest/FFVolts", ffVolts);
+
+    Logger.recordOutput(
+        "SingleMotorPosTest/AppliedVolts", motor.getAppliedOutput() * motor.getBusVoltage());
+    Logger.recordOutput("SingleMotorPosTest/SupplyCurrentAmps", motor.getOutputCurrent());
+    Logger.recordOutput("SingleMotorPosTest/TempC", motor.getMotorTemperature());
   }
 
   @Override
   public void periodic() {
-    LoggedTunableNumber.ifChanged(
-        changeId,
-        () -> applyConfig(ResetMode.kNoResetSafeParameters),
-        kP,
-        kI,
-        kD,
-        minOut,
-        maxOut,
-        useWrapping,
-        wrapMin,
-        wrapMax,
-        useSoftLimits,
-        softLimitRevDeg,
-        softLimitFwdDeg);
+    applyTunablesIfChanged();
 
-    if (enabled.get() > 0.5) {
-      double spDeg = setpointDeg.get();
+    double spRadLive =
+        SmartDashboard.getNumber("SingleMotorPosTest/SetpointRad", setpointRad.get());
+    SmartDashboard.putNumber("SingleMotorPosTest/SetpointRadLive", spRadLive);
 
-      ControlType type = ControlType.kPosition;
+    boolean isEnabled = enabled.get() > 0.5;
 
-      cl.setSetpoint(spDeg, type, ClosedLoopSlot.kSlot0, arbFFVolts.get(), ArbFFUnits.kVoltage);
+    boolean zeroNow = zeroEncoder.get() > 0.5;
+    if (zeroNow && !prevZero) {
+      enc.setPosition(0.0);
+      closedLoop.setIAccum(0.0);
+      Logger.recordOutput("SingleMotorPosTest/Zeroed", true);
+    } else {
+      Logger.recordOutput("SingleMotorPosTest/Zeroed", false);
+    }
+    prevZero = zeroNow;
+
+    if (isEnabled && !prevEnabled) {
+      closedLoop.setIAccum(0.0);
+    }
+    prevEnabled = isEnabled;
+
+    if (isEnabled) {
+      double goalRad = setpointRad.get();
+      setPivotPositionRad(goalRad);
     } else {
       motor.stopMotor();
     }
 
-    // Telemetry (degrees and degrees/sec because of conversion factors)
-    SmartDashboard.putNumber("SingleMotorPosTest/PosDeg", enc.getPosition());
-    SmartDashboard.putNumber("SingleMotorPosTest/VelDegPerSec", enc.getVelocity());
-    SmartDashboard.putNumber("SingleMotorPosTest/AppliedOutput", motor.getAppliedOutput());
-    SmartDashboard.putNumber("SingleMotorPosTest/BusVoltage", motor.getBusVoltage());
-    SmartDashboard.putNumber("SingleMotorPosTest/SetpointDeg", setpointDeg.get());
-
-    Logger.recordOutput("SingleMotorPosTest/PosDeg", enc.getPosition());
-    Logger.recordOutput("SingleMotorPosTest/VelDegPerSec", enc.getVelocity());
+    Logger.recordOutput("SingleMotorPosTest/VelocityRadPerSec", getMeasuredVelocityRadPerSec());
+    Logger.recordOutput("SingleMotorPosTest/PositionRad", getMeasuredPositionRad());
   }
 }

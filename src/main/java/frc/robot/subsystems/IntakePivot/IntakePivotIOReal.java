@@ -5,44 +5,37 @@ import static frc.robot.util.SparkUtil.tryUntilOk;
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkBase;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
-import org.littletonrobotics.junction.AutoLogOutputManager;
+import edu.wpi.first.wpilibj.DigitalInput;
 
 public class IntakePivotIOReal implements IntakePivotIO {
-  private final SparkBase motor;
+  private static final ClosedLoopSlot kPidSlot = ClosedLoopSlot.kSlot0;
+
+  private final SparkMax motor;
   private final RelativeEncoder enc;
-  private final SparkMaxConfig cfg = new SparkMaxConfig();
+  private final SparkClosedLoopController closedLoop;
 
-  private final ProfiledPIDController controller =
-      new ProfiledPIDController(
-          IntakePivotConstants.kP,
-          IntakePivotConstants.kI,
-          IntakePivotConstants.kD,
-          new TrapezoidProfile.Constraints(
-              IntakePivotConstants.kMaxVelRadPerSec, IntakePivotConstants.kMaxAccelRadPerSec2));
+  private final DigitalInput magSwitch;
+  private boolean prevMagState = true;
+  private boolean hasBeenZeroed = false;
 
-  private final ArmFeedforward ff =
-      new ArmFeedforward(
-          IntakePivotConstants.kS,
-          IntakePivotConstants.kG,
-          IntakePivotConstants.kV,
-          IntakePivotConstants.kA);
+  private double goalRad = 0.0;
 
   public IntakePivotIOReal(int canId) {
     motor = new SparkMax(canId, MotorType.kBrushless);
     enc = motor.getEncoder();
+    closedLoop = motor.getClosedLoopController();
+    magSwitch = new DigitalInput(0);
 
-    controller.setTolerance(
-        IntakePivotConstants.kPosToleranceRad, IntakePivotConstants.kVelToleranceRadPerSec);
+    SparkMaxConfig cfg = new SparkMaxConfig();
 
     cfg.idleMode(IdleMode.kBrake)
         .inverted(IntakePivotConstants.kInverted)
@@ -55,17 +48,31 @@ public class IntakePivotIOReal implements IntakePivotIO {
 
     cfg.signals.appliedOutputPeriodMs(20).busVoltagePeriodMs(20).outputCurrentPeriodMs(20);
 
+    double maxDuty = MathUtil.clamp(IntakePivotConstants.kMaxVolts / 12.0, 0.0, 1.0);
+
+    cfg.closedLoop
+        .pid(IntakePivotConstants.kP, IntakePivotConstants.kI, IntakePivotConstants.kD, kPidSlot)
+        .outputRange(-maxDuty, maxDuty, kPidSlot)
+        .allowedClosedLoopError(IntakePivotConstants.kPosToleranceRad, kPidSlot);
+
     tryUntilOk(
         motor,
         5,
         () -> motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
-    enc.setPosition(IntakePivotConstants.kStoragePosition);
-    controller.reset(enc.getPosition(), 0.0);
+    if (!magSwitch.get()) {
+      enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
+      goalRad = IntakePivotConstants.kMagSensorPositionRad;
+      hasBeenZeroed = true;
+    } else {
+      enc.setPosition(0.0);
+      goalRad = 0.0;
+    }
+    closedLoop.setIAccum(0.0);
   }
 
   private double getMeasuredPositionRad() {
-    return Units.rotationsToRadians(enc.getPosition());
+    return enc.getPosition();
   }
 
   @Override
@@ -75,47 +82,76 @@ public class IntakePivotIOReal implements IntakePivotIO {
 
   @Override
   public void setStoragePosition() {
+    if (!hasBeenZeroed) {
+      motor.setVoltage(IntakePivotConstants.kStorageCreepVolts);
+      return;
+    }
     setPivotPosition(IntakePivotConstants.kStoragePosition);
   }
 
   @Override
-  public void setIntakePosition() {
-    setPivotPosition(IntakePivotConstants.kIntakePosition);
+  public void setIntakePrimaryPosition() {
+    setPivotPosition(IntakePivotConstants.kIntakePrimaryPosition);
   }
 
   @Override
-  public void setPivotPosition(double degree) {
+  public void setIntakeSecondaryPosition() {
+    setPivotPosition(IntakePivotConstants.kIntakeSecondaryPosition);
+  }
 
-    double goalPos = Units.degreesToRadians(degree);
+  @Override
+  public void setPivotPosition(double positionRad) {
+    goalRad = positionRad;
+    double posRad = getMeasuredPositionRad();
+    double errorRad = goalRad - posRad;
 
-    double pidVolts = controller.calculate(getMeasuredPositionRad(), goalPos);
+    // Scale encoder range [0, -1] → physical angle [0, -π/2]
+    double ffAngleRad = posRad * (Math.PI / 2.0);
+    double gravityFFVolts = IntakePivotConstants.kG * Math.cos(ffAngleRad);
 
-    var sp = controller.getSetpoint();
-    double ffVolts = ff.calculate(sp.position, sp.velocity);
+    // Static friction compensation — only applied when error exceeds tolerance
+    double ksFFVolts = 0.0;
+    if (Math.abs(errorRad) > IntakePivotConstants.kPosToleranceRad) {
+      ksFFVolts = Math.copySign(IntakePivotConstants.kS, errorRad);
+    }
 
-    double outVolts = pidVolts + ffVolts;
-    outVolts =
-        MathUtil.clamp(outVolts, -IntakePivotConstants.kMaxVolts, IntakePivotConstants.kMaxVolts);
+    double ffVolts = gravityFFVolts + ksFFVolts;
+    ffVolts =
+        MathUtil.clamp(ffVolts, -IntakePivotConstants.kMaxVolts, IntakePivotConstants.kMaxVolts);
 
-    motor.setVoltage(outVolts);
+    closedLoop.setSetpoint(
+        goalRad, SparkBase.ControlType.kPosition, kPidSlot, ffVolts, ArbFFUnits.kVoltage);
+  }
 
-    AutoLogOutputManager.addObject(sp);
+  @Override
+  public boolean isAtGoal() {
+    return Math.abs(goalRad - getMeasuredPositionRad()) < IntakePivotConstants.kPosToleranceRad;
   }
 
   @Override
   public void zeroToStorage() {
-    enc.setPosition(0);
-    controller.reset(0, 0.0);
+    enc.setPosition(IntakePivotConstants.kStoragePosition);
+    goalRad = IntakePivotConstants.kStoragePosition;
+    closedLoop.setIAccum(0.0);
   }
 
   @Override
   public void zeroToIntake() {
-    enc.setPosition(IntakePivotConstants.kIntakePosition);
-    controller.reset(IntakePivotConstants.kIntakePosition, 0.0);
+    enc.setPosition(IntakePivotConstants.kIntakePrimaryPosition);
+    goalRad = IntakePivotConstants.kIntakePrimaryPosition;
+    closedLoop.setIAccum(0.0);
   }
 
   @Override
   public void updateInputs(IntakePivotIOInputs inputs) {
+    boolean mag = !magSwitch.get();
+    if (mag && !prevMagState) {
+      enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
+      closedLoop.setIAccum(0.0);
+      hasBeenZeroed = true;
+    }
+    prevMagState = mag;
+
     inputs.position = enc.getPosition();
     inputs.velocityRPM = enc.getVelocity();
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();

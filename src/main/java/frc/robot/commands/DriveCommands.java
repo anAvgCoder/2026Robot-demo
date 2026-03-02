@@ -42,6 +42,9 @@ public class DriveCommands {
   private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
   private static final double WHEEL_RADIUS_RAMP_RATE = 0.05; // Rad/Sec^2
 
+  private static final SlewRateLimiter xLimiter = new SlewRateLimiter(15);
+  private static final SlewRateLimiter yLimiter = new SlewRateLimiter(15);
+
   private DriveCommands() {}
 
   private static Translation2d getLinearVelocityFromJoysticks(double x, double y) {
@@ -70,6 +73,7 @@ public class DriveCommands {
     return Commands.run(
         () -> {
           boolean robotCentric = false;
+
           // Get linear velocity
           Translation2d linearVelocity =
               getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
@@ -81,10 +85,14 @@ public class DriveCommands {
           omega = Math.copySign(omega * omega, omega);
 
           // Convert to field relative speeds & send command
+
+          double x = xLimiter.calculate(linearVelocity.getX());
+          double y = yLimiter.calculate(linearVelocity.getY());
+
           ChassisSpeeds speeds =
               new ChassisSpeeds(
-                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec(),
-                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec(),
+                  x * drive.getMaxLinearSpeedMetersPerSec(),
+                  y * drive.getMaxLinearSpeedMetersPerSec(),
                   omega * drive.getMaxAngularSpeedRadPerSec());
           boolean isFlipped =
               DriverStation.getAlliance().isPresent()

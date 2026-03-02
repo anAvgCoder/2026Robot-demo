@@ -19,6 +19,7 @@ import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
 import frc.robot.commands.belt.BeltOutakeCommand;
 import frc.robot.commands.diverter.DiverterCommand;
+import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
 import frc.robot.commands.shooter.ShooterSetSpeedCommand;
@@ -35,6 +36,10 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
+import frc.robot.subsystems.intakepivot.IntakePivot;
+import frc.robot.subsystems.intakepivot.IntakePivotConstants;
+import frc.robot.subsystems.intakepivot.IntakePivotIO;
+import frc.robot.subsystems.intakepivot.IntakePivotIOReal;
 import frc.robot.subsystems.intakeroller.IntakeRoller;
 import frc.robot.subsystems.intakeroller.IntakeRollerIO;
 import frc.robot.subsystems.intakeroller.IntakeRollerIOReal;
@@ -45,7 +50,7 @@ import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.subsystems.turret.shooter.ShooterIOReal;
 import frc.robot.subsystems.turret.shooter.ShooterIOSim;
-import frc.robot.util.SingleMotorTests.IntakePivotPIDRioTest;
+import frc.robot.util.SingleMotorTests.SingleMotorTurretPIDRioTest;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -59,12 +64,12 @@ public class RobotContainer {
   private final Drive drive;
   private final Belt leftBelt;
   private final Belt rightBelt;
-  // private final IntakePivot intakePivot;
+  private final IntakePivot intakePivot;
   private final IntakeRoller intakeRoller;
   private final Shooter leftShooter;
   private final Shooter rightShooter;
   private final Diverter diverter;
-  private final IntakePivotPIDRioTest intakePivotTest;
+  private final SingleMotorTurretPIDRioTest singleMotorTurretPIDRioTest;
 
   // Commands
 
@@ -100,7 +105,7 @@ public class RobotContainer {
         diverter = new Diverter(new DiverterIOReal());
         leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft));
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight));
-        // intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
+        intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
         intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
         leftShooter = new Shooter(new ShooterIOReal(45));
         rightShooter = new Shooter(new ShooterIOReal(44));
@@ -120,7 +125,7 @@ public class RobotContainer {
         diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim());
         rightBelt = new Belt(new BeltIOSim());
-        // intakePivot = new IntakePivot(new IntakePivotIO() {});
+        intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
         leftShooter = new Shooter(new ShooterIOSim());
         rightShooter = new Shooter(new ShooterIOSim());
@@ -139,14 +144,14 @@ public class RobotContainer {
         diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim() {});
         rightBelt = new Belt(new BeltIOSim() {});
-        // intakePivot = new IntakePivot(new IntakePivotIO() {});
+        intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
         leftShooter = new Shooter(new ShooterIOSim());
         rightShooter = new Shooter(new ShooterIOSim());
         break;
     }
 
-    intakePivotTest = new IntakePivotPIDRioTest();
+    singleMotorTurretPIDRioTest = new SingleMotorTurretPIDRioTest();
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -172,12 +177,16 @@ public class RobotContainer {
 
     intakeButton.whileTrue(
         Commands.parallel(
-            new IRIntakeCommand(intakeRoller),
-            new BeltIntakeCommand(rightBelt),
-            new BeltIntakeCommand(leftBelt),
-            new DiverterCommand(diverter),
             new ShooterSetSpeedCommand(leftShooter),
-            new ShooterSetSpeedCommand(rightShooter)));
+            new ShooterSetSpeedCommand(rightShooter),
+            Commands.sequence(
+                Commands.waitSeconds(1.0),
+                Commands.parallel(
+                    new IRIntakeCommand(intakeRoller),
+                    new BeltIntakeCommand(rightBelt),
+                    new BeltIntakeCommand(leftBelt),
+                    new DiverterCommand(diverter),
+                    new IPIntakeCommand(intakePivot)))));
 
     outakeButton.whileTrue(
         Commands.parallel(
@@ -194,7 +203,7 @@ public class RobotContainer {
                     drive.setPose(
                         new Pose2d(
                             drive.getPose().getTranslation(),
-                            Rotation2d.kZero.plus(new Rotation2d(0)))))
+                            Rotation2d.kZero.plus(new Rotation2d(-90)))))
             .ignoringDisable(true));
 
     resetQuestPoseRedButton.onTrue(

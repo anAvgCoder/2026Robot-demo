@@ -21,6 +21,9 @@ public class ShooterIOSim implements ShooterIO {
   public void hubAdaptiveAiming() {}
 
   @Override
+  public void stopApplyingMotor() {}
+
+  @Override
   public void storageAdaptiveAiming() {}
 
   @Override
