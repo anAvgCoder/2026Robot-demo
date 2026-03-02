@@ -11,6 +11,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -23,6 +24,7 @@ import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
 import frc.robot.commands.shooter.ShooterSetSpeedCommand;
+import frc.robot.commands.turret.AdaptiveHubAiming;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
 import frc.robot.subsystems.belt.BeltIOReal;
@@ -47,10 +49,17 @@ import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
+import frc.robot.subsystems.turret.hood.Hood;
+import frc.robot.subsystems.turret.hood.HoodConstants;
+import frc.robot.subsystems.turret.hood.HoodIO;
+import frc.robot.subsystems.turret.hood.HoodIOReal;
+import frc.robot.subsystems.turret.rotater.Rotater;
+import frc.robot.subsystems.turret.rotater.RotaterConstants;
+import frc.robot.subsystems.turret.rotater.RotaterIO;
+import frc.robot.subsystems.turret.rotater.RotaterIOReal;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.subsystems.turret.shooter.ShooterIOReal;
 import frc.robot.subsystems.turret.shooter.ShooterIOSim;
-import frc.robot.util.SingleMotorTests.SingleMotorTurretPIDRioTest;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -66,25 +75,33 @@ public class RobotContainer {
   private final Belt rightBelt;
   private final IntakePivot intakePivot;
   private final IntakeRoller intakeRoller;
-  private final Shooter leftShooter;
-  private final Shooter rightShooter;
   private final Diverter diverter;
-  private final SingleMotorTurretPIDRioTest singleMotorTurretPIDRioTest;
+
+  private final Rotater leftRotater;
+  private final Shooter leftShooter;
+  private final Hood leftHood;
+
+  private final Rotater rightRotater;
+  private final Hood rightHood;
+  private final Shooter rightShooter;
 
   // Commands
 
   // Joysticks
-  private static final XboxController driverController = new XboxController(0);
+  private static final Joystick leftJoy = new Joystick(0);
+  private static final Joystick rightJoy = new Joystick(1);
+  private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
-  private static final JoystickButton gyroButton = new JoystickButton(driverController, 4);
-  private static final JoystickButton resetQuestPoseRedButton =
-      new JoystickButton(driverController, 3);
-  private static final JoystickButton resetQuestPoseBlueButton =
-      new JoystickButton(driverController, 1);
 
-  private static final JoystickButton intakeButton = new JoystickButton(driverController, 6);
-  private static final JoystickButton outakeButton = new JoystickButton(driverController, 5);
+  private static final JoystickButton adaptiveAimingButton = new JoystickButton(rightJoy, 2);
+
+  private static final JoystickButton gyroButton = new JoystickButton(buttonPanel, 1);
+  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 2);
+  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 5);
+
+  private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
+  private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -107,8 +124,18 @@ public class RobotContainer {
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight));
         intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
         intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
+
         leftShooter = new Shooter(new ShooterIOReal(45));
+        leftRotater =
+            new Rotater(
+                new RotaterIOReal(RotaterConstants.kCanIdLeft, RotaterConstants.kCanIdLeftCoder));
+        leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId));
+
         rightShooter = new Shooter(new ShooterIOReal(44));
+        rightRotater =
+            new Rotater(
+                new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder));
+        rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId));
 
         break;
 
@@ -127,8 +154,14 @@ public class RobotContainer {
         rightBelt = new Belt(new BeltIOSim());
         intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
+
         leftShooter = new Shooter(new ShooterIOSim());
+        leftRotater = new Rotater(new RotaterIO() {});
+        leftHood = new Hood(new HoodIO() {});
+
         rightShooter = new Shooter(new ShooterIOSim());
+        rightRotater = new Rotater(new RotaterIO() {});
+        rightHood = new Hood(new HoodIO() {});
         break;
 
       default:
@@ -146,12 +179,16 @@ public class RobotContainer {
         rightBelt = new Belt(new BeltIOSim() {});
         intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
+
         leftShooter = new Shooter(new ShooterIOSim());
+        leftRotater = new Rotater(new RotaterIO() {});
+        leftHood = new Hood(new HoodIO() {});
+
         rightShooter = new Shooter(new ShooterIOSim());
+        rightRotater = new Rotater(new RotaterIO() {});
+        rightHood = new Hood(new HoodIO() {});
         break;
     }
-
-    singleMotorTurretPIDRioTest = new SingleMotorTurretPIDRioTest();
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
@@ -171,18 +208,18 @@ public class RobotContainer {
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> getClampedLeftX(driverController) ? -driverController.getLeftX() : 0.0,
-            () -> getClampedY(driverController) ? driverController.getLeftY() : 0.0,
-            () -> getClampedRightX(driverController) ? driverController.getRightX() : 0.0));
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
     intakeButton.whileTrue(
         Commands.parallel(
+            new IRIntakeCommand(intakeRoller),
             new ShooterSetSpeedCommand(leftShooter),
             new ShooterSetSpeedCommand(rightShooter),
             Commands.sequence(
-                Commands.waitSeconds(1.0),
+                Commands.waitSeconds(0.35),
                 Commands.parallel(
-                    new IRIntakeCommand(intakeRoller),
                     new BeltIntakeCommand(rightBelt),
                     new BeltIntakeCommand(leftBelt),
                     new DiverterCommand(diverter),
@@ -194,37 +231,39 @@ public class RobotContainer {
             new BeltOutakeCommand(rightBelt),
             new BeltOutakeCommand(leftBelt),
             new DiverterCommand(diverter)));
-    // new IPIntakeCommand(intakePivot)));
+
+    adaptiveAimingButton.whileTrue(
+        new AdaptiveHubAiming(
+            rightRotater,
+            rightShooter,
+            rightHood,
+            leftRotater,
+            leftShooter,
+            leftHood,
+            drive,
+            true));
 
     // Reset gyro to 0 on press
     gyroButton.onTrue(
         Commands.runOnce(
-                () ->
-                    drive.setPose(
-                        new Pose2d(
-                            drive.getPose().getTranslation(),
-                            Rotation2d.kZero.plus(new Rotation2d(-90)))))
+                () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)))
             .ignoringDisable(true));
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.resetQuestPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
             .ignoringDisable(true));
 
-    resetQuestPoseRedButton.onTrue(
+    resetQuestPoseBlueButton.onTrue(
         Commands.runOnce(() -> drive.resetQuestPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
   }
 
-  public boolean getClampedLeftX(XboxController joy) {
-    return Math.abs(joy.getLeftX()) >= 0.1;
+  public boolean getClampedTurn(Joystick joy) {
+    return Math.abs(joy.getX()) >= 0.1;
   }
 
-  public boolean getClampedRightX(XboxController joy) {
-    return Math.abs(joy.getRightX()) >= 0.1;
-  }
-
-  public boolean getClampedY(XboxController joy) {
-    return Math.abs(joy.getLeftY()) >= 0.1;
+  public boolean getClampedDrive(Joystick joy) {
+    return (Math.abs(joy.getY()) > 0.1) || (Math.abs(joy.getX()) > 0.1);
   }
 
   /**

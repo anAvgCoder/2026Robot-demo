@@ -106,8 +106,7 @@ public class SingleMotorTurretPIDRioTest extends SubsystemBase {
 
   public void setTurnPosition(double goalRad) {
     double meas = getMeasuredAngleRad();
-    // Clamp goal to -90° to +90° range
-    double goal = MathUtil.clamp(goalRad, -125.0 / 180.0 * Math.PI, 125.0 / 180.0 * Math.PI);
+    double goal = MathUtil.clamp(goalRad, -135.0 / 180.0 * Math.PI, 135.0 / 180.0 * Math.PI);
 
     double out = profiledPid.calculate(meas, goal);
 

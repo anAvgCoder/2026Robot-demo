@@ -7,7 +7,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.questnav.QuestNavSystem;
+import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
@@ -41,7 +41,7 @@ public class AdaptiveHubAiming extends Command {
       Rotater rotaterLeft,
       Shooter shooterLeft,
       Hood hoodLeft,
-      QuestNavSystem questNavSystem,
+      Drive drive,
       boolean isBlueCheck) {
     rotaterIORight = rotaterRight.getIO();
     hoodIORight = hoodRight.getIO();
@@ -51,7 +51,7 @@ public class AdaptiveHubAiming extends Command {
     hoodIOLeft = hoodLeft.getIO();
     shooterIOLeft = shooterLeft.getIO();
 
-    questNavSystemIO = questNavSystem.getIO();
+    questNavSystemIO = drive.getQuestNavSystemIO();
 
     addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft);
 
@@ -69,17 +69,13 @@ public class AdaptiveHubAiming extends Command {
     ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
     hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
     shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
-    rotaterIORight.setTurnPosition(
-        calculateTurretDegrees(turretPoseRight)
-            - Math.toDegrees(MathUtil.angleModulus(turretPoseRight.getRotation().getZ())));
+    rotaterIORight.setTurnPosition(calculateTurretDegreesRobotRelative(turretPoseRight));
 
     Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
     ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
     hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
     shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
-    rotaterIOLeft.setTurnPosition(
-        calculateTurretDegrees(turretPoseLeft)
-            - Math.toDegrees(MathUtil.angleModulus(turretPoseLeft.getRotation().getZ())));
+    rotaterIOLeft.setTurnPosition(calculateTurretDegreesRobotRelative(turretPoseLeft));
 
     runCounter++;
     if (runCounter > 24) {
@@ -103,15 +99,20 @@ public class AdaptiveHubAiming extends Command {
     }
   }
 
-  public double calculateTurretDegrees(Pose3d turretPose) {
+  public double calculateTurretDegreesRobotRelative(Pose3d turretPose) {
     Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
 
     double dx = hubPose.getX() - turretPose.getX();
     double dy = hubPose.getY() - turretPose.getY();
 
-    double targetRad = Math.atan2(dy, dx);
+    // Field-relative angle to hub
+    double fieldAngleRad = Math.atan2(dy, dx);
+    // Robot's yaw
+    double robotYawRad = turretPose.getRotation().getZ();
+    // Subtract robot yaw to get robot-relative angle, then wrap to ±180°
+    double robotRelativeRad = MathUtil.angleModulus(fieldAngleRad - robotYawRad);
 
-    return Math.toDegrees(MathUtil.angleModulus(targetRad));
+    return Math.toDegrees(robotRelativeRad);
   }
 
   public double calculateAdjustedHubDistance(Pose3d turretPose) {

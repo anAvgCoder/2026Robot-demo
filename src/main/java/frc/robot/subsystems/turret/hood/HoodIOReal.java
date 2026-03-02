@@ -11,35 +11,28 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import org.littletonrobotics.junction.AutoLogOutputManager;
+import org.littletonrobotics.junction.Logger;
 
 public class HoodIOReal implements HoodIO {
   private final SparkBase motor;
   private final RelativeEncoder enc;
-  private final SparkMaxConfig cfg = new SparkMaxConfig();
 
-  private final ProfiledPIDController controller =
-      new ProfiledPIDController(
-          HoodConstants.kP,
-          HoodConstants.kI,
-          HoodConstants.kD,
-          new TrapezoidProfile.Constraints(
-              HoodConstants.kMaxVelRadPerSec, HoodConstants.kMaxAccelRadPerSec2));
+  private final ProfiledPIDController controller;
 
-  private final ArmFeedforward ff =
-      new ArmFeedforward(HoodConstants.kS, HoodConstants.kG, HoodConstants.kV, HoodConstants.kA);
+  private final String logPrefix;
 
   public HoodIOReal(int canId) {
     motor = new SparkMax(canId, MotorType.kBrushless);
     enc = motor.getEncoder();
 
-    controller.setTolerance(HoodConstants.kPosToleranceRad, HoodConstants.kVelToleranceRadPerSec);
+    logPrefix = "Hood/" + canId + "/";
 
-    cfg.idleMode(IdleMode.kBrake)
-        .inverted(HoodConstants.kInverted)
+    // Configure motor
+    var cfg = new SparkMaxConfig();
+    cfg.inverted(HoodConstants.kInverted)
+        .idleMode(IdleMode.kBrake)
         .smartCurrentLimit(HoodConstants.kCurrentLimitAmps)
         .voltageCompensation(12.0);
 
@@ -54,17 +47,26 @@ public class HoodIOReal implements HoodIO {
         5,
         () -> motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
-    zeroAtMin();
+    // RIO-side profiled PID using motor relative encoder
+    controller =
+        new ProfiledPIDController(
+            HoodConstants.kP,
+            HoodConstants.kI,
+            HoodConstants.kD,
+            new TrapezoidProfile.Constraints(
+                HoodConstants.kMaxVelRadPerSec, HoodConstants.kMaxAccelRadPerSec2));
+
+    controller.setTolerance(HoodConstants.kPosToleranceRad, HoodConstants.kVelToleranceRadPerSec);
+
+    // Assume hood starts at min position on boot
+    enc.setPosition(HoodConstants.kMinAngleRad);
+    controller.reset(HoodConstants.kMinAngleRad, 0.0);
   }
 
   @Override
   public void zeroAtMin() {
-    enc.setPosition(0);
-    controller.reset(getMeasuredAnglePos(), 0.0);
-  }
-
-  private double getMeasuredAnglePos() {
-    return enc.getPosition();
+    enc.setPosition(HoodConstants.kMinAngleRad);
+    controller.reset(HoodConstants.kMinAngleRad, 0.0);
   }
 
   @Override
@@ -74,22 +76,26 @@ public class HoodIOReal implements HoodIO {
 
   @Override
   public void setHoodPosition(double position) {
-    double goalPos =
-        MathUtil.clamp(position, HoodConstants.kMinAnglePos, HoodConstants.kMaxAnglePos);
+    double measRad = enc.getPosition();
+    double goalRad =
+        MathUtil.clamp(position, HoodConstants.kMaxAngleRad, HoodConstants.kMinAngleRad);
 
-    double pidVolts = controller.calculate(getMeasuredAnglePos(), goalPos);
+    double out = controller.calculate(measRad, goalRad);
+    double capped = MathUtil.clamp(out, -HoodConstants.kMaxOutput, HoodConstants.kMaxOutput);
 
+    // Soft-limit: zero output if at limit and trying to push further
+    if (measRad >= HoodConstants.kMinAngleRad && capped > 0.0) capped = 0.0;
+    if (measRad <= HoodConstants.kMaxAngleRad && capped < 0.0) capped = 0.0;
+
+    motor.set(capped);
+
+    // Log for tuning
     var sp = controller.getSetpoint();
-    double ffVolts = ff.calculate(sp.position, sp.velocity);
-
-    double outVolts = pidVolts + ffVolts;
-    outVolts = MathUtil.clamp(outVolts, -HoodConstants.kMaxVolts, HoodConstants.kMaxVolts);
-
-    if (getMeasuredAnglePos() >= HoodConstants.kMaxAnglePos && outVolts > 0.0) outVolts = 0.0;
-    if (getMeasuredAnglePos() <= HoodConstants.kMinAnglePos && outVolts < 0.0) outVolts = 0.0;
-    motor.setVoltage(outVolts);
-
-    AutoLogOutputManager.addObject(sp);
+    Logger.recordOutput(logPrefix + "GoalRad", goalRad);
+    Logger.recordOutput(logPrefix + "MeasRad", measRad);
+    Logger.recordOutput(logPrefix + "ProfilePosRad", sp.position);
+    Logger.recordOutput(logPrefix + "ProfileVelRadPerSec", sp.velocity);
+    Logger.recordOutput(logPrefix + "OutputCmd", capped);
   }
 
   @Override

@@ -18,39 +18,35 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
-import org.littletonrobotics.junction.AutoLogOutputManager;
+import org.littletonrobotics.junction.Logger;
 
 public class RotaterIOReal implements RotaterIO {
   private final SparkBase motor;
-  private final SparkMaxConfig cfg = new SparkMaxConfig();
 
-  private final CANcoder turnCAN;
+  private final CANcoder cancoder;
   private final StatusSignal<Angle> absPosSig;
   private final StatusSignal<AngularVelocity> absVelSig;
 
-  private final ProfiledPIDController controller =
-      new ProfiledPIDController(
-          RotaterConstants.kP,
-          RotaterConstants.kI,
-          RotaterConstants.kD,
-          new TrapezoidProfile.Constraints(
-              RotaterConstants.kMaxVelRadPerSec, RotaterConstants.kMaxAccelRadPerSec2));
+  private final ProfiledPIDController controller;
+
+  private final String logPrefix;
 
   public RotaterIOReal(int canId, int coderId) {
     motor = new SparkMax(canId, MotorType.kBrushless);
-    turnCAN = new CANcoder(coderId);
+    cancoder = new CANcoder(coderId);
 
-    controller.setTolerance(
-        RotaterConstants.kPosToleranceRad, RotaterConstants.kVelToleranceRadPerSec);
+    logPrefix = "Rotater/" + canId + "/";
 
-    absPosSig = turnCAN.getAbsolutePosition();
-    absVelSig = turnCAN.getVelocity();
+    absPosSig = cancoder.getAbsolutePosition();
+    absVelSig = cancoder.getVelocity();
 
     BaseStatusSignal.setUpdateFrequencyForAll(100.0, absPosSig, absVelSig);
-    turnCAN.optimizeBusUtilization();
+    cancoder.optimizeBusUtilization();
 
-    cfg.idleMode(IdleMode.kBrake)
-        .inverted(RotaterConstants.kInverted)
+    // Configure motor
+    var cfg = new SparkMaxConfig();
+    cfg.inverted(RotaterConstants.kInverted)
+        .idleMode(IdleMode.kBrake)
         .smartCurrentLimit(RotaterConstants.kCurrentLimitAmps)
         .voltageCompensation(12.0);
 
@@ -61,26 +57,34 @@ public class RotaterIOReal implements RotaterIO {
         5,
         () -> motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
-    // Start profile from the current measured state (prevents jump on first command)
-    controller.reset(getMeasuredAngleRad(), getMeasuredVelocityRadPerSec());
-  }
+    controller =
+        new ProfiledPIDController(
+            RotaterConstants.kP,
+            RotaterConstants.kI,
+            RotaterConstants.kD,
+            new TrapezoidProfile.Constraints(
+                RotaterConstants.kMaxVelRadPerSec, RotaterConstants.kMaxAccelRadPerSec2));
 
-  @Override
-  public void setVoltage(double volts) {
-    motor.setVoltage(volts);
+    controller.setTolerance(
+        RotaterConstants.kPosToleranceRad, RotaterConstants.kVelToleranceRadPerSec);
+
+    controller.reset(getMeasuredAngleRad(), getMeasuredVelocityRadPerSec());
   }
 
   private double getMeasuredAngleRad() {
     absPosSig.refresh();
     double rot = absPosSig.getValueAsDouble();
-    double rad = Units.rotationsToRadians(rot);
-    return MathUtil.inputModulus(rad, -Math.PI, Math.PI);
+    return Units.rotationsToRadians(rot);
   }
 
   private double getMeasuredVelocityRadPerSec() {
     absVelSig.refresh();
-    double rotPerSec = absVelSig.getValueAsDouble();
-    return Units.rotationsToRadians(rotPerSec);
+    return Units.rotationsToRadians(absVelSig.getValueAsDouble());
+  }
+
+  @Override
+  public void setVoltage(double volts) {
+    motor.setVoltage(volts);
   }
 
   @Override
@@ -91,15 +95,24 @@ public class RotaterIOReal implements RotaterIO {
 
     double measRad = getMeasuredAngleRad();
 
-    double pidVolts = controller.calculate(measRad, goalRad);
-    pidVolts = MathUtil.clamp(pidVolts, -RotaterConstants.kMaxVolts, RotaterConstants.kMaxVolts);
+    double out = controller.calculate(measRad, goalRad);
 
-    if (measRad >= RotaterConstants.kMaxAngleRad && pidVolts > 0.0) pidVolts = 0.0;
-    if (measRad <= RotaterConstants.kMinAngleRad && pidVolts < 0.0) pidVolts = 0.0;
+    // Clamp output to max duty-cycle range
+    double capped = MathUtil.clamp(out, -1.0, 1.0);
 
-    motor.setVoltage(-pidVolts);
+    // Soft-limit: zero output if at limit and trying to push further
+    if (measRad >= RotaterConstants.kMaxAngleRad && capped > 0.0) capped = 0.0;
+    if (measRad <= RotaterConstants.kMinAngleRad && capped < 0.0) capped = 0.0;
 
-    AutoLogOutputManager.addObject(controller.getSetpoint());
+    motor.set(-capped);
+
+    // Log for tuning
+    var sp = controller.getSetpoint();
+    Logger.recordOutput(logPrefix + "GoalRad", goalRad);
+    Logger.recordOutput(logPrefix + "MeasRad", measRad);
+    Logger.recordOutput(logPrefix + "ProfilePosRad", sp.position);
+    Logger.recordOutput(logPrefix + "ProfileVelRadPerSec", sp.velocity);
+    Logger.recordOutput(logPrefix + "OutputCmd", capped);
   }
 
   @Override

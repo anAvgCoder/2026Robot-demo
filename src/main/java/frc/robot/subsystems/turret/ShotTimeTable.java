@@ -7,7 +7,7 @@ public class ShotTimeTable {
   private static final InterpolatingTreeMap<Double, Double> table =
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), (a, b, t) -> a + (b - a) * t);
 
-  public ShotTimeTable() {
+  static {
     // key = distanceMeters, value = flightTimeSeconds
     table.put(1.0, 0.25);
     table.put(2.0, 0.35);

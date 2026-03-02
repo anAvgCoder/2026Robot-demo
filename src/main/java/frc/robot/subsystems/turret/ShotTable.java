@@ -17,11 +17,11 @@ public class ShotTable {
   private static final InterpolatingTreeMap<Double, ShotSetpoint> table =
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), shotInterpolator);
 
-  public ShotTable() {
+  static {
     // key = distanceMeters
-    table.put(1.0, new ShotSetpoint(0, 0.1));
-    table.put(2.0, new ShotSetpoint(1, 0.2));
-    table.put(3.5, new ShotSetpoint(2, 0.3));
+    table.put(1.0, new ShotSetpoint(0, 0.0));
+    table.put(5.0, new ShotSetpoint(0.7, 0.0));
+    table.put(10.0, new ShotSetpoint(1.4, 0.0));
   }
 
   public static ShotSetpoint get(double distanceMeters) {

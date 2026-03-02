@@ -29,7 +29,7 @@ import org.littletonrobotics.junction.Logger;
 public class SingleMotorPositionPIDTest extends SubsystemBase {
   private final int changeId = System.identityHashCode(this);
 
-  private static final int kMotorCanId = 41;
+  private static final int kMotorCanId = 40;
   private static final boolean kInverted = true;
   private static final int kCurrentLimitAmps = 10;
   private static final ClosedLoopSlot kPidSlot = ClosedLoopSlot.kSlot0;

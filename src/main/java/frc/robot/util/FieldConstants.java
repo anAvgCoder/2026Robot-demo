@@ -26,6 +26,20 @@ public class FieldConstants {
           Units.inchesToMeters(0.0),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 
+  public static final Pose3d BLUE_HUB_POSE3D_DOWNIE =
+      new Pose3d(
+          Units.inchesToMeters(182.11),
+          Units.inchesToMeters(317.69 / 2),
+          Units.inchesToMeters(0.0),
+          new Rotation3d(0, 0, Units.degreesToRadians(0)));
+
+  public static final Pose3d BLUE_HUB_POSE3D_UPPIE =
+      new Pose3d(
+          Units.inchesToMeters(182.11),
+          Units.inchesToMeters(317.69 / 2),
+          Units.inchesToMeters(0.0),
+          new Rotation3d(0, 0, Units.degreesToRadians(0)));
+
   public static final Pose3d RED_LOW_TARGET_POSE3D =
       new Pose3d(
           Units.inchesToMeters(651.22 - 42),

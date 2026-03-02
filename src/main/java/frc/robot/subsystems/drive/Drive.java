@@ -295,12 +295,7 @@ public class Drive extends SubsystemBase {
   /** Returns the current odometry pose. */
   @AutoLogOutput(key = "Odometry/Robot")
   public Pose2d getPose() {
-    // return questpose if working
-    if (questNavIO.isWorking()) {
-      return questNavIO.getLastRobotPose().toPose2d();
-    } else {
-      return poseEstimator.getEstimatedPosition();
-    }
+    return poseEstimator.getEstimatedPosition();
   }
 
   @AutoLogOutput(key = "Odometry/subsystemPosePoseEstimator")
@@ -334,7 +329,11 @@ public class Drive extends SubsystemBase {
 
         // contribute to robot pose
         poseEstimator.addVisionMeasurement(
-            frame.questPose3d().transformBy(ROBOT_TO_QUEST.inverse()).toPose2d(),
+            frame
+                .questPose3d()
+                .transformBy(questNavIO.getDefaultQuestPose())
+                .transformBy(ROBOT_TO_QUEST.inverse())
+                .toPose2d(),
             frame.dataTimestamp(),
             questNavStdDevs);
       }
@@ -358,5 +357,9 @@ public class Drive extends SubsystemBase {
   /** Returns the maximum angular speed in radians per sec. */
   public double getMaxAngularSpeedRadPerSec() {
     return maxSpeedMetersPerSec / driveBaseRadius;
+  }
+
+  public QuestNavSystemIO getQuestNavSystemIO() {
+    return questNavIO;
   }
 }

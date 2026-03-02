@@ -98,6 +98,11 @@ public class QuestNavSystemIOReal implements QuestNavSystemIO {
     return robotPose;
   }
 
+  @Override
+  public Transform3d getDefaultQuestPose() {
+    return defaultQuestPose.minus(new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)));
+  }
+
   private void pushPose(Pose3d pose) {
     last6[last6Idx] = pose;
     last6Idx = (last6Idx + 1) % last6.length;

@@ -16,20 +16,20 @@ public class RotaterConstants {
   public static final int kCurrentLimitAmps = 30;
 
   // Motor rotations per turret rotation
-  public static final double kGearRatio = 100.0;
+  public static final double kGearRatio = 25.0;
 
   // Soft limits (degrees)
-  public static final double kMinAngleDeg = -180.0;
-  public static final double kMaxAngleDeg = 180.0;
+  public static final double kMinAngleDeg = -135.0;
+  public static final double kMaxAngleDeg = 135.0;
 
   // Motion constraints for the trapezoidal pid thing from wpilib
-  public static final double kMaxVelDegPerSec = 240.0;
-  public static final double kMaxAccelDegPerSec2 = 720.0;
+  public static final double kMaxVelDegPerSec = 45.0;
+  public static final double kMaxAccelDegPerSec2 = 70.0;
 
   // Gains TODO: TUNE
-  public static final double kP = 0.0;
+  public static final double kP = 0.5;
   public static final double kI = 0.0;
-  public static final double kD = 0.0;
+  public static final double kD = 0.014;
 
   // Output limiting
   public static final double kMaxVolts = 12.0;
