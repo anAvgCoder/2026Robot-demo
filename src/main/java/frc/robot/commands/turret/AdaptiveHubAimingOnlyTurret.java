@@ -46,9 +46,10 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
   @Override
   public void execute() {
-    Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
-    // rotaterIORight.setTurnPosition(calculateTurretDegreesRobotRelative(turretPoseRight,
-    // RotaterConstants.turretRightAngleLocation));
+    // Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
+    // rotaterIORight.setTurnPosition(
+    //     calculateTurretDegreesRobotRelative(
+    //         turretPoseRight, RotaterConstants.turretRightAngleLocation));
 
     Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
     rotaterIOLeft.setTurnPosition(
@@ -85,10 +86,10 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
     double fieldAngleRad = Math.atan2(dy, dx);
     double robotYawRad = turretPose.getRotation().getZ();
-    double turretMountRad = Math.toRadians(turretMountAngleDeg);
-    double turretRelativeRad = MathUtil.angleModulus(fieldAngleRad - robotYawRad - turretMountRad);
+    // double turretMountRad = Math.toRadians(turretMountAngleDeg);
+    double turretRelativeRad = MathUtil.angleModulus(fieldAngleRad - robotYawRad);
 
-    double aimFieldRad = robotYawRad + turretMountRad + turretRelativeRad;
+    double aimFieldRad = robotYawRad + turretRelativeRad;
     Logger.recordOutput(
         "AimDebug/TurretAimPose",
         new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(aimFieldRad)));

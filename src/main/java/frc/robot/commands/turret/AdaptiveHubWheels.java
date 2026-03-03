@@ -10,8 +10,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.questnav.QuestNavSystemIO;
-import frc.robot.subsystems.turret.ShotTimeTable;
 import frc.robot.subsystems.turret.rotater.Rotater;
 import frc.robot.subsystems.turret.rotater.RotaterConstants;
 import frc.robot.subsystems.turret.rotater.RotaterIO;
@@ -29,7 +27,7 @@ public class AdaptiveHubWheels extends Command {
   private int runCounter;
 
   public AdaptiveHubWheels(
-    Rotater rotaterRight, Rotater rotaterLeft, Drive drive, boolean isBlueCheck) {
+      Rotater rotaterRight, Rotater rotaterLeft, Drive drive, boolean isBlueCheck) {
     rotaterIORight = rotaterRight.getIO();
     rotaterIOLeft = rotaterLeft.getIO();
 
@@ -120,7 +118,7 @@ public class AdaptiveHubWheels extends Command {
   public Pose3d calculateAdjustedTurretPose(boolean isRightTurret) {
     Pose3d robotPose;
 
-      robotPose = new Pose3d(drive.getPose());
+    robotPose = new Pose3d(drive.getPose());
 
     if (isRightTurret) {
       robotPose =
@@ -166,5 +164,4 @@ public class AdaptiveHubWheels extends Command {
 
     return new Transform3d(x, y, 0.0, new Rotation3d(0.0, 0.0, 0.0));
   }
-
 }
