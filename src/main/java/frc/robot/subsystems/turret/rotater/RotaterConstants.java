@@ -4,15 +4,16 @@ import edu.wpi.first.math.util.Units;
 
 public class RotaterConstants {
   // Turret Locations
-  public static final double turretRightAngleLocation = 46; // TODO: measure with calc
-  public static final double turretLeftAngleLocation = -44;
+  public static final double turretRightAngleLocation = 43.7;
+  public static final double turretLeftAngleLocation = -43.7;
 
   // Hardware
   public static final int kCanIdLeft = 43;
   public static final int kCanIdRight = 42;
   public static final int kCanIdLeftCoder = 25;
   public static final int kCanIdRightCoder = 26;
-  public static final boolean kInverted = true;
+  public static final boolean kInvertedRight = true;
+  public static final boolean kInvertedLeft = true;
   public static final int kCurrentLimitAmps = 40;
 
   // Motor rotations per turret rotation
@@ -23,8 +24,8 @@ public class RotaterConstants {
   public static final double kMaxAngleDeg = 135.0;
 
   // Motion constraints for the trapezoidal pid thing from wpilib
-  public static final double kMaxVelDegPerSec = 45.0;
-  public static final double kMaxAccelDegPerSec2 = 70.0;
+  public static final double kMaxVelRadPerSec = 5.0; // 45
+  public static final double kMaxAccelRadPerSec2 = 7.0; // 70
 
   // Gains TODO: TUNE
   public static final double kP = 0.5;
@@ -41,9 +42,6 @@ public class RotaterConstants {
   // --- Conversions (radians) ---
   public static final double kMinAngleRad = Units.degreesToRadians(kMinAngleDeg);
   public static final double kMaxAngleRad = Units.degreesToRadians(kMaxAngleDeg);
-
-  public static final double kMaxVelRadPerSec = Units.degreesToRadians(kMaxVelDegPerSec);
-  public static final double kMaxAccelRadPerSec2 = Units.degreesToRadians(kMaxAccelDegPerSec2);
 
   public static final double kPosToleranceRad = Units.degreesToRadians(kPosToleranceDeg);
   public static final double kVelToleranceRadPerSec =

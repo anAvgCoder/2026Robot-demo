@@ -1,7 +1,9 @@
 package frc.robot.commands.turret;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
@@ -9,52 +11,31 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
-import frc.robot.subsystems.turret.ShotTable;
-import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
 import frc.robot.subsystems.turret.ShotTimeTable;
-import frc.robot.subsystems.turret.hood.Hood;
-import frc.robot.subsystems.turret.hood.HoodIO;
 import frc.robot.subsystems.turret.rotater.Rotater;
 import frc.robot.subsystems.turret.rotater.RotaterConstants;
 import frc.robot.subsystems.turret.rotater.RotaterIO;
-import frc.robot.subsystems.turret.shooter.Shooter;
-import frc.robot.subsystems.turret.shooter.ShooterIO;
 import frc.robot.util.FieldConstants;
+import org.littletonrobotics.junction.Logger;
 
 // new AdaptiveHubAiming(rotater, shooter, hood,
 // questNavSystem).withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
-public class AdaptiveHubAiming extends Command {
+public class AdaptiveHubWheels extends Command {
+  private final Drive drive;
   private final RotaterIO rotaterIORight;
-  private final HoodIO hoodIORight;
-  private final ShooterIO shooterIORight;
   private final RotaterIO rotaterIOLeft;
-  private final HoodIO hoodIOLeft;
-  private final ShooterIO shooterIOLeft;
-  private final QuestNavSystemIO questNavSystemIO;
+
   private boolean isBlue = true;
   private int runCounter;
 
-  public AdaptiveHubAiming(
-      Rotater rotaterRight,
-      Shooter shooterRight,
-      Hood hoodRight,
-      Rotater rotaterLeft,
-      Shooter shooterLeft,
-      Hood hoodLeft,
-      Drive drive,
-      boolean isBlueCheck) {
+  public AdaptiveHubWheels(
+    Rotater rotaterRight, Rotater rotaterLeft, Drive drive, boolean isBlueCheck) {
     rotaterIORight = rotaterRight.getIO();
-    hoodIORight = hoodRight.getIO();
-    shooterIORight = shooterRight.getIO();
-
     rotaterIOLeft = rotaterLeft.getIO();
-    hoodIOLeft = hoodLeft.getIO();
-    shooterIOLeft = shooterLeft.getIO();
 
-    questNavSystemIO = drive.getQuestNavSystemIO();
+    this.drive = drive;
 
-    addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft);
-
+    addRequirements(rotaterRight, rotaterLeft);
     isBlue = isBlueCheck;
   }
 
@@ -66,17 +47,10 @@ public class AdaptiveHubAiming extends Command {
   @Override
   public void execute() {
     Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
-    ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
-    hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
-    shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
-    rotaterIORight.setTurnPosition(
-        calculateTurretDegreesRobotRelative(
-            turretPoseRight, RotaterConstants.turretRightAngleLocation));
+    // rotaterIORight.setTurnPosition(calculateTurretDegreesRobotRelative(turretPoseRight,
+    // RotaterConstants.turretRightAngleLocation));
 
     Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
-    ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
-    hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
-    shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
     rotaterIOLeft.setTurnPosition(
         calculateTurretDegreesRobotRelative(
             turretPoseLeft, RotaterConstants.turretLeftAngleLocation));
@@ -88,10 +62,7 @@ public class AdaptiveHubAiming extends Command {
   }
 
   @Override
-  public void end(boolean interrupted) {
-    shooterIORight.stopApplyingMotor();
-    shooterIOLeft.stopApplyingMotor();
-  }
+  public void end(boolean interrupted) {}
 
   @Override
   public boolean isFinished() {
@@ -113,10 +84,19 @@ public class AdaptiveHubAiming extends Command {
     double dy = hubPose.getY() - turretPose.getY();
 
     double fieldAngleRad = Math.atan2(dy, dx);
-
     double robotYawRad = turretPose.getRotation().getZ();
     double turretMountRad = Math.toRadians(turretMountAngleDeg);
     double turretRelativeRad = MathUtil.angleModulus(fieldAngleRad - robotYawRad - turretMountRad);
+
+    double aimFieldRad = robotYawRad + turretMountRad + turretRelativeRad;
+    Logger.recordOutput(
+        "AimDebug/TurretAimPose",
+        new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(aimFieldRad)));
+
+    // Log where it SHOULD be pointing (straight at hub)
+    Logger.recordOutput(
+        "AimDebug/TurretToHubPose",
+        new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(fieldAngleRad)));
 
     return Math.toDegrees(turretRelativeRad);
   }
@@ -140,17 +120,7 @@ public class AdaptiveHubAiming extends Command {
   public Pose3d calculateAdjustedTurretPose(boolean isRightTurret) {
     Pose3d robotPose;
 
-    if (isRightTurret) {
-      robotPose =
-          questNavSystemIO.predictPoseFromWindow(
-              questNavSystemIO.getLast6RobotPoses(),
-              ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(true)));
-    } else {
-      robotPose =
-          questNavSystemIO.predictPoseFromWindow(
-              questNavSystemIO.getLast6RobotPoses(),
-              ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(false)));
-    }
+      robotPose = new Pose3d(drive.getPose());
 
     if (isRightTurret) {
       robotPose =
@@ -164,7 +134,7 @@ public class AdaptiveHubAiming extends Command {
   }
 
   public double calculateTurretDistance(boolean isRightTurret) {
-    Pose3d robotPose = questNavSystemIO.getLastRobotPose();
+    Pose3d robotPose = new Pose3d(drive.getPose());
 
     if (isRightTurret) {
       robotPose =
@@ -196,4 +166,5 @@ public class AdaptiveHubAiming extends Command {
 
     return new Transform3d(x, y, 0.0, new Rotation3d(0.0, 0.0, 0.0));
   }
+
 }

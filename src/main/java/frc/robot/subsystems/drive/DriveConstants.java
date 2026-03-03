@@ -58,8 +58,8 @@ public class DriveConstants {
 
   // Drive motor configuration
   public static final int driveMotorCurrentLimit = 80;
-  public static final double wheelRadiusMeters = Units.inchesToMeters(2); // 1.5?
-  public static final double driveMotorReduction = 11.3142;
+  public static final double wheelRadiusMeters = Units.inchesToMeters(4);
+  public static final double driveMotorReduction = 7.13;
   public static final DCMotor driveGearbox = DCMotor.getNeoVortex(1);
 
   // Drive encoder configuration
@@ -100,9 +100,9 @@ public class DriveConstants {
   // PathPlanner configuration
   public static final PathConstraints PATH_CONSTRAINTS = new PathConstraints(4.5, 7, 12.566, 24);
 
-  public static final double robotMassKg = 16.31; // need
+  public static final double robotMassKg = 51; // 112 lbs
   public static final double robotMOI = 6.883; // need
-  public static final double wheelCOF = 1.4; // need
+  public static final double wheelCOF = 1.4;
   public static final RobotConfig ppConfig =
       new RobotConfig(
           robotMassKg,

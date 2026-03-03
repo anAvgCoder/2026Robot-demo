@@ -30,6 +30,7 @@ public class RotaterIOReal implements RotaterIO {
   private final ProfiledPIDController controller;
 
   private final String logPrefix;
+  private double lastGoalRad = Double.NaN;
 
   public RotaterIOReal(int canId, int coderId) {
     motor = new SparkMax(canId, MotorType.kBrushless);
@@ -45,8 +46,13 @@ public class RotaterIOReal implements RotaterIO {
 
     // Configure motor
     var cfg = new SparkMaxConfig();
-    cfg.inverted(RotaterConstants.kInverted)
-        .idleMode(IdleMode.kBrake)
+    if (canId == RotaterConstants.kCanIdRight) {
+      cfg.inverted(RotaterConstants.kInvertedRight);
+    } else {
+      cfg.inverted(RotaterConstants.kInvertedLeft);
+    }
+
+    cfg.idleMode(IdleMode.kBrake)
         .smartCurrentLimit(RotaterConstants.kCurrentLimitAmps)
         .voltageCompensation(12.0);
 
@@ -93,7 +99,12 @@ public class RotaterIOReal implements RotaterIO {
     double meas = getMeasuredAngleRad();
     double goal = MathUtil.clamp(goalRad, -135.0 / 180.0 * Math.PI, 135.0 / 180.0 * Math.PI);
 
-    double out = controller.calculate(meas, goal);
+    if (Double.isNaN(lastGoalRad) || Math.abs(goal - lastGoalRad) > Units.degreesToRadians(0.5)) {
+      controller.setGoal(goal);
+      lastGoalRad = goal;
+    }
+
+    double out = controller.calculate(meas);
 
     double capped = MathUtil.clamp(out, -1.0, 1.0);
     motor.set(-capped);

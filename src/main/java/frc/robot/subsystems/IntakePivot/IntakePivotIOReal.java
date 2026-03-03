@@ -110,7 +110,7 @@ public class IntakePivotIOReal implements IntakePivotIO {
     double gravityFFVolts = IntakePivotConstants.kG * Math.cos(ffAngleRad);
 
     // Static friction compensation — only applied when error exceeds tolerance
-    double ksFFVolts = 0.0;
+    double ksFFVolts = 0.0; // It's unnecessary from when I last measured
     if (Math.abs(errorRad) > IntakePivotConstants.kPosToleranceRad) {
       ksFFVolts = Math.copySign(IntakePivotConstants.kS, errorRad);
     }
