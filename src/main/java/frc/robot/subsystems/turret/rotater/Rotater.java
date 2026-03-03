@@ -6,9 +6,11 @@ import org.littletonrobotics.junction.Logger;
 public class Rotater extends SubsystemBase implements RotaterIO {
   private final RotaterIO io;
   private final RotaterIOInputsAutoLogged inputs = new RotaterIOInputsAutoLogged();
+  private final String logKey;
 
-  public Rotater(RotaterIO io) {
+  public Rotater(RotaterIO io, String logKey) {
     this.io = io;
+    this.logKey = logKey;
   }
 
   public RotaterIO getIO() {
@@ -18,6 +20,6 @@ public class Rotater extends SubsystemBase implements RotaterIO {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("IntakeRoller", inputs);
+    Logger.processInputs(logKey, inputs);
   }
 }

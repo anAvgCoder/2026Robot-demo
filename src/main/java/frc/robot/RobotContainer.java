@@ -128,13 +128,15 @@ public class RobotContainer {
         leftShooter = new Shooter(new ShooterIOReal(45));
         leftRotater =
             new Rotater(
-                new RotaterIOReal(RotaterConstants.kCanIdLeft, RotaterConstants.kCanIdLeftCoder));
+                new RotaterIOReal(RotaterConstants.kCanIdLeft, RotaterConstants.kCanIdLeftCoder),
+                "LeftRotater");
         leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId));
 
         rightShooter = new Shooter(new ShooterIOReal(44));
         rightRotater =
             new Rotater(
-                new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder));
+                new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder),
+                "RightRotater");
         rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId));
 
         break;
@@ -156,11 +158,11 @@ public class RobotContainer {
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
 
         leftShooter = new Shooter(new ShooterIOSim());
-        leftRotater = new Rotater(new RotaterIO() {});
+        leftRotater = new Rotater(new RotaterIO() {}, "LeftRotater");
         leftHood = new Hood(new HoodIO() {});
 
         rightShooter = new Shooter(new ShooterIOSim());
-        rightRotater = new Rotater(new RotaterIO() {});
+        rightRotater = new Rotater(new RotaterIO() {}, "RightRotater");
         rightHood = new Hood(new HoodIO() {});
         break;
 
@@ -181,11 +183,11 @@ public class RobotContainer {
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
 
         leftShooter = new Shooter(new ShooterIOSim());
-        leftRotater = new Rotater(new RotaterIO() {});
+        leftRotater = new Rotater(new RotaterIO() {}, "LeftRotater");
         leftHood = new Hood(new HoodIO() {});
 
         rightShooter = new Shooter(new ShooterIOSim());
-        rightRotater = new Rotater(new RotaterIO() {});
+        rightRotater = new Rotater(new RotaterIO() {}, "RightRotater");
         rightHood = new Hood(new HoodIO() {});
         break;
     }

@@ -12,8 +12,8 @@ public class RotaterConstants {
   public static final int kCanIdRight = 42;
   public static final int kCanIdLeftCoder = 25;
   public static final int kCanIdRightCoder = 26;
-  public static final boolean kInverted = false;
-  public static final int kCurrentLimitAmps = 30;
+  public static final boolean kInverted = true;
+  public static final int kCurrentLimitAmps = 40;
 
   // Motor rotations per turret rotation
   public static final double kGearRatio = 25.0;

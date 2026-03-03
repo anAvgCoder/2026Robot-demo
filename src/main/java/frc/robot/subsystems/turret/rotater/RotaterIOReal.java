@@ -88,28 +88,19 @@ public class RotaterIOReal implements RotaterIO {
   }
 
   @Override
-  public void setTurnPosition(double degrees) {
-    double clampDeg =
-        MathUtil.clamp(degrees, RotaterConstants.kMinAngleDeg, RotaterConstants.kMaxAngleDeg);
-    double goalRad = Units.degreesToRadians(clampDeg);
+  public void setTurnPosition(double goalDegrees) {
+    double goalRad = Units.degreesToRadians(goalDegrees);
+    double meas = getMeasuredAngleRad();
+    double goal = MathUtil.clamp(goalRad, -135.0 / 180.0 * Math.PI, 135.0 / 180.0 * Math.PI);
 
-    double measRad = getMeasuredAngleRad();
+    double out = controller.calculate(meas, goal);
 
-    double out = controller.calculate(measRad, goalRad);
-
-    // Clamp output to max duty-cycle range
     double capped = MathUtil.clamp(out, -1.0, 1.0);
-
-    // Soft-limit: zero output if at limit and trying to push further
-    if (measRad >= RotaterConstants.kMaxAngleRad && capped > 0.0) capped = 0.0;
-    if (measRad <= RotaterConstants.kMinAngleRad && capped < 0.0) capped = 0.0;
-
     motor.set(-capped);
 
-    // Log for tuning
     var sp = controller.getSetpoint();
-    Logger.recordOutput(logPrefix + "GoalRad", goalRad);
-    Logger.recordOutput(logPrefix + "MeasRad", measRad);
+    Logger.recordOutput("TurnRioTest/GoalRad", goal);
+    Logger.recordOutput("TurnRioTest/MeasRad", meas);
     Logger.recordOutput(logPrefix + "ProfilePosRad", sp.position);
     Logger.recordOutput(logPrefix + "ProfileVelRadPerSec", sp.velocity);
     Logger.recordOutput(logPrefix + "OutputCmd", capped);

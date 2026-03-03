@@ -75,7 +75,7 @@ public class AdaptiveHubAiming extends Command {
     ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
     hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
     shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
-    rotaterIOLeft.setTurnPosition(calculateTurretDegreesRobotRelative(turretPoseLeft));
+    // rotaterIOLeft.setTurnPosition(calculateTurretDegreesRobotRelative(turretPoseLeft));
 
     runCounter++;
     if (runCounter > 24) {
