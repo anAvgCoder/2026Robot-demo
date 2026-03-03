@@ -11,7 +11,7 @@ public class QuestNavSystem extends SubsystemBase {
     this.io = io;
 
     // set initial reference point
-    io.setQuestPose(defaultQuestPose);
+    io.setQuestPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE);
   }
 
   public QuestNavSystemIO getIO() {

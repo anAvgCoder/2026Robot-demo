@@ -135,10 +135,20 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
     if (isRightTurret) {
       robotPose =
-          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
+          robotPose.transformBy(
+              new Transform3d(
+                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(-6.75),
+                  0.0,
+                  new Rotation3d(0.0, 0.0, 0.0)));
     } else {
       robotPose =
-          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
+          robotPose.transformBy(
+              new Transform3d(
+                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(6.75),
+                  0.0,
+                  new Rotation3d(0.0, 0.0, 0.0)));
     }
 
     return robotPose;
@@ -149,10 +159,20 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
     if (isRightTurret) {
       robotPose =
-          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretRightAngleLocation));
+          robotPose.transformBy(
+              new Transform3d(
+                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(-6.75),
+                  0.0,
+                  new Rotation3d(0.0, 0.0, 0.0)));
     } else {
       robotPose =
-          robotPose.transformBy(pointOnCircleDegCCW(RotaterConstants.turretLeftAngleLocation));
+          robotPose.transformBy(
+              new Transform3d(
+                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(6.75),
+                  0.0,
+                  new Rotation3d(0.0, 0.0, 0.0)));
     }
 
     double dx;
@@ -166,15 +186,5 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
       dy = robotPose.getY() - FieldConstants.RED_HUB_POSE3D.getY();
     }
     return Math.hypot(dx, dy);
-  }
-
-  public Transform3d pointOnCircleDegCCW(double angleDeg) {
-    double r = Units.inchesToMeters(9.37); // radius of the circle 6.5^2 + 6.75^2
-    double theta = Math.toRadians(angleDeg);
-
-    double x = -r * Math.sin(theta);
-    double y = r * Math.cos(theta);
-
-    return new Transform3d(x, y, 0.0, new Rotation3d(0.0, 0.0, 0.0));
   }
 }

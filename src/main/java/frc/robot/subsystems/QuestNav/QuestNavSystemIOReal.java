@@ -5,7 +5,6 @@ import static frc.robot.subsystems.questnav.QuestNavSystemConstants.*;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
 import org.littletonrobotics.junction.Logger;
@@ -32,7 +31,7 @@ public class QuestNavSystemIOReal implements QuestNavSystemIO {
     questWorking = isWorking();
 
     // set initial reference point
-    setQuestPose(defaultQuestPose);
+    this.questNav.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE);
   }
 
   @Override
@@ -55,13 +54,8 @@ public class QuestNavSystemIOReal implements QuestNavSystemIO {
   }
 
   @Override
-  public void resetQuestPose(Pose3d pose3d) {
-    setQuestPose(defaultQuestPose);
-  }
-
-  @Override
   public void resetQuestPoseZero(Pose3d pose3d) {
-    defaultQuestPose = pose3d;
+    this.questNav.setPose(pose3d);
   }
 
   // Test fix: this command may overwrite the value with nothing if called twice
@@ -87,20 +81,15 @@ public class QuestNavSystemIOReal implements QuestNavSystemIO {
     Logger.recordOutput("QuestNavTest/questWorking", questWorking);
     Logger.recordOutput("QuestNavTest/latestPoseFrames", latestPoseFrames);
 
-    Transform3d transform = defaultQuestPose.minus(new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)));
-
     if (questWorking && latestPoseFrames.length != 0) {
       setQuestPose(
-          latestPoseFrames[latestPoseFrames.length - 1].questPose3d().transformBy(transform));
+          latestPoseFrames[latestPoseFrames.length - 1]
+              .questPose3d()
+              .transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse()));
     }
 
     pushPose(robotPose);
     return robotPose;
-  }
-
-  @Override
-  public Transform3d getDefaultQuestPose() {
-    return defaultQuestPose.minus(new Pose3d(0, 0, 0, new Rotation3d(0, 0, 0)));
   }
 
   private void pushPose(Pose3d pose) {

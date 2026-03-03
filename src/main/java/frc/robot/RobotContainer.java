@@ -8,8 +8,6 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
@@ -247,17 +245,18 @@ public class RobotContainer {
     //         true));
 
     // Reset gyro to 0 on press
-    gyroButton.onTrue(
-        Commands.runOnce(
-                () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(), Rotation2d.kZero)))
-            .ignoringDisable(true));
+    // gyroButton.onTrue(
+    //     Commands.runOnce(
+    //             () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(),
+    // Rotation2d.kZero)))
+    //         .ignoringDisable(true));
 
     resetQuestPoseRedButton.onTrue(
-        Commands.runOnce(() -> drive.resetQuestPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
+        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
             .ignoringDisable(true));
 
     resetQuestPoseBlueButton.onTrue(
-        Commands.runOnce(() -> drive.resetQuestPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
+        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
   }
 

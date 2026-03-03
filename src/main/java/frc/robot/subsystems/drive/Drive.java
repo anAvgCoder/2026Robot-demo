@@ -9,7 +9,6 @@ package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
-import static frc.robot.subsystems.questnav.QuestNavSystemConstants.ROBOT_TO_QUEST;
 import static frc.robot.subsystems.questnav.QuestNavSystemConstants.questNavStdDevs;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -42,6 +41,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
 import frc.robot.subsystems.questnav.QuestNavSystem;
+import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.util.LocalADStarAK;
 import gg.questnav.questnav.PoseFrame;
@@ -96,7 +96,9 @@ public class Drive extends SubsystemBase {
     // Configure AutoBuilder for PathPlanner
     AutoBuilder.configure(
         this::getPose,
-        this::setPose,
+        x -> {
+          this.setPose(Pose3d.kZero);
+        },
         this::getChassisSpeeds,
         this::runVelocity,
         new PPHolonomicDriveController(
@@ -309,10 +311,15 @@ public class Drive extends SubsystemBase {
   }
 
   /** Resets the current odometry pose. */
-  public void setPose(Pose2d pose) {
-    gyroIO.setYaw(pose.getRotation());
-    questNavIO.setRobotPose(new Pose3d(pose));
-    poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), pose);
+  public void setPose(Pose3d pose) {
+    Pose2d RobotPose2d = pose.toPose2d();
+    gyroIO.setYaw(RobotPose2d.getRotation());
+
+    questNavIO.resetQuestPoseZero(pose);
+    poseEstimator.resetPosition(
+        rawGyroRotation,
+        getModulePositions(),
+        pose.transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse()).toPose2d());
   }
 
   public void resetQuestPose(Pose3d pose) {
@@ -324,15 +331,12 @@ public class Drive extends SubsystemBase {
 
     if (questNavIO.isWorking()) {
       for (PoseFrame frame : poseFrames) {
-        // update quest pose
-        questNavIO.setQuestPose(frame.questPose3d());
 
         // contribute to robot pose
         poseEstimator.addVisionMeasurement(
             frame
                 .questPose3d()
-                .transformBy(questNavIO.getDefaultQuestPose())
-                .transformBy(ROBOT_TO_QUEST.inverse())
+                .transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse())
                 .toPose2d(),
             frame.dataTimestamp(),
             questNavStdDevs);

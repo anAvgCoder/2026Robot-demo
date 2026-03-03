@@ -1,7 +1,6 @@
 package frc.robot.subsystems.questnav;
 
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import gg.questnav.questnav.PoseFrame;
 
 public interface QuestNavSystemIO {
@@ -16,8 +15,6 @@ public interface QuestNavSystemIO {
 
   public default void setRobotPose(Pose3d pose3d) {}
 
-  public default void resetQuestPose(Pose3d pose3d) {}
-
   public default double getQuestVelocity() {
     return 0;
   }
@@ -25,10 +22,6 @@ public interface QuestNavSystemIO {
   public default void getQuestVector(Pose3d pose3d) {}
 
   public default void resetQuestPoseZero(Pose3d pose3d) {}
-
-  public default Transform3d getDefaultQuestPose() {
-    return new Transform3d();
-  }
 
   public default void updateLatestPoseFrames() {}
 
