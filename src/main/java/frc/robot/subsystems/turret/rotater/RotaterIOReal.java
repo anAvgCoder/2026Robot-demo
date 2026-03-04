@@ -47,7 +47,6 @@ public class RotaterIOReal implements RotaterIO {
     BaseStatusSignal.setUpdateFrequencyForAll(100.0, absPosSig, absVelSig);
     cancoder.optimizeBusUtilization();
 
-    // Configure motor
     var cfg = new SparkMaxConfig();
     if (canId == RotaterConstants.kCanIdRight) {
       cfg.inverted(RotaterConstants.kInvertedRight);
@@ -109,7 +108,6 @@ public class RotaterIOReal implements RotaterIO {
 
     double out = controller.calculate(meas);
 
-    // Dead-band: ignore tiny corrections that just cause wiggle
     if (Math.abs(goal - meas) < Units.degreesToRadians(2.0)) {
       out = 0.0;
     }
