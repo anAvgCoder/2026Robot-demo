@@ -96,9 +96,7 @@ public class Drive extends SubsystemBase {
     // Configure AutoBuilder for PathPlanner
     AutoBuilder.configure(
         this::getPose,
-        x -> {
-          this.setPose(Pose3d.kZero);
-        },
+        this::resetPose2d,
         this::getChassisSpeeds,
         this::runVelocity,
         new PPHolonomicDriveController(
@@ -320,6 +318,10 @@ public class Drive extends SubsystemBase {
         rawGyroRotation,
         getModulePositions(),
         pose.transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse()).toPose2d());
+  }
+
+  public void resetPose2d(Pose2d pose) {
+    poseEstimator.resetPose(pose);
   }
 
   public void resetQuestPose(Pose3d pose) {

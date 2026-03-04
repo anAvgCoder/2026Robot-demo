@@ -57,8 +57,8 @@ public class DriveConstants {
   public static final int backRightCANcoderID = 24;
 
   // Drive motor configuration
-  public static final int driveMotorCurrentLimit = 80;
-  public static final double wheelRadiusMeters = Units.inchesToMeters(4);
+  public static final int driveMotorCurrentLimit = 75;
+  public static final double wheelRadiusMeters = Units.inchesToMeters(2);
   public static final double driveMotorReduction = 7.13;
   public static final DCMotor driveGearbox = DCMotor.getNeoVortex(1);
 

@@ -14,6 +14,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
@@ -28,6 +29,8 @@ public class RotaterIOReal implements RotaterIO {
   private final StatusSignal<AngularVelocity> absVelSig;
 
   private final ProfiledPIDController controller;
+
+  private final LinearFilter measFilter = LinearFilter.movingAverage(5);
 
   private final String logPrefix;
   private double lastGoalRad = Double.NaN;
@@ -80,7 +83,7 @@ public class RotaterIOReal implements RotaterIO {
   private double getMeasuredAngleRad() {
     absPosSig.refresh();
     double rot = absPosSig.getValueAsDouble();
-    return Units.rotationsToRadians(rot);
+    return measFilter.calculate(Units.rotationsToRadians(rot));
   }
 
   private double getMeasuredVelocityRadPerSec() {
@@ -105,6 +108,11 @@ public class RotaterIOReal implements RotaterIO {
     }
 
     double out = controller.calculate(meas);
+
+    // Dead-band: ignore tiny corrections that just cause wiggle
+    if (controller.atGoal()) {
+      out = 0.0;
+    }
 
     double capped = MathUtil.clamp(out, -1.0, 1.0);
     double motorCmd = -capped;

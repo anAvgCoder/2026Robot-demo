@@ -15,8 +15,14 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
-import frc.robot.commands.TestHoodShooterCommand;
-import frc.robot.commands.turret.AdaptiveHubAimingOnlyTurret;
+import frc.robot.commands.belt.BeltIntakeCommand;
+import frc.robot.commands.belt.BeltOutakeCommand;
+import frc.robot.commands.diverter.DiverterCommand;
+import frc.robot.commands.intakepivot.IPIntakeCommand;
+import frc.robot.commands.intakeroller.IRIntakeCommand;
+import frc.robot.commands.intakeroller.IROutakeCommand;
+import frc.robot.commands.shooter.ShooterSetSpeedCommand;
+import frc.robot.commands.turret.AdaptiveHubAiming;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
 import frc.robot.subsystems.belt.BeltIOReal;
@@ -85,6 +91,8 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
+
+  private static final JoystickButton FiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
 
   private static final JoystickButton adaptiveAimingButton = new JoystickButton(rightJoy, 2);
   private static final JoystickButton adaptiveShooterTestAimingButton =
@@ -220,42 +228,49 @@ public class RobotContainer {
                     getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
                     getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0)));
 
-    // intakeButton.whileTrue(
-    //     Commands.parallel(
-    //         new IRIntakeCommand(intakeRoller),
-    //         new ShooterSetSpeedCommand(leftShooter),
-    //         new ShooterSetSpeedCommand(rightShooter),
-    //         Commands.sequence(
-    //             Commands.waitSeconds(0.35),
-    //             Commands.parallel(
-    //                 new BeltIntakeCommand(rightBelt),
-    //                 new BeltIntakeCommand(leftBelt),
-    //                 new DiverterCommand(diverter),
-    //                 new IPIntakeCommand(intakePivot)))));
+    FiftyPercentDriveButton.toggleOnTrue(
+        DriveCommands.joystickDrive(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
+            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
 
-    // outakeButton.whileTrue(
-    //     Commands.parallel(
-    //         new IROutakeCommand(intakeRoller),
-    //         new BeltOutakeCommand(rightBelt),
-    //         new BeltOutakeCommand(leftBelt),
-    //         new DiverterCommand(diverter)));
+    intakeButton.whileTrue(
+        Commands.parallel(
+            new IRIntakeCommand(intakeRoller),
+            new ShooterSetSpeedCommand(leftShooter),
+            // new ShooterSetSpeedCommand(rightShooter),
+            Commands.sequence(
+                Commands.waitSeconds(0.35),
+                Commands.parallel(
+                    new BeltIntakeCommand(rightBelt),
+                    new BeltOutakeCommand(leftBelt),
+                    // new BeltIntakeCommand(leftBelt),
+                    new DiverterCommand(diverter),
+                    new IPIntakeCommand(intakePivot)))));
 
-    adaptiveAimingButton.toggleOnTrue(
-        new AdaptiveHubAimingOnlyTurret(rightRotater, leftRotater, drive, true));
+    outakeButton.whileTrue(
+        Commands.parallel(
+            new IROutakeCommand(intakeRoller),
+            new BeltOutakeCommand(rightBelt),
+            new BeltOutakeCommand(leftBelt),
+            new DiverterCommand(diverter)));
 
-    adaptiveShooterTestAimingButton.toggleOnTrue(
-        new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
+    // adaptiveAimingButton.toggleOnTrue(
+    //     new AdaptiveHubAimingOnlyTurret(rightRotater, leftRotater, drive, true));
+    // adaptiveShooterTestAimingButton.toggleOnTrue(
+    //     new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
 
-    // adaptiveAimingButton.whileTrue(
-    //     new AdaptiveHubAiming(
-    //         rightRotater,
-    //         rightShooter,
-    //         rightHood,
-    //         leftRotater,
-    //         leftShooter,
-    //         leftHood,
-    //         drive,
-    //         true));
+    adaptiveAimingButton.whileTrue(
+        new AdaptiveHubAiming(
+            rightRotater,
+            rightShooter,
+            rightHood,
+            leftRotater,
+            leftShooter,
+            leftHood,
+            drive,
+            true));
 
     // Reset gyro to 0 on press
     // gyroButton.onTrue(

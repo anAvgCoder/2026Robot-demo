@@ -30,7 +30,7 @@ public class RotaterConstants {
   // Gains TODO: TUNE
   public static final double kP = 0.5;
   public static final double kI = 0.0;
-  public static final double kD = 0.014;
+  public static final double kD = 0.0;
 
   // Output limiting
   public static final double kMaxVolts = 8.0;

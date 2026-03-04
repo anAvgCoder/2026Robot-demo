@@ -44,7 +44,7 @@ public class AdaptiveHubWheels extends Command {
 
   @Override
   public void execute() {
-    Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
+    // Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
     // rotaterIORight.setTurnPosition(calculateTurretDegreesRobotRelative(turretPoseRight,
     // RotaterConstants.turretRightAngleLocation));
 

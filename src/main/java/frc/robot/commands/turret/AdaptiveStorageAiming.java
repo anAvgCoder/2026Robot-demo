@@ -12,53 +12,31 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
-import frc.robot.subsystems.turret.ShotTable;
-import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
 import frc.robot.subsystems.turret.ShotTimeTable;
-import frc.robot.subsystems.turret.hood.Hood;
-import frc.robot.subsystems.turret.hood.HoodIO;
 import frc.robot.subsystems.turret.rotater.Rotater;
 import frc.robot.subsystems.turret.rotater.RotaterConstants;
 import frc.robot.subsystems.turret.rotater.RotaterIO;
-import frc.robot.subsystems.turret.shooter.Shooter;
-import frc.robot.subsystems.turret.shooter.ShooterIO;
 import frc.robot.util.FieldConstants;
 import org.littletonrobotics.junction.Logger;
 
 // new AdaptiveHubAiming(rotater, shooter, hood,
 // questNavSystem).withInterruptBehavior(Command.InterruptionBehavior.kCancelIncoming);
-public class AdaptiveHubAiming extends Command {
+public class AdaptiveStorageAiming extends Command {
   private final RotaterIO rotaterIORight;
-  private final HoodIO hoodIORight;
-  private final ShooterIO shooterIORight;
   private final RotaterIO rotaterIOLeft;
-  private final HoodIO hoodIOLeft;
-  private final ShooterIO shooterIOLeft;
+
   private final QuestNavSystemIO questNavSystemIO;
   private boolean isBlue = true;
   private int runCounter;
 
-  public AdaptiveHubAiming(
-      Rotater rotaterRight,
-      Shooter shooterRight,
-      Hood hoodRight,
-      Rotater rotaterLeft,
-      Shooter shooterLeft,
-      Hood hoodLeft,
-      Drive drive,
-      boolean isBlueCheck) {
+  public AdaptiveStorageAiming(
+      Rotater rotaterRight, Rotater rotaterLeft, Drive drive, boolean isBlueCheck) {
     rotaterIORight = rotaterRight.getIO();
-    hoodIORight = hoodRight.getIO();
-    shooterIORight = shooterRight.getIO();
-
     rotaterIOLeft = rotaterLeft.getIO();
-    hoodIOLeft = hoodLeft.getIO();
-    shooterIOLeft = shooterLeft.getIO();
 
     questNavSystemIO = drive.getQuestNavSystemIO();
 
-    addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft);
-
+    addRequirements(rotaterRight, rotaterLeft);
     isBlue = isBlueCheck;
   }
 
@@ -73,10 +51,6 @@ public class AdaptiveHubAiming extends Command {
     rotaterIORight.setTurnPosition(
         calculateTurretDegreesRobotRelative(
             turretPoseRight, RotaterConstants.turretRightAngleLocation));
-
-    ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
-    hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
-    shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
 
     // Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
     // rotaterIOLeft.setTurnPosition(
@@ -106,10 +80,11 @@ public class AdaptiveHubAiming extends Command {
   }
 
   public double calculateTurretDegreesRobotRelative(Pose3d turretPose, double turretMountAngleDeg) {
-    Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
+    Pose3d storagePose =
+        isBlue ? FieldConstants.BLUE_LOW_TARGET_POSE3D : FieldConstants.RED_HIGH_TARGET_POSE3D;
 
-    double dx = hubPose.getX() - turretPose.getX();
-    double dy = hubPose.getY() - turretPose.getY();
+    double dx = storagePose.getX() - turretPose.getX();
+    double dy = storagePose.getY() - turretPose.getY();
 
     double fieldAngleRad = Math.atan2(dy, dx);
     double robotYawRad = turretPose.getRotation().getZ();
@@ -121,7 +96,7 @@ public class AdaptiveHubAiming extends Command {
         new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(aimFieldRad)));
 
     Logger.recordOutput(
-        "AimDebug/TurretToHubPose",
+        "AimDebug/TurretToStoragePose",
         new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(fieldAngleRad)));
 
     return Math.toDegrees(turretRelativeRad);
