@@ -93,6 +93,7 @@ public class RobotContainer {
   private static final JoystickButton gyroButton = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 2);
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 5);
+  private static final JoystickButton syncYawButton = new JoystickButton(buttonPanel, 6);
 
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
@@ -208,6 +209,16 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
+
+    syncYawButton.toggleOnTrue(
+        DriveCommands.joystickDriveAtAngle(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+            () ->
+                Math.atan2(
+                    getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+                    getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0)));
 
     // intakeButton.whileTrue(
     //     Commands.parallel(
