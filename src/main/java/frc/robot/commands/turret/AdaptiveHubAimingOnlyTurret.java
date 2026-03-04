@@ -10,6 +10,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.turret.ShotTimeTable;
 import frc.robot.subsystems.turret.rotater.Rotater;
@@ -46,15 +47,15 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
   @Override
   public void execute() {
-    // Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
-    // rotaterIORight.setTurnPosition(
-    //     calculateTurretDegreesRobotRelative(
-    //         turretPoseRight, RotaterConstants.turretRightAngleLocation));
-
-    Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
-    rotaterIOLeft.setTurnPosition(
+    Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
+    rotaterIORight.setTurnPosition(
         calculateTurretDegreesRobotRelative(
-            turretPoseLeft, RotaterConstants.turretLeftAngleLocation));
+            turretPoseRight, RotaterConstants.turretRightAngleLocation));
+
+    // Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
+    // rotaterIOLeft.setTurnPosition(
+    //     calculateTurretDegreesRobotRelative(
+    //         turretPoseLeft, RotaterConstants.turretLeftAngleLocation));
 
     runCounter++;
     if (runCounter > 24) {
@@ -86,7 +87,6 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
     double fieldAngleRad = Math.atan2(dy, dx);
     double robotYawRad = turretPose.getRotation().getZ();
-    // double turretMountRad = Math.toRadians(turretMountAngleDeg);
     double turretRelativeRad = MathUtil.angleModulus(fieldAngleRad - robotYawRad);
 
     double aimFieldRad = robotYawRad + turretRelativeRad;
@@ -94,7 +94,6 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
         "AimDebug/TurretAimPose",
         new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(aimFieldRad)));
 
-    // Log where it SHOULD be pointing (straight at hub)
     Logger.recordOutput(
         "AimDebug/TurretToHubPose",
         new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(fieldAngleRad)));
@@ -137,7 +136,8 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
       robotPose =
           robotPose.transformBy(
               new Transform3d(
-                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(
+                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
                   Units.inchesToMeters(-6.75),
                   0.0,
                   new Rotation3d(0.0, 0.0, 0.0)));
@@ -145,7 +145,8 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
       robotPose =
           robotPose.transformBy(
               new Transform3d(
-                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(
+                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
                   Units.inchesToMeters(6.75),
                   0.0,
                   new Rotation3d(0.0, 0.0, 0.0)));
@@ -155,13 +156,22 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
   }
 
   public double calculateTurretDistance(boolean isRightTurret) {
-    Pose3d robotPose = questNavSystemIO.getLastRobotPose();
+    // Use getLast6RobotPoses to get the most recent pose WITHOUT the
+    // pushPose() side-effect that getLastRobotPose() has.
+    // Calling getLastRobotPose() here would add a duplicate entry to the
+    // ring buffer, corrupting the velocity estimate in predictPoseFromWindow
+    // and causing the aim to drift a few degrees while rotating.
+    // - Daniel [Ask me if question, yes this command should be looking at the frame timestamp not
+    // just a standard 100ms. Add if after Canada]
+    Pose3d[] poses = questNavSystemIO.getLast6RobotPoses();
+    Pose3d robotPose = (poses.length > 0) ? poses[poses.length - 1] : new Pose3d();
 
     if (isRightTurret) {
       robotPose =
           robotPose.transformBy(
               new Transform3d(
-                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(
+                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
                   Units.inchesToMeters(-6.75),
                   0.0,
                   new Rotation3d(0.0, 0.0, 0.0)));
@@ -169,7 +179,8 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
       robotPose =
           robotPose.transformBy(
               new Transform3d(
-                  Units.inchesToMeters(6.5),
+                  Units.inchesToMeters(
+                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
                   Units.inchesToMeters(6.75),
                   0.0,
                   new Rotation3d(0.0, 0.0, 0.0)));
@@ -185,6 +196,8 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
       dx = robotPose.getX() - FieldConstants.RED_HUB_POSE3D.getX();
       dy = robotPose.getY() - FieldConstants.RED_HUB_POSE3D.getY();
     }
+    Logger.recordOutput("AimDebug/TurretToHubDistance", Math.hypot(dx, dy));
+
     return Math.hypot(dx, dy);
   }
 }

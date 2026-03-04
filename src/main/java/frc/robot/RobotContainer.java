@@ -124,14 +124,14 @@ public class RobotContainer {
             new Rotater(
                 new RotaterIOReal(RotaterConstants.kCanIdLeft, RotaterConstants.kCanIdLeftCoder),
                 "LeftRotater");
-        leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId));
+        leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId), "LeftHood");
 
         rightShooter = new Shooter(new ShooterIOReal(44));
         rightRotater =
             new Rotater(
                 new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder),
                 "RightRotater");
-        rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId));
+        rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId), "RightHood");
 
         break;
 
@@ -153,11 +153,11 @@ public class RobotContainer {
 
         leftShooter = new Shooter(new ShooterIOSim());
         leftRotater = new Rotater(new RotaterIO() {}, "LeftRotater");
-        leftHood = new Hood(new HoodIO() {});
+        leftHood = new Hood(new HoodIO() {}, "LeftHood");
 
         rightShooter = new Shooter(new ShooterIOSim());
         rightRotater = new Rotater(new RotaterIO() {}, "RightRotater");
-        rightHood = new Hood(new HoodIO() {});
+        rightHood = new Hood(new HoodIO() {}, "RightHood");
         break;
 
       default:
@@ -178,11 +178,11 @@ public class RobotContainer {
 
         leftShooter = new Shooter(new ShooterIOSim());
         leftRotater = new Rotater(new RotaterIO() {}, "LeftRotater");
-        leftHood = new Hood(new HoodIO() {});
+        leftHood = new Hood(new HoodIO() {}, "LeftHood");
 
         rightShooter = new Shooter(new ShooterIOSim());
         rightRotater = new Rotater(new RotaterIO() {}, "RightRotater");
-        rightHood = new Hood(new HoodIO() {});
+        rightHood = new Hood(new HoodIO() {}, "RightHood");
         break;
     }
 
@@ -201,6 +201,7 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
+
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
@@ -230,8 +231,9 @@ public class RobotContainer {
 
     adaptiveAimingButton.toggleOnTrue(
         new AdaptiveHubAimingOnlyTurret(rightRotater, leftRotater, drive, true));
+
     adaptiveShooterTestAimingButton.toggleOnTrue(
-        new TestHoodShooterCommand(rightShooter, rightHood));
+        new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
 
     // adaptiveAimingButton.whileTrue(
     //     new AdaptiveHubAiming(

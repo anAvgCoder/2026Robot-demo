@@ -6,9 +6,11 @@ import org.littletonrobotics.junction.Logger;
 public class Hood extends SubsystemBase implements HoodIO {
   private final HoodIO io;
   private final HoodIOInputsAutoLogged inputs = new HoodIOInputsAutoLogged();
+  private final String logKey;
 
-  public Hood(HoodIO io) {
+  public Hood(HoodIO io, String logKey) {
     this.io = io;
+    this.logKey = logKey;
   }
 
   public HoodIO getIO() {
@@ -18,7 +20,7 @@ public class Hood extends SubsystemBase implements HoodIO {
   @Override
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Hood", inputs);
+    Logger.processInputs(logKey, inputs);
   }
 
   // Optional convenience wrapper; control still happens in IOReal

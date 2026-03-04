@@ -11,7 +11,7 @@ public class HoodConstants {
 
   // Hood range (radians)
   public static final double kMinAngleRad = 0;
-  public static final double kMaxAngleRad = -1.47;
+  public static final double kMaxAngleRad = 0.439823;
 
   // PID gains (TODO tune)
   public static final double kP = 0.65;
@@ -30,7 +30,7 @@ public class HoodConstants {
   public static final double kMaxVelRadPerSec = 45;
   public static final double kMaxAccelRadPerSec2 = 70;
 
-  public static final double kPosToleranceRad = 0.03;
+  public static final double kPosToleranceRad = 0.01;
   public static final double kVelToleranceRadPerSec =
       Units.degreesToRadians(kVelToleranceDegPerSec);
 

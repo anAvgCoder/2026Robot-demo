@@ -76,23 +76,22 @@ public class HoodIOReal implements HoodIO {
 
   @Override
   public void setHoodPosition(double position) {
-    double measRad = enc.getPosition();
-    double goalRad =
-        MathUtil.clamp(position, HoodConstants.kMaxAngleRad, HoodConstants.kMinAngleRad);
+    double meas = enc.getPosition();
+    double goal = MathUtil.clamp(position, HoodConstants.kMinAngleRad, HoodConstants.kMaxAngleRad);
 
-    double out = controller.calculate(measRad, goalRad);
+    double out = controller.calculate(meas, goal);
     double capped = MathUtil.clamp(out, -HoodConstants.kMaxOutput, HoodConstants.kMaxOutput);
 
-    // Soft-limit: zero output if at limit and trying to push further
-    if (measRad >= HoodConstants.kMinAngleRad && capped > 0.0) capped = 0.0;
-    if (measRad <= HoodConstants.kMaxAngleRad && capped < 0.0) capped = 0.0;
+    // Soft-limit: zero output if at limit and trying to push further past it
+    if (meas >= HoodConstants.kMaxAngleRad && capped > 0.0) capped = 0.0;
+    if (meas <= HoodConstants.kMinAngleRad && capped < 0.0) capped = 0.0;
 
     motor.set(capped);
 
     // Log for tuning
     var sp = controller.getSetpoint();
-    Logger.recordOutput(logPrefix + "GoalRad", goalRad);
-    Logger.recordOutput(logPrefix + "MeasRad", measRad);
+    Logger.recordOutput(logPrefix + "GoalRad", goal);
+    Logger.recordOutput(logPrefix + "MeasRad", meas);
     Logger.recordOutput(logPrefix + "ProfilePosRad", sp.position);
     Logger.recordOutput(logPrefix + "ProfileVelRadPerSec", sp.velocity);
     Logger.recordOutput(logPrefix + "OutputCmd", capped);
