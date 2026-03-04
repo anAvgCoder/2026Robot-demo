@@ -24,8 +24,8 @@ public class RotaterConstants {
   public static final double kMaxAngleDeg = 135.0;
 
   // Motion constraints for the trapezoidal pid thing from wpilib
-  public static final double kMaxVelRadPerSec = 45; // 45
-  public static final double kMaxAccelRadPerSec2 = 70; // 70
+  public static final double kMaxVelRadPerSec = 20; // 45
+  public static final double kMaxAccelRadPerSec2 = 45; // 70
 
   // Gains TODO: TUNE
   public static final double kP = 0.5;

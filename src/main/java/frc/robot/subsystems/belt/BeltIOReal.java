@@ -43,12 +43,12 @@ public class BeltIOReal implements BeltIO {
 
   @Override
   public void intake() {
-    motor.set(0.5);
+    motor.set(0.3);
   }
 
   @Override
   public void outake() {
-    motor.set(-0.5);
+    motor.set(-0.3);
   }
 
   @Override

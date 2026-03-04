@@ -110,7 +110,7 @@ public class RotaterIOReal implements RotaterIO {
     double out = controller.calculate(meas);
 
     // Dead-band: ignore tiny corrections that just cause wiggle
-    if (controller.atGoal()) {
+    if (Math.abs(goal - meas) < Units.degreesToRadians(2.0)) {
       out = 0.0;
     }
 

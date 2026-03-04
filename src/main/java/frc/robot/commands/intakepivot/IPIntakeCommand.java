@@ -7,32 +7,21 @@ import frc.robot.subsystems.intakepivot.IntakePivotIO;
 
 public class IPIntakeCommand extends Command {
   private final IntakePivotIO intakePivotIO;
-  private final IntakePivot intakePivot;
-  private boolean reachedPrimary;
   private int runCounter;
 
   public IPIntakeCommand(IntakePivot intakePivot) {
-    this.intakePivot = intakePivot;
     intakePivotIO = intakePivot.getIO();
     addRequirements(intakePivot);
   }
 
   @Override
   public void initialize() {
-    reachedPrimary = false;
     runCounter = 0;
   }
 
   @Override
   public void execute() {
-    if (!reachedPrimary) {
-      intakePivotIO.setIntakePrimaryPosition();
-      if (intakePivot.isAtGoal()) {
-        reachedPrimary = true;
-      }
-    } else {
-      intakePivotIO.setIntakeSecondaryPosition();
-    }
+    intakePivotIO.setIntakeSecondaryPosition();
 
     runCounter++;
     if (runCounter > 24) {

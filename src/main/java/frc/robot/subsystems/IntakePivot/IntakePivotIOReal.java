@@ -137,8 +137,8 @@ public class IntakePivotIOReal implements IntakePivotIO {
 
   @Override
   public void zeroToIntake() {
-    enc.setPosition(IntakePivotConstants.kIntakePrimaryPosition);
-    goalRad = IntakePivotConstants.kIntakePrimaryPosition;
+    enc.setPosition(IntakePivotConstants.kIntakeSecondaryPosition);
+    goalRad = IntakePivotConstants.kIntakeSecondaryPosition;
     closedLoop.setIAccum(0.0);
   }
 

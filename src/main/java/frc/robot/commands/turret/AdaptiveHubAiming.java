@@ -69,19 +69,30 @@ public class AdaptiveHubAiming extends Command {
 
   @Override
   public void execute() {
-    Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
-    rotaterIORight.setTurnPosition(
-        calculateTurretDegreesRobotRelative(
-            turretPoseRight, RotaterConstants.turretRightAngleLocation));
+    Pose3d[] poses = questNavSystemIO.getLast6RobotPoses();
+    if (poses.length < 2) {
+      runCounter++;
+      if (runCounter > 24) runCounter = 0;
+      return;
+    }
 
-    ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
-    hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
-    shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
-
-    // Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
-    // rotaterIOLeft.setTurnPosition(
+    // Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
+    // rotaterIORight.setTurnPosition(
     //     calculateTurretDegreesRobotRelative(
-    //         turretPoseLeft, RotaterConstants.turretLeftAngleLocation));
+    //         turretPoseRight, RotaterConstants.turretRightAngleLocation));
+
+    // ShotSetpoint shotSetpointRight =
+    // ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
+    // hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
+    // shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
+
+    Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
+    rotaterIOLeft.setTurnPosition(
+        calculateTurretDegreesRobotRelative(
+            turretPoseLeft, RotaterConstants.turretLeftAngleLocation));
+    ShotSetpoint shotSetpointLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
+    hoodIOLeft.setHoodPosition(shotSetpointLeft.hoodPos());
+    shooterIOLeft.setSpeed(shotSetpointLeft.shooterSpeed());
 
     runCounter++;
     if (runCounter > 24) {
@@ -90,7 +101,14 @@ public class AdaptiveHubAiming extends Command {
   }
 
   @Override
-  public void end(boolean interrupted) {}
+  public void end(boolean interrupted) {
+    rotaterIORight.setVoltage(0.0);
+    rotaterIOLeft.setVoltage(0.0);
+    shooterIORight.setOpenSpeed(0.0);
+    shooterIOLeft.setOpenSpeed(0.0);
+    hoodIORight.setVoltage(0.0);
+    hoodIOLeft.setVoltage(0.0);
+  }
 
   @Override
   public boolean isFinished() {

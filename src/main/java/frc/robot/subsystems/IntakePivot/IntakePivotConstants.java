@@ -12,11 +12,11 @@ public class IntakePivotConstants {
   public static final double kGearRatio = 30.0;
 
   // Positions
-  public static final double kStoragePosition = -0.987357;
-  public static final double kIntakePrimaryPosition = 0;
-  public static final double kIntakeSecondaryPosition = 0.2;
+  public static final double kStoragePosition = -1.316477;
+  public static final double kIntakePrimaryPosition = -0.1;
+  public static final double kIntakeSecondaryPosition = 0.0;
 
-  public static final double kMagSensorPositionRad = -0.987357;
+  public static final double kMagSensorPositionRad = -1.316477;
 
   // Trapezoid constraints
   public static final double kMaxVelDegPerSec = 180.0;
@@ -37,7 +37,7 @@ public class IntakePivotConstants {
   public static final double kMaxVolts = 6.0;
 
   // Slow creep voltage toward storage when sensor hasn't been hit yet (brownout recovery)
-  public static final double kStorageCreepVolts = -3.5; // TODO: tune (negative = toward storage)
+  public static final double kStorageCreepVolts = -4.0; // TODO: tune (negative = toward storage)
 
   // Tolerances
   public static final double kPosToleranceDeg = 1.0;

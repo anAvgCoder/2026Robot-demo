@@ -47,6 +47,13 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
   @Override
   public void execute() {
+    Pose3d[] poses = questNavSystemIO.getLast6RobotPoses();
+    if (poses.length < 2) {
+      runCounter++;
+      if (runCounter > 24) runCounter = 0;
+      return;
+    }
+
     Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
     rotaterIORight.setTurnPosition(
         calculateTurretDegreesRobotRelative(

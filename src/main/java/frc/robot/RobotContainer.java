@@ -21,7 +21,6 @@ import frc.robot.commands.diverter.DiverterCommand;
 import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
-import frc.robot.commands.shooter.ShooterSetSpeedCommand;
 import frc.robot.commands.turret.AdaptiveHubAiming;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
@@ -238,14 +237,11 @@ public class RobotContainer {
     intakeButton.whileTrue(
         Commands.parallel(
             new IRIntakeCommand(intakeRoller),
-            new ShooterSetSpeedCommand(leftShooter),
-            // new ShooterSetSpeedCommand(rightShooter),
             Commands.sequence(
                 Commands.waitSeconds(0.35),
                 Commands.parallel(
                     new BeltIntakeCommand(rightBelt),
-                    new BeltOutakeCommand(leftBelt),
-                    // new BeltIntakeCommand(leftBelt),
+                    new BeltIntakeCommand(leftBelt),
                     new DiverterCommand(diverter),
                     new IPIntakeCommand(intakePivot)))));
 
@@ -261,7 +257,7 @@ public class RobotContainer {
     // adaptiveShooterTestAimingButton.toggleOnTrue(
     //     new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
 
-    adaptiveAimingButton.whileTrue(
+    adaptiveAimingButton.toggleOnTrue(
         new AdaptiveHubAiming(
             rightRotater,
             rightShooter,

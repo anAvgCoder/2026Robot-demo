@@ -22,6 +22,7 @@ public class HoodIOReal implements HoodIO {
   private final ProfiledPIDController controller;
 
   private final String logPrefix;
+  private double lastGoalRad = Double.NaN;
 
   public HoodIOReal(int canId) {
     motor = new SparkMax(canId, MotorType.kBrushless);
@@ -72,6 +73,8 @@ public class HoodIOReal implements HoodIO {
   @Override
   public void setVoltage(double volts) {
     motor.setVoltage(volts);
+    // Invalidate so the controller resets on the next setHoodPosition call
+    lastGoalRad = Double.NaN;
   }
 
   @Override
@@ -79,16 +82,29 @@ public class HoodIOReal implements HoodIO {
     double meas = enc.getPosition();
     double goal = MathUtil.clamp(position, HoodConstants.kMinAngleRad, HoodConstants.kMaxAngleRad);
 
-    double out = controller.calculate(meas, goal);
+    if (Double.isNaN(lastGoalRad)
+        || Math.abs(goal - lastGoalRad) > HoodConstants.kPosToleranceRad) {
+      if (Double.isNaN(lastGoalRad)) {
+        // First call since boot / idle — reset profile to current state
+        controller.reset(meas, 0.0);
+      }
+      controller.setGoal(goal);
+      lastGoalRad = goal;
+    }
+
+    double out = controller.calculate(meas);
+
+    if (controller.atGoal()) {
+      out = 0.0;
+    }
+
     double capped = MathUtil.clamp(out, -HoodConstants.kMaxOutput, HoodConstants.kMaxOutput);
 
-    // Soft-limit: zero output if at limit and trying to push further past it
-    if (meas >= HoodConstants.kMaxAngleRad && capped > 0.0) capped = 0.0;
-    if (meas <= HoodConstants.kMinAngleRad && capped < 0.0) capped = 0.0;
+    if (meas >= HoodConstants.kMaxAngleRad && capped < 0.0) capped = 0.0;
+    if (meas <= HoodConstants.kMinAngleRad && capped > 0.0) capped = 0.0;
 
     motor.set(capped);
 
-    // Log for tuning
     var sp = controller.getSetpoint();
     Logger.recordOutput(logPrefix + "GoalRad", goal);
     Logger.recordOutput(logPrefix + "MeasRad", meas);
