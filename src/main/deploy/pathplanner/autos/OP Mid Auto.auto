@@ -11,33 +11,28 @@
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "StartPick"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "AdaptiveStorageAiming"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.3
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Bottom Up"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "StopPick"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Bottom Up"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "StartPick"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AdaptiveStorageAiming"
+                }
+              }
+            ]
           }
         }
       ]

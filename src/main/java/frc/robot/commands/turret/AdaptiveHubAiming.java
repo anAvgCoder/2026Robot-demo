@@ -78,8 +78,7 @@ public class AdaptiveHubAiming extends Command {
     rotaterIORight.setTurnPosition(
         calculateTurretDegreesRobotRelative(
             turretPoseRight, RotaterConstants.turretRightAngleLocation));
-    ShotSetpoint shotSetpointRight =
-    ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
+    ShotSetpoint shotSetpointRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
     hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
     shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
 
@@ -180,19 +179,36 @@ public class AdaptiveHubAiming extends Command {
     ChassisSpeeds fieldSpeeds = drive.getFieldRelativeSpeeds();
 
     Pose3d predictedRobotPose = baseRobotPose;
-    Pose3d predictedTurretPose = new Pose3d(predictedRobotPose.getTranslation().plus(turretOffset(isRightTurret).getTranslation().rotateBy(predictedRobotPose.getRotation())), predictedRobotPose.getRotation());
+    Pose3d predictedTurretPose =
+        new Pose3d(
+            predictedRobotPose
+                .getTranslation()
+                .plus(
+                    turretOffset(isRightTurret)
+                        .getTranslation()
+                        .rotateBy(predictedRobotPose.getRotation())),
+            predictedRobotPose.getRotation());
 
     double dist = calculateAdjustedHubDistance(predictedTurretPose);
     double tof = ShotTimeTable.getFlightTimeSeconds(dist);
 
     for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
-      predictedRobotPose = predictPoseFromFieldSpeeds(new Pose3d(drive.getPose()), fieldSpeeds, tof);
-      predictedTurretPose = new Pose3d(predictedRobotPose.getTranslation().plus(turretOffset(isRightTurret).getTranslation().rotateBy(predictedRobotPose.getRotation())), predictedRobotPose.getRotation());
+      predictedRobotPose =
+          predictPoseFromFieldSpeeds(new Pose3d(drive.getPose()), fieldSpeeds, tof);
+      predictedTurretPose =
+          new Pose3d(
+              predictedRobotPose
+                  .getTranslation()
+                  .plus(
+                      turretOffset(isRightTurret)
+                          .getTranslation()
+                          .rotateBy(predictedRobotPose.getRotation())),
+              predictedRobotPose.getRotation());
 
       dist = calculateAdjustedHubDistance(predictedTurretPose);
       tof = ShotTimeTable.getFlightTimeSeconds(dist);
     }
 
-    return predictedTurretPose; 
+    return predictedTurretPose;
   }
 }

@@ -11,9 +11,9 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
@@ -21,7 +21,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
 import frc.robot.commands.belt.BeltOutakeCommand;
 import frc.robot.commands.diverter.DiverterCommand;
@@ -250,31 +249,31 @@ public class RobotContainer {
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
 
-    drive.setDefaultCommand(
-        DriveCommands.joystickDrive(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
+    // drive.setDefaultCommand(
+    //     DriveCommands.joystickDrive(
+    //         drive,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+    //         () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
-    syncYawButton.onTrue(
-        DriveCommands.joystickDriveAtAngle(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-            () ->
-                MathUtil.angleModulus(
-                    Math.PI
-                        + Math.atan2(
-                            getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-                            getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0))));
+    // syncYawButton.onTrue(
+    //     DriveCommands.joystickDriveAtAngle(
+    //         drive,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+    //         () ->
+    //             MathUtil.angleModulus(
+    //                 Math.PI
+    //                     + Math.atan2(
+    //                         getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+    //                         getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0))));
 
-    FiftyPercentDriveButton.toggleOnTrue(
-        DriveCommands.joystickDrive(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
-            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
+    // FiftyPercentDriveButton.toggleOnTrue(
+    //     DriveCommands.joystickDrive(
+    //         drive,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
+    //         () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
 
     intakeButton.whileTrue(
         Commands.parallel(
@@ -312,7 +311,7 @@ public class RobotContainer {
             leftShooter,
             leftHood,
             drive,
-            true));
+            (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
 
     adaptiveStorageButton.toggleOnTrue(
         new AdaptiveStorageAiming(
@@ -323,7 +322,7 @@ public class RobotContainer {
             leftShooter,
             leftHood,
             drive,
-            true));
+            (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
@@ -430,7 +429,7 @@ public class RobotContainer {
                 leftShooter,
                 leftHood,
                 drive,
-                true)));
+                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red))));
 
     NamedCommands.registerCommand(
         "AdaptiveStorageAiming",
@@ -443,7 +442,7 @@ public class RobotContainer {
                 leftShooter,
                 leftHood,
                 drive,
-                true)));
+                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red))));
   }
 
   /**
