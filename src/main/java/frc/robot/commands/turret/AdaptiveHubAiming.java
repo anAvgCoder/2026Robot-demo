@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -34,6 +35,7 @@ public class AdaptiveHubAiming extends Command {
   private final RotaterIO rotaterIOLeft;
   private final HoodIO hoodIOLeft;
   private final ShooterIO shooterIOLeft;
+  private Drive drive;
   private final QuestNavSystemIO questNavSystemIO;
   private boolean isBlue = true;
   private int runCounter;
@@ -55,6 +57,8 @@ public class AdaptiveHubAiming extends Command {
     hoodIOLeft = hoodLeft.getIO();
     shooterIOLeft = shooterLeft.getIO();
 
+    this.drive = drive;
+
     questNavSystemIO = drive.getQuestNavSystemIO();
 
     addRequirements(rotaterRight, shooterRight, hoodRight, rotaterLeft, shooterLeft, hoodLeft);
@@ -69,12 +73,6 @@ public class AdaptiveHubAiming extends Command {
 
   @Override
   public void execute() {
-    Pose3d[] poses = questNavSystemIO.getLast6RobotPoses();
-    if (poses.length < 2) {
-      runCounter++;
-      if (runCounter > 24) runCounter = 0;
-      return;
-    }
 
     // Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
     // rotaterIORight.setTurnPosition(
@@ -161,42 +159,42 @@ public class AdaptiveHubAiming extends Command {
     return Math.hypot(dx, dy);
   }
 
+  private static final int LOOKAHEAD_ITERS = 3;
+
+  private Pose3d predictPoseFromFieldSpeeds(Pose3d start, ChassisSpeeds field, double dtSec) {
+    double newX = start.getX() + field.vxMetersPerSecond * dtSec;
+    double newY = start.getY() + field.vyMetersPerSecond * dtSec;
+    double newYaw = start.getRotation().getZ() + field.omegaRadiansPerSecond * dtSec;
+    return new Pose3d(newX, newY, start.getZ(), new Rotation3d(0.0, 0.0, newYaw));
+  }
+
+  private Transform3d turretOffset(boolean isRightTurret) {
+    double xMeters =
+        Units.inchesToMeters(6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE);
+    double yMeters = Units.inchesToMeters(isRightTurret ? -6.75 : 6.75);
+    return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
+  }
+
   public Pose3d calculateAdjustedTurretPose(boolean isRightTurret) {
-    Pose3d robotPose;
+    Pose3d baseRobotPose = new Pose3d(drive.getPose());
 
-    if (isRightTurret) {
-      robotPose =
-          questNavSystemIO.predictPoseFromWindow(
-              questNavSystemIO.getLast6RobotPoses(),
-              ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(true)));
-    } else {
-      robotPose =
-          questNavSystemIO.predictPoseFromWindow(
-              questNavSystemIO.getLast6RobotPoses(),
-              ShotTimeTable.getFlightTimeSeconds(calculateTurretDistance(false)));
+    ChassisSpeeds fieldSpeeds = drive.getFieldRelativeSpeeds();
+
+    Pose3d predictedRobotPose = baseRobotPose;
+    Pose3d predictedTurretPose = predictedRobotPose.transformBy(turretOffset(isRightTurret));
+
+    double dist = calculateAdjustedHubDistance(predictedTurretPose);
+    double tof = ShotTimeTable.getFlightTimeSeconds(dist);
+
+    for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
+      predictedRobotPose = predictPoseFromFieldSpeeds(baseRobotPose, fieldSpeeds, tof);
+      predictedTurretPose = predictedRobotPose.transformBy(turretOffset(isRightTurret));
+
+      dist = calculateAdjustedHubDistance(predictedTurretPose);
+      tof = ShotTimeTable.getFlightTimeSeconds(dist);
     }
 
-    if (isRightTurret) {
-      robotPose =
-          robotPose.transformBy(
-              new Transform3d(
-                  Units.inchesToMeters(
-                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
-                  Units.inchesToMeters(-6.75),
-                  0.0,
-                  new Rotation3d(0.0, 0.0, 0.0)));
-    } else {
-      robotPose =
-          robotPose.transformBy(
-              new Transform3d(
-                  Units.inchesToMeters(
-                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
-                  Units.inchesToMeters(6.75),
-                  0.0,
-                  new Rotation3d(0.0, 0.0, 0.0)));
-    }
-
-    return robotPose;
+    return predictedTurretPose;
   }
 
   public double calculateTurretDistance(boolean isRightTurret) {
@@ -207,8 +205,7 @@ public class AdaptiveHubAiming extends Command {
     // and causing the aim to drift a few degrees while rotating.
     // - Daniel [Ask me if question, yes this command should be looking at the frame timestamp not
     // just a standard 100ms. Add if after Canada]
-    Pose3d[] poses = questNavSystemIO.getLast6RobotPoses();
-    Pose3d robotPose = (poses.length > 0) ? poses[poses.length - 1] : new Pose3d();
+    Pose3d robotPose = new Pose3d(drive.getPose());
 
     if (isRightTurret) {
       robotPose =

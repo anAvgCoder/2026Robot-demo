@@ -10,7 +10,7 @@ public class FieldConstants {
 
   public static final double FIELD_WIDTH_INCHES = 651.22;
   public static final double FIELD_LENGTH_INCHES = 317.69;
-  public static final double FIELD_HUB_TO_SIDE_INCHES = 181.11;
+  public static final double FIELD_HUB_TO_SIDE_INCHES = 182.11;
 
   // STORAGE TARGETS TO AIM FOR
   public static final Pose3d BLUE_LOW_TARGET_POSE3D =

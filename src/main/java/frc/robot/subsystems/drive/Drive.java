@@ -62,6 +62,7 @@ public class Drive extends SubsystemBase {
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(moduleTranslations);
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
+  private double lastQuestVisionTimestamp = Double.NEGATIVE_INFINITY;
   private SwerveModulePosition[] lastModulePositions = // For delta tracking
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -179,8 +180,10 @@ public class Drive extends SubsystemBase {
 
       // Apply update
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
-      getQuestSwerveUpdates();
     }
+
+    
+      // getQuestSwerveUpdates();
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
@@ -274,6 +277,21 @@ public class Drive extends SubsystemBase {
     return kinematics.toChassisSpeeds(getModuleStates());
   }
 
+  public ChassisSpeeds getRobotRelativeSpeeds() {
+    odometryLock.lock();
+    try {
+      return getChassisSpeeds();
+    } finally {
+      odometryLock.unlock();
+    }
+  }
+
+  public ChassisSpeeds getFieldRelativeSpeeds() {
+    ChassisSpeeds robot = getRobotRelativeSpeeds();
+    Rotation2d heading = getRotation();
+    return ChassisSpeeds.fromRobotRelativeSpeeds(robot, heading);
+  }
+
   /** Returns the position of each module in radians. */
   public double[] getWheelRadiusCharacterizationPositions() {
     double[] values = new double[4];
@@ -327,22 +345,29 @@ public class Drive extends SubsystemBase {
   public void resetQuestPose(Pose3d pose) {
     questNavIO.resetQuestPoseZero(pose);
   }
-
+  
   public void getQuestSwerveUpdates() {
+    questNavIO.updateLatestPoseFrames();
+
     PoseFrame[] poseFrames = questNavIO.getLatestPoseFrames();
+    if (!questNavIO.isWorking() || poseFrames == null || poseFrames.length == 0) {
+      return;
+    }
 
-    if (questNavIO.isWorking()) {
-      for (PoseFrame frame : poseFrames) {
-
-        // contribute to robot pose
-        poseEstimator.addVisionMeasurement(
-            frame
-                .questPose3d()
-                .transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse())
-                .toPose2d(),
-            frame.dataTimestamp(),
-            questNavStdDevs);
+    for (PoseFrame frame : poseFrames) {
+      double ts = frame.dataTimestamp();
+      if (ts <= lastQuestVisionTimestamp) {
+        continue; // skip duplicates / old frames
       }
+      lastQuestVisionTimestamp = ts;
+
+      poseEstimator.addVisionMeasurement(
+          frame.questPose3d()
+              .transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse())
+              .toPose2d(),
+          ts,
+          questNavStdDevs
+      );
     }
   }
 

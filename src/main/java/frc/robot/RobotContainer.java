@@ -8,10 +8,16 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
@@ -57,6 +63,10 @@ import frc.robot.subsystems.turret.rotater.RotaterIOReal;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.subsystems.turret.shooter.ShooterIOReal;
 import frc.robot.subsystems.turret.shooter.ShooterIOSim;
+
+import java.util.Map;
+import java.util.Set;
+
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -82,6 +92,7 @@ public class RobotContainer {
   private final Hood rightHood;
   private final Shooter rightShooter;
 
+
   // Commands
 
   // Joysticks
@@ -102,11 +113,41 @@ public class RobotContainer {
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 5);
   private static final JoystickButton syncYawButton = new JoystickButton(buttonPanel, 6);
 
+  private static final JoystickButton aButton = new JoystickButton(buttonPanel, 7);
+  private static final JoystickButton bButton = new JoystickButton(buttonPanel, 8);
+  private static final JoystickButton cButton = new JoystickButton(buttonPanel, 9);
+  private static final JoystickButton dButton = new JoystickButton(buttonPanel, 10);
+
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
+  private int activePathToken = 0;
+
+  private static PathPlannerPath loadPath(String name) {
+    try {
+      return PathPlannerPath.fromPathFile(name);
+    } catch (Exception e) {
+      DriverStation.reportError("Failed to load path: " + name, e.getStackTrace());
+      throw new RuntimeException(e);
+    }
+  }
+
+  private final Map<String, PathPlannerPath> paths = Map.of(
+    "ST Push Balls", loadPath("ST Push Balls"),
+    "ST Clear Depot", loadPath("ST Clear Depot"),
+    "OP Push Balls", loadPath("OP Push Balls")
+  );
+
+  private Command activePathCommand = null;
+
+  private final PathConstraints pathfindConstraints = 
+    new PathConstraints(1.5
+      ,1.5, 
+      Units.degreesToRadians(540),
+    Units.degreesToRadians(720));
+
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -282,6 +323,24 @@ public class RobotContainer {
     resetQuestPoseBlueButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
+
+
+
+
+
+    aButton.onTrue(
+      runTeleopPath("ST Push Balls")
+    );
+    bButton.onTrue(
+      runTeleopPath("ST Clear Depot")
+    );
+    cButton.onTrue(
+      runTeleopPath("OP Push Balls")
+    );
+    dButton.onTrue(
+      cancelActivePath()
+    );
+
   }
 
   public boolean getClampedTurn(Joystick joy) {
@@ -290,6 +349,43 @@ public class RobotContainer {
 
   public boolean getClampedDrive(Joystick joy) {
     return (Math.abs(joy.getY()) > 0.1) || (Math.abs(joy.getX()) > 0.1);
+  }
+
+  private Command runTeleopPath(String name) {
+    PathPlannerPath path = paths.get(name);
+    if (path == null) {
+      return Commands.runOnce(() ->
+          DriverStation.reportError("Unknown path name: " + name, false));
+    }
+
+    return Commands.defer(() -> {
+      cancelActivePathNow();
+
+      final int myToken = ++activePathToken;
+
+      Command cmd = AutoBuilder.pathfindThenFollowPath(path, pathfindConstraints)
+          .withName("TeleopPath_" + name)
+          .finallyDo(interrupted -> {
+            if (activePathToken == myToken) {
+              activePathCommand = null;
+            }
+          });
+
+      activePathCommand = cmd;
+      return cmd;
+    }, Set.of(drive));
+  }
+
+  private Command cancelActivePath() {
+    return Commands.runOnce(this::cancelActivePathNow);
+  }
+
+  
+  private void cancelActivePathNow() {
+    if (activePathCommand != null) {
+      CommandScheduler.getInstance().cancel(activePathCommand);
+      activePathCommand = null;
+    }
   }
 
   /**
