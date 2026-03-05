@@ -100,8 +100,8 @@ public class HoodIOReal implements HoodIO {
 
     double capped = MathUtil.clamp(out, -HoodConstants.kMaxOutput, HoodConstants.kMaxOutput);
 
-    if (meas >= HoodConstants.kMaxAngleRad && capped < 0.0) capped = 0.0;
-    if (meas <= HoodConstants.kMinAngleRad && capped > 0.0) capped = 0.0;
+    // if (meas >= HoodConstants.kMaxAngleRad && capped < 0.0) capped = 0.0;
+    // if (meas <= HoodConstants.kMinAngleRad && capped > 0.0) capped = 0.0;
 
     motor.set(capped);
 

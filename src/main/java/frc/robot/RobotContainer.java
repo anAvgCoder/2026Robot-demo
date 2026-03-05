@@ -11,6 +11,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -28,6 +29,7 @@ import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
 import frc.robot.commands.turret.AdaptiveHubAiming;
+import frc.robot.commands.turret.AdaptiveStorageAiming;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
 import frc.robot.subsystems.belt.BeltIOReal;
@@ -99,6 +101,7 @@ public class RobotContainer {
 
   // Buttons
 
+  private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
   private static final JoystickButton adaptiveAimingButton = new JoystickButton(rightJoy, 2);
   private static final JoystickButton FiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
 
@@ -118,8 +121,6 @@ public class RobotContainer {
 
   private static final JoystickButton testingButon1 = new JoystickButton(buttonPanel, 14);
   private static final JoystickButton testingButton2 = new JoystickButton(buttonPanel, 15);
-
-  private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -262,9 +263,11 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
             () ->
-                Math.atan2(
-                    getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-                    getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0)));
+                MathUtil.angleModulus(
+                    Math.PI
+                        + Math.atan2(
+                            getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+                            getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0))));
 
     FiftyPercentDriveButton.toggleOnTrue(
         DriveCommands.joystickDrive(
@@ -286,18 +289,33 @@ public class RobotContainer {
 
     outakeButton.whileTrue(
         Commands.parallel(
-            new IROutakeCommand(intakeRoller),
-            new BeltOutakeCommand(rightBelt),
-            new BeltOutakeCommand(leftBelt),
-            new DiverterCommand(diverter)));
+            new IPIntakeCommand(intakePivot),
+            Commands.sequence(
+                Commands.waitSeconds(0.45),
+                Commands.parallel(
+                    new BeltOutakeCommand(rightBelt),
+                    new BeltOutakeCommand(leftBelt),
+                    new DiverterCommand(diverter),
+                    new IROutakeCommand(intakeRoller)))));
 
     // adaptiveAimingButton.toggleOnTrue(
     //     new AdaptiveHubAimingOnlyTurret(rightRotater, leftRotater, drive, true));
     // adaptiveShooterTestAimingButton.toggleOnTrue(
     //     new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
 
-    adaptiveAimingButton.whileTrue(
+    adaptiveAimingButton.toggleOnTrue(
         new AdaptiveHubAiming(
+            rightRotater,
+            rightShooter,
+            rightHood,
+            leftRotater,
+            leftShooter,
+            leftHood,
+            drive,
+            true));
+
+    adaptiveStorageButton.toggleOnTrue(
+        new AdaptiveStorageAiming(
             rightRotater,
             rightShooter,
             rightHood,
@@ -322,7 +340,7 @@ public class RobotContainer {
     STMidButton.onTrue(runTeleopPath("ST Push Balls"));
     STCloseButton.onTrue(runTeleopPath("ST Clear Depot"));
     OPMidButton.onTrue(runTeleopPath("OP Push Balls"));
-    OPCloseButton.onTrue(cancelActivePath());
+    OPCloseButton.onTrue(runTeleopPath("OP Clear Depot"));
     cancelPathButton.onTrue(cancelActivePath());
   }
 
@@ -405,6 +423,19 @@ public class RobotContainer {
         "AdaptiveHubAiming",
         Commands.repeatingSequence(
             new AdaptiveHubAiming(
+                rightRotater,
+                rightShooter,
+                rightHood,
+                leftRotater,
+                leftShooter,
+                leftHood,
+                drive,
+                true)));
+
+    NamedCommands.registerCommand(
+        "AdaptiveStorageAiming",
+        Commands.repeatingSequence(
+            new AdaptiveStorageAiming(
                 rightRotater,
                 rightShooter,
                 rightHood,

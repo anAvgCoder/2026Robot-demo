@@ -32,6 +32,8 @@ public class ShotTable {
     table.put(3.96, new ShotSetpoint(0.15, 3590));
     table.put(4.48, new ShotSetpoint(0.10, 3570));
     table.put(5.13, new ShotSetpoint(0.26, 3640));
+    table.put(10.00, new ShotSetpoint(0.26, 3640));
+    table.put(15.00, new ShotSetpoint(0.26, 3640));
     table.put(20.00, new ShotSetpoint(0.26, 3640));
   }
 

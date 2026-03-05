@@ -22,6 +22,9 @@ public class ShotTimeTable {
     table.put(3.96, 1.62);
     table.put(4.48, 1.70);
     table.put(5.13, 1.70);
+    table.put(10.00, 1.70);
+    table.put(15.00, 1.70);
+    table.put(20.00, 1.70);
   }
 
   public static double getFlightTimeSeconds(double distanceMeters) {

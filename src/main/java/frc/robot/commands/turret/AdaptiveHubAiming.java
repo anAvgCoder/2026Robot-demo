@@ -74,15 +74,14 @@ public class AdaptiveHubAiming extends Command {
   @Override
   public void execute() {
 
-    // Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
-    // rotaterIORight.setTurnPosition(
-    //     calculateTurretDegreesRobotRelative(
-    //         turretPoseRight, RotaterConstants.turretRightAngleLocation));
-
-    // ShotSetpoint shotSetpointRight =
-    // ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
-    // hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
-    // shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
+    Pose3d turretPoseRight = calculateAdjustedTurretPose(true);
+    rotaterIORight.setTurnPosition(
+        calculateTurretDegreesRobotRelative(
+            turretPoseRight, RotaterConstants.turretRightAngleLocation));
+    ShotSetpoint shotSetpointRight =
+    ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
+    hoodIORight.setHoodPosition(shotSetpointRight.hoodPos());
+    shooterIORight.setSpeed(shotSetpointRight.shooterSpeed());
 
     Pose3d turretPoseLeft = calculateAdjustedTurretPose(false);
     rotaterIOLeft.setTurnPosition(
@@ -181,64 +180,19 @@ public class AdaptiveHubAiming extends Command {
     ChassisSpeeds fieldSpeeds = drive.getFieldRelativeSpeeds();
 
     Pose3d predictedRobotPose = baseRobotPose;
-    Pose3d predictedTurretPose = predictedRobotPose.transformBy(turretOffset(isRightTurret));
+    Pose3d predictedTurretPose = new Pose3d(predictedRobotPose.getTranslation().plus(turretOffset(isRightTurret).getTranslation().rotateBy(predictedRobotPose.getRotation())), predictedRobotPose.getRotation());
 
     double dist = calculateAdjustedHubDistance(predictedTurretPose);
     double tof = ShotTimeTable.getFlightTimeSeconds(dist);
 
     for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
-      predictedRobotPose = predictPoseFromFieldSpeeds(baseRobotPose, fieldSpeeds, tof);
-      predictedTurretPose = predictedRobotPose.transformBy(turretOffset(isRightTurret));
+      predictedRobotPose = predictPoseFromFieldSpeeds(new Pose3d(drive.getPose()), fieldSpeeds, tof);
+      predictedTurretPose = new Pose3d(predictedRobotPose.getTranslation().plus(turretOffset(isRightTurret).getTranslation().rotateBy(predictedRobotPose.getRotation())), predictedRobotPose.getRotation());
 
       dist = calculateAdjustedHubDistance(predictedTurretPose);
       tof = ShotTimeTable.getFlightTimeSeconds(dist);
     }
 
-    return predictedTurretPose;
-  }
-
-  public double calculateTurretDistance(boolean isRightTurret) {
-    // Use getLast6RobotPoses to get the most recent pose WITHOUT the
-    // pushPose() side-effect that getLastRobotPose() has.
-    // Calling getLastRobotPose() here would add a duplicate entry to the
-    // ring buffer, corrupting the velocity estimate in predictPoseFromWindow
-    // and causing the aim to drift a few degrees while rotating.
-    // - Daniel [Ask me if question, yes this command should be looking at the frame timestamp not
-    // just a standard 100ms. Add if after Canada]
-    Pose3d robotPose = new Pose3d(drive.getPose());
-
-    if (isRightTurret) {
-      robotPose =
-          robotPose.transformBy(
-              new Transform3d(
-                  Units.inchesToMeters(
-                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
-                  Units.inchesToMeters(-6.75),
-                  0.0,
-                  new Rotation3d(0.0, 0.0, 0.0)));
-    } else {
-      robotPose =
-          robotPose.transformBy(
-              new Transform3d(
-                  Units.inchesToMeters(
-                      6.5 + QuestNavSystemConstants.ROBOT_TO_QUEST_INCHES_X_DOUBLE),
-                  Units.inchesToMeters(6.75),
-                  0.0,
-                  new Rotation3d(0.0, 0.0, 0.0)));
-    }
-
-    double dx;
-    double dy;
-
-    if (isBlue) {
-      dx = robotPose.getX() - FieldConstants.BLUE_HUB_POSE3D.getX();
-      dy = robotPose.getY() - FieldConstants.BLUE_HUB_POSE3D.getY();
-    } else {
-      dx = robotPose.getX() - FieldConstants.RED_HUB_POSE3D.getX();
-      dy = robotPose.getY() - FieldConstants.RED_HUB_POSE3D.getY();
-    }
-    Logger.recordOutput("AimDebug/TurretToHubDistance", Math.hypot(dx, dy));
-
-    return Math.hypot(dx, dy);
+    return predictedTurretPose; 
   }
 }

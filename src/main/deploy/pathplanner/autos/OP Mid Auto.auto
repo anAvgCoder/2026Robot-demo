@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Mid To Top"
+            "pathName": "Mid To Bottom"
           }
         },
         {
@@ -17,21 +17,21 @@
           }
         },
         {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.3
-          }
-        },
-        {
           "type": "named",
           "data": {
             "name": "AdaptiveStorageAiming"
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.3
+          }
+        },
+        {
           "type": "path",
           "data": {
-            "pathName": "Top Down"
+            "pathName": "Bottom Up"
           }
         },
         {
