@@ -7,7 +7,20 @@
         {
           "type": "path",
           "data": {
-            "pathName": "New Path"
+            "pathName": "Mid To Top"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Top Down"
+                }
+              }
+            ]
           }
         }
       ]

@@ -50,10 +50,8 @@ public class QuestNavSystemConstants {
 
   public static final Pose3d ROBOT_TO_QUEST_BLUE_TESTING =
       new Pose3d(
-          Units.inchesToMeters(
-              156.61 - ROBOT_WIDTH_INCHES_BUMPER_HALF_DOUBLE),
-          Units.inchesToMeters(
-              FieldConstants.FIELD_LENGTH_INCHES/2),
+          Units.inchesToMeters(156.61 - ROBOT_WIDTH_INCHES_BUMPER_HALF_DOUBLE),
+          Units.inchesToMeters(FieldConstants.FIELD_LENGTH_INCHES / 2),
           Units.inchesToMeters(ROBOT_TO_QUEST_INCHES_Z_DOUBLE),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 

@@ -8,9 +8,9 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -63,10 +63,8 @@ import frc.robot.subsystems.turret.rotater.RotaterIOReal;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.subsystems.turret.shooter.ShooterIOReal;
 import frc.robot.subsystems.turret.shooter.ShooterIOSim;
-
 import java.util.Map;
 import java.util.Set;
-
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -92,7 +90,6 @@ public class RobotContainer {
   private final Hood rightHood;
   private final Shooter rightShooter;
 
-
   // Commands
 
   // Joysticks
@@ -102,24 +99,27 @@ public class RobotContainer {
 
   // Buttons
 
+  private static final JoystickButton adaptiveAimingButton = new JoystickButton(rightJoy, 2);
   private static final JoystickButton FiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
 
-  private static final JoystickButton adaptiveAimingButton = new JoystickButton(rightJoy, 2);
-  private static final JoystickButton adaptiveShooterTestAimingButton =
-      new JoystickButton(leftJoy, 2);
+  private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
+  private static final JoystickButton syncYawButton = new JoystickButton(leftJoy, 4);
+  private static final JoystickButton adaptiveStorageButton = new JoystickButton(leftJoy, 2);
 
-  private static final JoystickButton gyroButton = new JoystickButton(buttonPanel, 1);
-  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 2);
-  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 5);
-  private static final JoystickButton syncYawButton = new JoystickButton(buttonPanel, 6);
+  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 3);
+  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 6);
 
-  private static final JoystickButton aButton = new JoystickButton(buttonPanel, 7);
-  private static final JoystickButton bButton = new JoystickButton(buttonPanel, 8);
-  private static final JoystickButton cButton = new JoystickButton(buttonPanel, 9);
-  private static final JoystickButton dButton = new JoystickButton(buttonPanel, 10);
+  private static final JoystickButton STCloseButton = new JoystickButton(buttonPanel, 5);
+  private static final JoystickButton STMidButton = new JoystickButton(buttonPanel, 2);
+  private static final JoystickButton OPCloseButton = new JoystickButton(buttonPanel, 4);
+  private static final JoystickButton OPMidButton = new JoystickButton(buttonPanel, 1);
+
+  private static final JoystickButton cancelPathButton = new JoystickButton(buttonPanel, 7);
+
+  private static final JoystickButton testingButon1 = new JoystickButton(buttonPanel, 14);
+  private static final JoystickButton testingButton2 = new JoystickButton(buttonPanel, 15);
 
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
-  private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -134,20 +134,16 @@ public class RobotContainer {
     }
   }
 
-  private final Map<String, PathPlannerPath> paths = Map.of(
-    "ST Push Balls", loadPath("ST Push Balls"),
-    "ST Clear Depot", loadPath("ST Clear Depot"),
-    "OP Push Balls", loadPath("OP Push Balls")
-  );
+  private final Map<String, PathPlannerPath> paths =
+      Map.of(
+          "ST Push Balls", loadPath("ST Push Balls"),
+          "ST Clear Depot", loadPath("ST Clear Depot"),
+          "OP Push Balls", loadPath("OP Push Balls"));
 
   private Command activePathCommand = null;
 
-  private final PathConstraints pathfindConstraints = 
-    new PathConstraints(1.5
-      ,1.5, 
-      Units.degreesToRadians(540),
-    Units.degreesToRadians(720));
-
+  private final PathConstraints pathfindConstraints =
+      new PathConstraints(1.5, 1.5, Units.degreesToRadians(540), Units.degreesToRadians(720));
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -236,6 +232,8 @@ public class RobotContainer {
     }
 
     // Set up auto routines
+    registerNamedCommands();
+
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
     // Configure the button bindings
@@ -258,7 +256,7 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
-    syncYawButton.toggleOnTrue(
+    syncYawButton.onTrue(
         DriveCommands.joystickDriveAtAngle(
             drive,
             () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
@@ -298,7 +296,7 @@ public class RobotContainer {
     // adaptiveShooterTestAimingButton.toggleOnTrue(
     //     new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
 
-    adaptiveAimingButton.toggleOnTrue(
+    adaptiveAimingButton.whileTrue(
         new AdaptiveHubAiming(
             rightRotater,
             rightShooter,
@@ -309,13 +307,6 @@ public class RobotContainer {
             drive,
             true));
 
-    // Reset gyro to 0 on press
-    // gyroButton.onTrue(
-    //     Commands.runOnce(
-    //             () -> drive.setPose(new Pose2d(drive.getPose().getTranslation(),
-    // Rotation2d.kZero)))
-    //         .ignoringDisable(true));
-
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
             .ignoringDisable(true));
@@ -324,23 +315,15 @@ public class RobotContainer {
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
 
+    testingButon1.onTrue(
+        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
+            .ignoringDisable(true));
 
-
-
-
-    aButton.onTrue(
-      runTeleopPath("ST Push Balls")
-    );
-    bButton.onTrue(
-      runTeleopPath("ST Clear Depot")
-    );
-    cButton.onTrue(
-      runTeleopPath("OP Push Balls")
-    );
-    dButton.onTrue(
-      cancelActivePath()
-    );
-
+    STMidButton.onTrue(runTeleopPath("ST Push Balls"));
+    STCloseButton.onTrue(runTeleopPath("ST Clear Depot"));
+    OPMidButton.onTrue(runTeleopPath("OP Push Balls"));
+    OPCloseButton.onTrue(cancelActivePath());
+    cancelPathButton.onTrue(cancelActivePath());
   }
 
   public boolean getClampedTurn(Joystick joy) {
@@ -354,38 +337,82 @@ public class RobotContainer {
   private Command runTeleopPath(String name) {
     PathPlannerPath path = paths.get(name);
     if (path == null) {
-      return Commands.runOnce(() ->
-          DriverStation.reportError("Unknown path name: " + name, false));
+      return Commands.runOnce(() -> DriverStation.reportError("Unknown path name: " + name, false));
     }
 
-    return Commands.defer(() -> {
-      cancelActivePathNow();
+    return Commands.defer(
+        () -> {
+          cancelActivePathNow();
 
-      final int myToken = ++activePathToken;
+          final int myToken = ++activePathToken;
 
-      Command cmd = AutoBuilder.pathfindThenFollowPath(path, pathfindConstraints)
-          .withName("TeleopPath_" + name)
-          .finallyDo(interrupted -> {
-            if (activePathToken == myToken) {
-              activePathCommand = null;
-            }
-          });
+          Command cmd =
+              AutoBuilder.pathfindThenFollowPath(path, pathfindConstraints)
+                  .withName("TeleopPath_" + name)
+                  .finallyDo(
+                      interrupted -> {
+                        if (activePathToken == myToken) {
+                          activePathCommand = null;
+                        }
+                      });
 
-      activePathCommand = cmd;
-      return cmd;
-    }, Set.of(drive));
+          activePathCommand = cmd;
+          return cmd;
+        },
+        Set.of(drive));
   }
 
   private Command cancelActivePath() {
     return Commands.runOnce(this::cancelActivePathNow);
   }
 
-  
   private void cancelActivePathNow() {
     if (activePathCommand != null) {
       CommandScheduler.getInstance().cancel(activePathCommand);
       activePathCommand = null;
     }
+  }
+
+  private void registerNamedCommands() {
+
+    // Go to the L4 Position
+
+    System.out.println("Commands registered");
+
+    NamedCommands.registerCommand(
+        "StartPick",
+        Commands.parallel(
+            Commands.runOnce(() -> intakeRoller.getIO().intake()),
+            Commands.sequence(
+                Commands.waitSeconds(0.35),
+                Commands.runOnce(() -> intakePivot.getIO().setIntakeSecondaryPosition()),
+                Commands.runOnce(() -> leftBelt.getIO().intake()),
+                Commands.runOnce(() -> rightBelt.getIO().intake()),
+                Commands.runOnce(() -> diverter.getIO().intake()))));
+
+    NamedCommands.registerCommand(
+        "StopPick",
+        Commands.parallel(
+            Commands.runOnce(() -> intakeRoller.getIO().stop()),
+            Commands.sequence(
+                Commands.waitSeconds(0.35),
+                Commands.runOnce(() -> intakePivot.getIO().setStoragePosition()),
+                Commands.runOnce(() -> leftBelt.getIO().stop()),
+                Commands.runOnce(() -> rightBelt.getIO().stop()),
+                Commands.runOnce(() -> diverter.getIO().stop()))));
+
+    NamedCommands.registerCommand(
+        "AdaptiveHubAiming",
+        Commands.repeatingSequence(
+            new AdaptiveHubAiming(
+                rightRotater,
+                rightShooter,
+                rightHood,
+                leftRotater,
+                leftShooter,
+                leftHood,
+                drive,
+                true)));
   }
 
   /**

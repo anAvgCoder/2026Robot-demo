@@ -182,8 +182,7 @@ public class Drive extends SubsystemBase {
       poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
     }
 
-    
-      // getQuestSwerveUpdates();
+    // getQuestSwerveUpdates();
 
     // Update gyro alert
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
@@ -345,7 +344,7 @@ public class Drive extends SubsystemBase {
   public void resetQuestPose(Pose3d pose) {
     questNavIO.resetQuestPoseZero(pose);
   }
-  
+
   public void getQuestSwerveUpdates() {
     questNavIO.updateLatestPoseFrames();
 
@@ -362,12 +361,12 @@ public class Drive extends SubsystemBase {
       lastQuestVisionTimestamp = ts;
 
       poseEstimator.addVisionMeasurement(
-          frame.questPose3d()
+          frame
+              .questPose3d()
               .transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse())
               .toPose2d(),
           ts,
-          questNavStdDevs
-      );
+          questNavStdDevs);
     }
   }
 
