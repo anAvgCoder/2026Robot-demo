@@ -39,14 +39,14 @@ public class SingleMotorTurretPIDRioTest extends SubsystemBase {
   private final LoggedTunableNumber setpointDeg =
       new LoggedTunableNumber("TurnRioTest/SetpointDeg", 0.0);
 
-  private final LoggedTunableNumber kP = new LoggedTunableNumber("TurnRioTest/kP", 0.25);
+  private final LoggedTunableNumber kP = new LoggedTunableNumber("TurnRioTest/kP", 0.5);
   private final LoggedTunableNumber kI = new LoggedTunableNumber("TurnRioTest/kI", 0.00);
-  private final LoggedTunableNumber kD = new LoggedTunableNumber("TurnRioTest/kD", 0.00025);
+  private final LoggedTunableNumber kD = new LoggedTunableNumber("TurnRioTest/kD", 0.0);
 
   private final LoggedTunableNumber maxVelRadPerSec =
-      new LoggedTunableNumber("TurnRioTest/MaxVelRadPerSec", 502.0);
+      new LoggedTunableNumber("TurnRioTest/MaxVelRadPerSec", 45.0);
   private final LoggedTunableNumber maxAccelRadPerSec2 =
-      new LoggedTunableNumber("TurnRioTest/MaxAccelRadPerSec2", 1190.0);
+      new LoggedTunableNumber("TurnRioTest/MaxAccelRadPerSec2", 70.0);
 
   private final LoggedTunableNumber maxOutput =
       new LoggedTunableNumber("TurnRioTest/MaxOutput", 1.0);
@@ -95,7 +95,7 @@ public class SingleMotorTurretPIDRioTest extends SubsystemBase {
             kD.get(),
             new TrapezoidProfile.Constraints(maxVelRadPerSec.get(), maxAccelRadPerSec2.get()));
 
-    profiledPid.setTolerance(Units.degreesToRadians(1.0), Units.degreesToRadians(20.0));
+    profiledPid.setTolerance(Units.degreesToRadians(0.5), Units.degreesToRadians(20.0));
   }
 
   private double getMeasuredAngleRad() {

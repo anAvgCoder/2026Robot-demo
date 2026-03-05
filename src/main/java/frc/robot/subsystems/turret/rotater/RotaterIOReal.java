@@ -14,11 +14,9 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
 import org.littletonrobotics.junction.Logger;
 
 public class RotaterIOReal implements RotaterIO {
@@ -26,14 +24,10 @@ public class RotaterIOReal implements RotaterIO {
 
   private final CANcoder cancoder;
   private final StatusSignal<Angle> absPosSig;
-  private final StatusSignal<AngularVelocity> absVelSig;
 
   private final ProfiledPIDController controller;
 
-  private final LinearFilter measFilter = LinearFilter.movingAverage(5);
-
   private final String logPrefix;
-  private double lastGoalRad = Double.NaN;
 
   public RotaterIOReal(int canId, int coderId) {
     motor = new SparkMax(canId, MotorType.kBrushless);
@@ -42,9 +36,8 @@ public class RotaterIOReal implements RotaterIO {
     logPrefix = "Rotater/" + canId + "/";
 
     absPosSig = cancoder.getAbsolutePosition();
-    absVelSig = cancoder.getVelocity();
 
-    BaseStatusSignal.setUpdateFrequencyForAll(100.0, absPosSig, absVelSig);
+    BaseStatusSignal.setUpdateFrequencyForAll(100.0, absPosSig);
     cancoder.optimizeBusUtilization();
 
     var cfg = new SparkMaxConfig();
@@ -76,18 +69,13 @@ public class RotaterIOReal implements RotaterIO {
     controller.setTolerance(
         RotaterConstants.kPosToleranceRad, RotaterConstants.kVelToleranceRadPerSec);
 
-    controller.reset(getMeasuredAngleRad(), getMeasuredVelocityRadPerSec());
+    controller.reset(getMeasuredAngleRad());
   }
 
   private double getMeasuredAngleRad() {
     absPosSig.refresh();
     double rot = absPosSig.getValueAsDouble();
-    return measFilter.calculate(Units.rotationsToRadians(rot));
-  }
-
-  private double getMeasuredVelocityRadPerSec() {
-    absVelSig.refresh();
-    return Units.rotationsToRadians(absVelSig.getValueAsDouble());
+    return Units.rotationsToRadians(rot);
   }
 
   @Override
@@ -101,28 +89,11 @@ public class RotaterIOReal implements RotaterIO {
     double meas = getMeasuredAngleRad();
     double goal = MathUtil.clamp(goalRad, -135.0 / 180.0 * Math.PI, 135.0 / 180.0 * Math.PI);
 
-    if (Double.isNaN(lastGoalRad) || Math.abs(goal - lastGoalRad) > Units.degreesToRadians(0.5)) {
-      controller.setGoal(goal);
-      lastGoalRad = goal;
-    }
-
-    double out = controller.calculate(meas);
-
-    if (Math.abs(goal - meas) < Units.degreesToRadians(2.0)) {
-      out = 0.0;
-    }
+    double out = controller.calculate(meas, goal);
 
     double capped = MathUtil.clamp(out, -1.0, 1.0);
-    double motorCmd = -capped;
 
-    // if (meas >= RotaterConstants.kMaxAngleRad && motorCmd > 0.0) {
-    //   motorCmd = 0.0;
-    // }
-    // if (meas <= RotaterConstants.kMinAngleRad && motorCmd < 0.0) {
-    //   motorCmd = 0.0;
-    // }
-
-    motor.set(motorCmd);
+    motor.set(-capped);
 
     var sp = controller.getSetpoint();
     Logger.recordOutput("TurnRioTest/GoalRad", goal);
@@ -135,7 +106,6 @@ public class RotaterIOReal implements RotaterIO {
   @Override
   public void updateInputs(RotaterIOInputs inputs) {
     inputs.positionRad = getMeasuredAngleRad();
-    inputs.velocityRadPerSec = getMeasuredVelocityRadPerSec();
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.supplyCurrentAmps = motor.getOutputCurrent();
     inputs.tempC = motor.getMotorTemperature();
