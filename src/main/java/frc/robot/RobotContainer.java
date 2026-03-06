@@ -4,7 +4,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -249,24 +248,24 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.8 : 0.0));
 
-    syncYawButton.whileTrue(
-        DriveCommands.joystickDriveAtAngle(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
-            () ->
-                MathUtil.angleModulus(
-                    Math.PI
-                        + Math.atan2(
-                            getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
-                            getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0))));
+    // syncYawButton.whileTrue(
+    //     DriveCommands.joystickDriveAtAngle(
+    //         drive,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
+    //         () ->
+    //             MathUtil.angleModulus(
+    //                 Math.PI
+    //                     + Math.atan2(
+    //                         getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
+    //                         getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0))));
 
-    fiftyPercentDriveButton.whileTrue(
-        DriveCommands.joystickDrive(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
-            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
+    // fiftyPercentDriveButton.whileTrue(
+    //     DriveCommands.joystickDrive(
+    //         drive,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
+    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
+    //         () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
 
     intakeButton.whileTrue(
         Commands.parallel(
@@ -347,9 +346,9 @@ public class RobotContainer {
     // drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
     //         .ignoringDisable(true));
 
-    leftJoy3Button.onTrue(runTeleopPath("ST Push Balls"));
+    // leftJoy3Button.onTrue(runTeleopPath("ST Push Balls"));
     // panelButton11.onTrue(runTeleopPath("ST Clear Depot"));
-    rightJoy4Button.onTrue(runTeleopPath("OP Push Balls"));
+    // rightJoy4Button.onTrue(runTeleopPath("OP Push Balls"));
     // panelButton13.onTrue(runTeleopPath("OP Clear Depot"));
   }
 
@@ -472,25 +471,14 @@ public class RobotContainer {
   private void registerNamedCommands() {
     NamedCommands.registerCommand(
         "StartPick",
-        Commands.parallel(
-            Commands.runOnce(() -> intakeRoller.getIO().intake()),
-            Commands.sequence(
-                Commands.waitSeconds(0.35),
-                Commands.runOnce(() -> intakePivot.setIntakeSecondaryPosition()),
-                Commands.runOnce(() -> leftBelt.getIO().intake()),
-                Commands.runOnce(() -> rightBelt.getIO().intake()),
-                Commands.runOnce(() -> diverter.getIO().intake()))));
-
-    NamedCommands.registerCommand(
-        "StopPick",
-        Commands.parallel(
-            Commands.runOnce(() -> intakeRoller.getIO().stop()),
-            Commands.sequence(
-                Commands.waitSeconds(0.35),
-                Commands.runOnce(() -> intakePivot.setStoragePosition()),
-                Commands.runOnce(() -> leftBelt.getIO().stop()),
-                Commands.runOnce(() -> rightBelt.getIO().stop()),
-                Commands.runOnce(() -> diverter.getIO().stop()))));
+        Commands.runOnce(
+            () -> {
+              intakePivot.setIntakeSecondaryPosition();
+              intakeRoller.getIO().intake();
+              leftBelt.getIO().intake();
+              rightBelt.getIO().intake();
+              diverter.getIO().intake();
+            }));
 
     NamedCommands.registerCommand(
         "AdaptiveStorageAimingShooter", shooterAdaptiveStorageAimingCommand());
@@ -509,6 +497,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    return autoChooser.get();
+    // return autoChooser.get();
+    return null;
   }
 }

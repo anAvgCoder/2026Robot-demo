@@ -53,7 +53,7 @@ public class IntakePivot extends SubsystemBase {
   }
 
   public void stop() {
-    manualVolts = 0.0;
+    manualVolts = -1.0;
     target = Target.DISABLED;
   }
 

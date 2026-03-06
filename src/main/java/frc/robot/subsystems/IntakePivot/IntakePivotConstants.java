@@ -37,7 +37,7 @@ public class IntakePivotConstants {
   public static final double kMaxVolts = 6.0;
 
   // Slow creep voltage toward storage when sensor hasn't been hit yet (brownout recovery)
-  public static final double kStorageCreepVolts = -4.0; // TODO: tune (negative = toward storage)
+  public static final double kStorageCreepVolts = -2.0; // TODO: tune (negative = toward storage)
 
   // Tolerances
   public static final double kPosToleranceDeg = 1.0;

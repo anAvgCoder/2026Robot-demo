@@ -45,7 +45,7 @@ public class ShooterIOReal implements ShooterIO {
     sparkConfig
         .closedLoop
         .feedForward
-        .kS(0.0, ClosedLoopSlot.kSlot0)
+        .kS(0.001, ClosedLoopSlot.kSlot0)
         .kV(ShooterConstants.kV, ClosedLoopSlot.kSlot0);
 
     sparkConfig

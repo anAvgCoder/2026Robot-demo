@@ -5,7 +5,7 @@
     "data": {
       "commands": [
         {
-          "type": "parallel",
+          "type": "sequential",
           "data": {
             "commands": [
               {
@@ -22,25 +22,6 @@
                       "type": "wait",
                       "data": {
                         "waitTime": 3.0
-                      }
-                    },
-                    {
-                      "type": "parallel",
-                      "data": {
-                        "commands": [
-                          {
-                            "type": "named",
-                            "data": {
-                              "name": "StartPick"
-                            }
-                          },
-                          {
-                            "type": "named",
-                            "data": {
-                              "name": "AdaptiveStorageAiming"
-                            }
-                          }
-                        ]
                       }
                     }
                   ]
