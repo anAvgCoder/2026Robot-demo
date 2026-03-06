@@ -4,11 +4,11 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.intakepivot.IntakePivot;
 import frc.robot.subsystems.intakepivot.IntakePivotIO;
 
-public class IPIntakeCommand extends Command {
+public class IPStorageCommand extends Command {
   private final IntakePivotIO intakePivotIO;
   private int runCounter;
 
-  public IPIntakeCommand(IntakePivot intakePivot) {
+  public IPStorageCommand(IntakePivot intakePivot) {
     intakePivotIO = intakePivot.getIO();
     addRequirements(intakePivot);
   }
@@ -20,7 +20,7 @@ public class IPIntakeCommand extends Command {
 
   @Override
   public void execute() {
-    intakePivotIO.setIntakeSecondaryPosition();
+    intakePivotIO.setStoragePosition();
 
     runCounter++;
     if (runCounter > 24) {

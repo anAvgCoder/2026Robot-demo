@@ -4,8 +4,8 @@ import edu.wpi.first.math.util.Units;
 
 public class RotaterConstants {
   // Turret Locations
-  public static final double turretRightAngleLocation = 43.7;
-  public static final double turretLeftAngleLocation = -43.7;
+  public static final double turretRightAngleLocation = 0;
+  public static final double turretLeftAngleLocation = 0;
 
   // Hardware
   public static final int kCanIdLeft = 43;

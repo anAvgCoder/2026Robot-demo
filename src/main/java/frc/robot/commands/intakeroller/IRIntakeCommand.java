@@ -1,6 +1,5 @@
 package frc.robot.commands.intakeroller;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.intakeroller.IntakeRoller;
 import frc.robot.subsystems.intakeroller.IntakeRollerIO;
@@ -39,14 +38,6 @@ public class IRIntakeCommand extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    if (!DriverStation.isAutonomous()) {
-      return false;
-    } else {
-      if (runCounter == 24) {
-        return true;
-      } else {
-        return false;
-      }
-    }
+    return false;
   }
 }

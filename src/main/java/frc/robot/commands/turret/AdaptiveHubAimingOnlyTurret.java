@@ -7,7 +7,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
@@ -75,15 +74,7 @@ public class AdaptiveHubAimingOnlyTurret extends Command {
 
   @Override
   public boolean isFinished() {
-    if (!DriverStation.isAutonomous()) {
-      return false;
-    } else {
-      if (runCounter == 24) {
-        return true;
-      } else {
-        return false;
-      }
-    }
+    return false;
   }
 
   public double calculateTurretDegreesRobotRelative(Pose3d turretPose, double turretMountAngleDeg) {

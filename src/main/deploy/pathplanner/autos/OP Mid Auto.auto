@@ -29,7 +29,13 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "AdaptiveStorageAiming"
+                  "name": "AdaptiveStorageAimingNoMove"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AdaptiveStorageAimingShooter"
                 }
               }
             ]

@@ -1,6 +1,5 @@
 package frc.robot.commands.diverter;
 
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.diverter.Diverter;
 import frc.robot.subsystems.diverter.DiverterIO;
@@ -39,14 +38,6 @@ public class DiverterCommand extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    if (!DriverStation.isAutonomous()) {
-      return false;
-    } else {
-      if (runCounter == 24) {
-        return true;
-      } else {
-        return false;
-      }
-    }
+    return false;
   }
 }

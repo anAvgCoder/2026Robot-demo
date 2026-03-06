@@ -27,9 +27,14 @@ import frc.robot.commands.belt.BeltIntakeCommand;
 import frc.robot.commands.belt.BeltOutakeCommand;
 import frc.robot.commands.diverter.DiverterCommand;
 import frc.robot.commands.intakepivot.IPIntakeCommand;
+import frc.robot.commands.intakepivot.IPStorageCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
+import frc.robot.commands.shooter.ShooterAdaptiveHubAiming;
+import frc.robot.commands.shooter.ShooterAdaptiveStorageAiming;
 import frc.robot.commands.turret.AdaptiveHubAiming;
+import frc.robot.commands.turret.AdaptiveHubNoMove;
+import frc.robot.commands.turret.AdaptiveNoMove;
 import frc.robot.commands.turret.AdaptiveStorageAiming;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
@@ -101,8 +106,6 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
-  private static final JoystickButton adaptiveAimingButton = new JoystickButton(buttonPanel, 6);
-  private static final JoystickButton adaptiveStorageButton = new JoystickButton(buttonPanel, 3);
 
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
   private static final JoystickButton FiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
@@ -110,15 +113,25 @@ public class RobotContainer {
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton syncYawButton = new JoystickButton(leftJoy, 4);
 
-  private static final JoystickButton STCloseButton = new JoystickButton(buttonPanel, 5);
-  private static final JoystickButton STMidButton = new JoystickButton(buttonPanel, 2);
-  private static final JoystickButton OPCloseButton = new JoystickButton(buttonPanel, 4);
-  private static final JoystickButton OPMidButton = new JoystickButton(buttonPanel, 1);
+  private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
+  private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
+  private static final JoystickButton panelButton3 = new JoystickButton(buttonPanel, 3);
+  private static final JoystickButton panelButton4 = new JoystickButton(buttonPanel, 4);
+  private static final JoystickButton panelButton5 = new JoystickButton(buttonPanel, 5);
+  private static final JoystickButton panelButton6 = new JoystickButton(buttonPanel, 6);
+  private static final JoystickButton panelButton7 = new JoystickButton(buttonPanel, 7);
+  private static final JoystickButton panelButton8 = new JoystickButton(buttonPanel, 8);
+  private static final JoystickButton panelButton9 = new JoystickButton(buttonPanel, 9);
+  private static final JoystickButton panelButton11 = new JoystickButton(buttonPanel, 11);
+  private static final JoystickButton panelButton12 = new JoystickButton(buttonPanel, 12);
+  private static final JoystickButton panelButton13 = new JoystickButton(buttonPanel, 13);
+  private static final JoystickButton panelButton14 = new JoystickButton(buttonPanel, 14);
+  private static final JoystickButton panelButton15 = new JoystickButton(buttonPanel, 15);
 
-  private static final JoystickButton cancelPathButton = new JoystickButton(buttonPanel, 7);
-
-  private static final JoystickButton testingButon1 = new JoystickButton(buttonPanel, 14);
+  private static final JoystickButton testingButton1 = new JoystickButton(buttonPanel, 14);
   private static final JoystickButton testingButton2 = new JoystickButton(buttonPanel, 15);
+  private static final JoystickButton testingButton3 = new JoystickButton(buttonPanel, 9);
+  private static final JoystickButton testingButton4 = new JoystickButton(buttonPanel, 11);
 
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
@@ -304,27 +317,66 @@ public class RobotContainer {
     // adaptiveShooterTestAimingButton.toggleOnTrue(
     //     new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
 
-    adaptiveAimingButton.whileTrue(
-        new AdaptiveHubAiming(
-            rightRotater,
+    panelButton3
+        .and(panelButton8.negate())
+        .whileTrue(
+            new AdaptiveHubNoMove(
+                rightRotater,
+                rightHood,
+                leftRotater,
+                leftHood,
+                drive,
+                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
+
+    panelButton2
+        .and(panelButton8.negate())
+        .whileTrue(
+            new AdaptiveHubAiming(
+                rightRotater,
+                rightHood,
+                leftRotater,
+                leftHood,
+                drive,
+                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
+
+    panelButton1.toggleOnTrue(
+        new ShooterAdaptiveHubAiming(
             rightShooter,
-            rightHood,
-            leftRotater,
             leftShooter,
-            leftHood,
             drive,
             (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
 
-    adaptiveStorageButton.whileTrue(
-        new AdaptiveStorageAiming(
-            rightRotater,
+    panelButton6
+        .and(panelButton8.negate())
+        .whileTrue(
+            new AdaptiveNoMove(
+                rightRotater,
+                rightHood,
+                leftRotater,
+                leftHood,
+                drive,
+                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
+
+    panelButton5
+        .and(panelButton8.negate())
+        .whileTrue(
+            new AdaptiveStorageAiming(
+                rightRotater,
+                rightHood,
+                leftRotater,
+                leftHood,
+                drive,
+                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
+
+    panelButton4.toggleOnTrue(
+        new ShooterAdaptiveStorageAiming(
             rightShooter,
-            rightHood,
-            leftRotater,
             leftShooter,
-            leftHood,
             drive,
             (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
+
+    panelButton7.onTrue(cancelActivePath());
+    panelButton8.whileTrue(forceHoodsDownAndIntake());
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
@@ -334,15 +386,14 @@ public class RobotContainer {
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
 
-    testingButon1.onTrue(
+    panelButton15.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
             .ignoringDisable(true));
 
-    STMidButton.onTrue(runTeleopPath("ST Push Balls"));
-    STCloseButton.onTrue(runTeleopPath("ST Clear Depot"));
-    OPMidButton.onTrue(runTeleopPath("OP Push Balls"));
-    OPCloseButton.onTrue(runTeleopPath("OP Clear Depot"));
-    cancelPathButton.onTrue(cancelActivePath());
+    panelButton9.onTrue(runTeleopPath("ST Push Balls"));
+    panelButton11.onTrue(runTeleopPath("ST Clear Depot"));
+    panelButton12.onTrue(runTeleopPath("OP Push Balls"));
+    panelButton13.onTrue(runTeleopPath("OP Clear Depot"));
   }
 
   public boolean getClampedTurn(Joystick joy) {
@@ -394,8 +445,6 @@ public class RobotContainer {
 
   private void registerNamedCommands() {
 
-    // Go to the L4 Position
-
     System.out.println("Commands registered");
 
     NamedCommands.registerCommand(
@@ -421,30 +470,39 @@ public class RobotContainer {
                 Commands.runOnce(() -> diverter.getIO().stop()))));
 
     NamedCommands.registerCommand(
-        "AdaptiveHubAiming",
+        "AdaptiveStorageAimingShooter",
         Commands.repeatingSequence(
-            new AdaptiveHubAiming(
-                rightRotater,
+            new ShooterAdaptiveStorageAiming(
                 rightShooter,
-                rightHood,
-                leftRotater,
                 leftShooter,
-                leftHood,
                 drive,
                 (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red))));
 
     NamedCommands.registerCommand(
-        "AdaptiveStorageAiming",
+        "AdaptiveStorageAimingNoMove",
         Commands.repeatingSequence(
-            new AdaptiveStorageAiming(
+            new AdaptiveNoMove(
                 rightRotater,
-                rightShooter,
                 rightHood,
                 leftRotater,
-                leftShooter,
                 leftHood,
                 drive,
                 (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red))));
+  }
+
+  private Command forceHoodsDownAndIntake() {
+    Command holdHoodsDown =
+        Commands.run(
+            () -> {
+              rightHood.getIO().setHoodPosition(0.0);
+              leftHood.getIO().setHoodPosition(0.0);
+            },
+            rightHood,
+            leftHood);
+
+    Command intake = Commands.parallel(new IPStorageCommand(intakePivot));
+
+    return holdHoodsDown.alongWith(intake).withName("ForceHoodsDownAndIntake");
   }
 
   /**
