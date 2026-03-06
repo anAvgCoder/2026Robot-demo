@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Mid To Bottom"
+            "pathName": "To Bottom 1-4"
           }
         },
         {
@@ -17,7 +17,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Bottom Up"
+                  "pathName": "Bottom 1-4 Up"
                 }
               },
               {

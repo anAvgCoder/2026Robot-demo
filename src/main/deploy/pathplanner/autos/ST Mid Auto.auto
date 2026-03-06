@@ -7,7 +7,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Mid To Top"
+            "pathName": "To Top 1-4"
           }
         },
         {
@@ -17,7 +17,7 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "AdaptiveStorageAimingShooter"
+                  "name": "AdaptiveStorageAiming"
                 }
               },
               {
@@ -29,13 +29,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Top Down"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "AdaptiveStorageAimingNoMove"
+                  "pathName": "Top 1-4 Down"
                 }
               }
             ]
