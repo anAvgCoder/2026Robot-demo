@@ -3,9 +3,9 @@ package frc.robot.subsystems.turret.rotater;
 import edu.wpi.first.math.util.Units;
 
 public class RotaterConstants {
-  // Turret Locations
-  public static final double turretRightAngleLocation = 0;
-  public static final double turretLeftAngleLocation = 0;
+  // Turret Locations / mount zero offsets used by higher-level aim code.
+  public static final double turretRightAngleLocation = 0.0;
+  public static final double turretLeftAngleLocation = 0.0;
 
   // Hardware
   public static final int kCanIdLeft = 43;
@@ -16,18 +16,28 @@ public class RotaterConstants {
   public static final boolean kInvertedLeft = true;
   public static final int kCurrentLimitAmps = 40;
 
-  // Motor rotations per turret rotation
-  public static final double kGearRatio = 25.0;
+  // Absolute encoder zero offsets.
+  // Leave at 0.0 until you calibrate them to your real mechanism.
+  public static final double kAbsEncoderOffsetRightRad = 0.0;
+  public static final double kAbsEncoderOffsetLeftRad = 0.0;
+
+  // Closed-loop motor command sign. Preserve the sign convention used in the original
+  // implementation
+  // until verified on-robot.
+  public static final double kClosedLoopOutputSignRight = -1.0;
+  public static final double kClosedLoopOutputSignLeft = -1.0;
 
   // Soft limits (degrees)
   public static final double kMinAngleDeg = -135.0;
   public static final double kMaxAngleDeg = 135.0;
 
-  // Motion constraints for the trapezoidal pid thing from wpilib
-  public static final double kMaxVelRadPerSec = 20; // 45
-  public static final double kMaxAccelRadPerSec2 = 45; // 70
+  // Motion constraints for the turret profile controller
+  public static final double kMaxVelRadPerSec = 20.0;
+  public static final double kMaxAccelRadPerSec2 = 45.0;
 
   // Gains TODO: TUNE
+  // Units here are effectively volts-per-radian, etc., because the closed-loop output is applied
+  // with setVoltage().
   public static final double kP = 0.5;
   public static final double kI = 0.0;
   public static final double kD = 0.0;
@@ -39,17 +49,11 @@ public class RotaterConstants {
   public static final double kPosToleranceDeg = 1.0;
   public static final double kVelToleranceDegPerSec = 5.0;
 
-  // --- Conversions (radians) ---
   public static final double kMinAngleRad = Units.degreesToRadians(kMinAngleDeg);
   public static final double kMaxAngleRad = Units.degreesToRadians(kMaxAngleDeg);
-
   public static final double kPosToleranceRad = Units.degreesToRadians(kPosToleranceDeg);
   public static final double kVelToleranceRadPerSec =
       Units.degreesToRadians(kVelToleranceDegPerSec);
 
-  // Motor rotations -> turret radians
-  public static final double kPositionFactorRadPerMotorRot = (2.0 * Math.PI) / kGearRatio;
-
-  // Motor RPM -> turret rad/s
-  public static final double kVelocityFactorRadPerSecPerRPM = (2.0 * Math.PI) / (kGearRatio * 60.0);
+  private RotaterConstants() {}
 }

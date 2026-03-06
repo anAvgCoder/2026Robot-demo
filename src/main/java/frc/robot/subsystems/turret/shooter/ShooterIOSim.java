@@ -1,33 +1,65 @@
 package frc.robot.subsystems.turret.shooter;
 
-import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.system.plant.LinearSystemId;
 import edu.wpi.first.wpilibj.simulation.DCMotorSim;
 
 public class ShooterIOSim implements ShooterIO {
-  private ShooterIOInputs inputs = new ShooterIOInputs();
-
   private final DCMotorSim motorSim;
-  private static final DCMotor gearbox = DCMotor.getNeoVortex(1);
+
+  private boolean closedLoopActive = false;
+  private double goalVelocityRPM = 0.0;
+  private double appliedVolts = 0.0;
 
   public ShooterIOSim() {
-    motorSim = new DCMotorSim(LinearSystemId.createDCMotorSystem(gearbox, 0.025, 1), gearbox);
+    motorSim =
+        new DCMotorSim(
+            LinearSystemId.createDCMotorSystem(
+                ShooterConstants.kSimMotor,
+                ShooterConstants.kSimJkgMetersSquared,
+                ShooterConstants.kSimGearing),
+            ShooterConstants.kSimMotor);
   }
 
   @Override
-  public void setSpeed(double speed) {}
+  public void setVelocityRPM(double velocityRPM) {
+    goalVelocityRPM = Math.max(0.0, velocityRPM);
+    closedLoopActive = true;
+  }
 
   @Override
-  public void hubAdaptiveAiming() {}
+  public void setOpenLoopPercent(double percent) {
+    goalVelocityRPM = 0.0;
+    closedLoopActive = false;
+    appliedVolts = MathUtil.clamp(percent, -1.0, 1.0) * ShooterConstants.kNominalVoltage;
+  }
 
   @Override
-  public void stopApplyingMotor() {}
-
-  @Override
-  public void storageAdaptiveAiming() {}
+  public void stop() {
+    goalVelocityRPM = 0.0;
+    closedLoopActive = false;
+    appliedVolts = 0.0;
+  }
 
   @Override
   public void updateInputs(ShooterIOInputs inputs) {
-    this.inputs = inputs;
+    if (closedLoopActive) {
+      double velocityErrorRPM = goalVelocityRPM - motorSim.getAngularVelocityRPM();
+      double ffVolts =
+          goalVelocityRPM / ShooterConstants.kNeoVortexFreeSpeedRPM * ShooterConstants.kNominalVoltage;
+      double fbVolts = velocityErrorRPM * ShooterConstants.kSimVelocityKpVoltsPerRPM;
+      appliedVolts = MathUtil.clamp(ffVolts + fbVolts, -ShooterConstants.kNominalVoltage, ShooterConstants.kNominalVoltage);
+    }
+
+    motorSim.setInputVoltage(appliedVolts);
+    motorSim.update(ShooterConstants.kLoopPeriodSec);
+
+    inputs.appliedVolts = appliedVolts;
+    inputs.supplyCurrentAmps = motorSim.getCurrentDrawAmps();
+    inputs.motorPositionRot = motorSim.getAngularPositionRotations();
+    inputs.velocityRPM = motorSim.getAngularVelocityRPM();
+    inputs.tempCelsius = 25.0;
+    inputs.goalVelocityRPM = goalVelocityRPM;
+    inputs.closedLoopActive = closedLoopActive;
   }
 }

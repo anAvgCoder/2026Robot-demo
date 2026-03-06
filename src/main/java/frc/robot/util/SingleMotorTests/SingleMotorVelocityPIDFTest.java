@@ -91,7 +91,7 @@ public class SingleMotorVelocityPIDFTest extends SubsystemBase {
   }
 
   private void applyConfig(ResetMode resetMode) {
-    cfg.idleMode(IdleMode.kCoast).smartCurrentLimit(ShooterConstants.shooterMotorCurrentLimit);
+    cfg.idleMode(IdleMode.kCoast).smartCurrentLimit(ShooterConstants.kCurrentLimitAmps);
 
     cfg.closedLoop
         .pid(kP.get(), kI.get(), kD.get(), ClosedLoopSlot.kSlot0)

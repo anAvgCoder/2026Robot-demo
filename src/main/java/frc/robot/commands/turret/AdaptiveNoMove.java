@@ -12,23 +12,18 @@ import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
 import frc.robot.subsystems.turret.hood.Hood;
-import frc.robot.subsystems.turret.hood.HoodIO;
 import frc.robot.subsystems.turret.rotater.Rotater;
 import frc.robot.subsystems.turret.rotater.RotaterConstants;
-import frc.robot.subsystems.turret.rotater.RotaterIO;
 import frc.robot.util.FieldConstants;
 import org.littletonrobotics.junction.Logger;
 
 public class AdaptiveNoMove extends Command {
-  private final RotaterIO rotaterIORight;
-  private final HoodIO hoodIORight;
-  private final RotaterIO rotaterIOLeft;
-  private final HoodIO hoodIOLeft;
-
+  private final Rotater rotaterRight;
+  private final Hood hoodRight;
+  private final Rotater rotaterLeft;
+  private final Hood hoodLeft;
   private final Drive drive;
   private final boolean isBlue;
-
-  private int runCounter;
 
   public AdaptiveNoMove(
       Rotater rotaterRight,
@@ -37,13 +32,10 @@ public class AdaptiveNoMove extends Command {
       Hood hoodLeft,
       Drive drive,
       boolean isBlueCheck) {
-
-    rotaterIORight = rotaterRight.getIO();
-    hoodIORight = hoodRight.getIO();
-
-    rotaterIOLeft = rotaterLeft.getIO();
-    hoodIOLeft = hoodLeft.getIO();
-
+    this.rotaterRight = rotaterRight;
+    this.hoodRight = hoodRight;
+    this.rotaterLeft = rotaterLeft;
+    this.hoodLeft = hoodLeft;
     this.drive = drive;
     this.isBlue = isBlueCheck;
 
@@ -51,39 +43,28 @@ public class AdaptiveNoMove extends Command {
   }
 
   @Override
-  public void initialize() {
-    runCounter = 0;
-
-    // Optional: if you still see estimator jitter during aiming, disable Quest fusion here:
-    // drive.setQuestVisionEnabled(false);
-  }
-
-  @Override
   public void execute() {
     Pose3d turretPoseRight = getTurretPose(true);
-    rotaterIORight.setTurnPosition(
+    rotaterRight.setTurnPosition(
         calculateTurretDegreesRobotRelative(
             turretPoseRight, RotaterConstants.turretRightAngleLocation));
-    ShotSetpoint spR = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
-    hoodIORight.setHoodPosition(spR.hoodPos());
+    ShotSetpoint spRight = ShotTable.get(calculateAdjustedTargetDistance(turretPoseRight));
+    hoodRight.setHoodPosition(spRight.hoodPos());
 
     Pose3d turretPoseLeft = getTurretPose(false);
-    rotaterIOLeft.setTurnPosition(
+    rotaterLeft.setTurnPosition(
         calculateTurretDegreesRobotRelative(
             turretPoseLeft, RotaterConstants.turretLeftAngleLocation));
-    ShotSetpoint spL = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
-    hoodIOLeft.setHoodPosition(spL.hoodPos());
-
-    runCounter++;
-    if (runCounter > 24) runCounter = 0;
+    ShotSetpoint spLeft = ShotTable.get(calculateAdjustedTargetDistance(turretPoseLeft));
+    hoodLeft.setHoodPosition(spLeft.hoodPos());
   }
 
   @Override
   public void end(boolean interrupted) {
-    rotaterIORight.setVoltage(0.0);
-    rotaterIOLeft.setVoltage(0.0);
-    hoodIORight.setVoltage(0.0);
-    hoodIOLeft.setVoltage(0.0);
+    rotaterRight.stop();
+    rotaterLeft.stop();
+    hoodRight.stop();
+    hoodLeft.stop();
   }
 
   @Override
@@ -127,18 +108,12 @@ public class AdaptiveNoMove extends Command {
     return Math.toDegrees(turretRelativeRad);
   }
 
-  public double calculateAdjustedHubDistance(Pose3d turretPose) {
-    double hubX =
-        isBlue
-            ? FieldConstants.BLUE_LOW_TARGET_POSE3D.getX()
-            : FieldConstants.RED_HIGH_TARGET_POSE3D.getX();
-    double hubY =
-        isBlue
-            ? FieldConstants.BLUE_LOW_TARGET_POSE3D.getY()
-            : FieldConstants.RED_HIGH_TARGET_POSE3D.getY();
+  public double calculateAdjustedTargetDistance(Pose3d turretPose) {
+    Pose3d targetPose =
+        isBlue ? FieldConstants.BLUE_LOW_TARGET_POSE3D : FieldConstants.RED_HIGH_TARGET_POSE3D;
 
-    double dx = turretPose.getX() - hubX;
-    double dy = turretPose.getY() - hubY;
+    double dx = turretPose.getX() - targetPose.getX();
+    double dy = turretPose.getY() - targetPose.getY();
     return Math.hypot(dx, dy);
   }
 }

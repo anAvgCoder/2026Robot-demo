@@ -1,10 +1,3 @@
-// Copyright (c) 2021-2026 Littleton Robotics
-// http://github.com/Mechanical-Advantage
-//
-// Use of this source code is governed by a BSD
-// license that can be found in the LICENSE file
-// at the root directory of this project.
-
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -21,6 +14,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
@@ -53,9 +47,11 @@ import frc.robot.subsystems.intakepivot.IntakePivot;
 import frc.robot.subsystems.intakepivot.IntakePivotConstants;
 import frc.robot.subsystems.intakepivot.IntakePivotIO;
 import frc.robot.subsystems.intakepivot.IntakePivotIOReal;
+import frc.robot.subsystems.intakepivot.IntakePivotIOSim;
 import frc.robot.subsystems.intakeroller.IntakeRoller;
 import frc.robot.subsystems.intakeroller.IntakeRollerIO;
 import frc.robot.subsystems.intakeroller.IntakeRollerIOReal;
+import frc.robot.subsystems.intakeroller.IntakeRollerIOSim;
 import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
@@ -64,10 +60,12 @@ import frc.robot.subsystems.turret.hood.Hood;
 import frc.robot.subsystems.turret.hood.HoodConstants;
 import frc.robot.subsystems.turret.hood.HoodIO;
 import frc.robot.subsystems.turret.hood.HoodIOReal;
+import frc.robot.subsystems.turret.hood.HoodIOSim;
 import frc.robot.subsystems.turret.rotater.Rotater;
 import frc.robot.subsystems.turret.rotater.RotaterConstants;
 import frc.robot.subsystems.turret.rotater.RotaterIO;
 import frc.robot.subsystems.turret.rotater.RotaterIOReal;
+import frc.robot.subsystems.turret.rotater.RotaterIOSim;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.subsystems.turret.shooter.ShooterIOReal;
 import frc.robot.subsystems.turret.shooter.ShooterIOSim;
@@ -75,12 +73,6 @@ import java.util.Map;
 import java.util.Set;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and button mappings) should be declared here.
- */
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
@@ -98,19 +90,18 @@ public class RobotContainer {
   private final Hood rightHood;
   private final Shooter rightShooter;
 
-  // Commands
-
   // Joysticks
   private static final Joystick leftJoy = new Joystick(0);
   private static final Joystick rightJoy = new Joystick(1);
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
-
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
-  private static final JoystickButton FiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
+  private static final JoystickButton deployOutakeButton = new JoystickButton(rightJoy, 2);
+  private static final JoystickButton fiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
 
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
+  private static final JoystickButton retractOutakeButton = new JoystickButton(leftJoy, 2);
   private static final JoystickButton syncYawButton = new JoystickButton(leftJoy, 4);
 
   private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
@@ -128,34 +119,20 @@ public class RobotContainer {
   private static final JoystickButton panelButton14 = new JoystickButton(buttonPanel, 14);
   private static final JoystickButton panelButton15 = new JoystickButton(buttonPanel, 15);
 
-  private static final JoystickButton testingButton1 = new JoystickButton(buttonPanel, 14);
-  private static final JoystickButton testingButton2 = new JoystickButton(buttonPanel, 15);
-  private static final JoystickButton testingButton3 = new JoystickButton(buttonPanel, 9);
-  private static final JoystickButton testingButton4 = new JoystickButton(buttonPanel, 11);
-
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
   private int activePathToken = 0;
-
-  private static PathPlannerPath loadPath(String name) {
-    try {
-      return PathPlannerPath.fromPathFile(name);
-    } catch (Exception e) {
-      DriverStation.reportError("Failed to load path: " + name, e.getStackTrace());
-      throw new RuntimeException(e);
-    }
-  }
-
-  private final Map<String, PathPlannerPath> paths =
-      Map.of(
-          "ST Push Balls", loadPath("ST Push Balls"),
-          "ST Clear Depot", loadPath("ST Clear Depot"),
-          "OP Push Balls", loadPath("OP Push Balls"));
-
   private Command activePathCommand = null;
+
+  private static final Map<String, String> TELEOP_PATH_FILES =
+      Map.of(
+          "ST Push Balls", "ST Push Balls",
+          "ST Clear Depot", "ST Clear Depot",
+          "OP Push Balls", "OP Push Balls",
+          "OP Clear Depot", "OP Clear Depot");
 
   private final PathConstraints pathfindConstraints =
       new PathConstraints(1.5, 1.5, Units.degreesToRadians(540), Units.degreesToRadians(720));
@@ -164,7 +141,6 @@ public class RobotContainer {
   public RobotContainer() {
     switch (Constants.currentMode) {
       case REAL:
-        // Real robot, instantiate hardware IO implementations
         drive =
             new Drive(
                 new GyroIOPigeon2(),
@@ -192,11 +168,9 @@ public class RobotContainer {
                 new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder),
                 "RightRotater");
         rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId), "RightHood");
-
         break;
 
       case SIM:
-        // Sim robot, instantiate physics sim IO implementations
         drive =
             new Drive(
                 new GyroIO() {},
@@ -208,20 +182,19 @@ public class RobotContainer {
         diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim());
         rightBelt = new Belt(new BeltIOSim());
-        intakePivot = new IntakePivot(new IntakePivotIO() {});
-        intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
+        intakePivot = new IntakePivot(new IntakePivotIOSim());
+        intakeRoller = new IntakeRoller(new IntakeRollerIOSim());
 
         leftShooter = new Shooter(new ShooterIOSim());
-        leftRotater = new Rotater(new RotaterIO() {}, "LeftRotater");
-        leftHood = new Hood(new HoodIO() {}, "LeftHood");
+        leftRotater = new Rotater(new RotaterIOSim(), "LeftRotater");
+        leftHood = new Hood(new HoodIOSim(), "LeftHood");
 
         rightShooter = new Shooter(new ShooterIOSim());
-        rightRotater = new Rotater(new RotaterIO() {}, "RightRotater");
-        rightHood = new Hood(new HoodIO() {}, "RightHood");
+        rightRotater = new Rotater(new RotaterIOSim(), "RightRotater");
+        rightHood = new Hood(new HoodIOSim(), "RightHood");
         break;
 
       default:
-        // Replayed robot, disable IO implementations
         drive =
             new Drive(
                 new GyroIO() {},
@@ -246,36 +219,32 @@ public class RobotContainer {
         break;
     }
 
-    // Set up auto routines
+    // Must happen before any PathPlanner path/auto is constructed.
     registerNamedCommands();
 
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
-    // Configure the button bindings
     configureButtonBindings();
   }
 
   /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
+   * Use this method to define button->command mappings.
+   *
+   * <p>Hold-style controls use whileTrue so the command is canceled automatically on release.
    */
   private void configureButtonBindings() {
-    // Default command, normal field-relative drive
-
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() *0.8 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() *0.8 : 0.0,
-            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() *0.8: 0.0));
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
+            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.8 : 0.0));
 
-    syncYawButton.toggleOnTrue(
+    syncYawButton.whileTrue(
         DriveCommands.joystickDriveAtAngle(
             drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() *0.8 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() *0.8: 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
             () ->
                 MathUtil.angleModulus(
                     Math.PI
@@ -283,7 +252,7 @@ public class RobotContainer {
                             getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
                             getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0))));
 
-    FiftyPercentDriveButton.toggleOnTrue(
+    fiftyPercentDriveButton.whileTrue(
         DriveCommands.joystickDrive(
             drive,
             () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
@@ -293,90 +262,36 @@ public class RobotContainer {
     intakeButton.whileTrue(
         Commands.parallel(
             new IRIntakeCommand(intakeRoller),
-            Commands.sequence(
-                Commands.waitSeconds(0.35),
-                Commands.parallel(
-                    new BeltIntakeCommand(rightBelt),
-                    new BeltIntakeCommand(leftBelt),
-                    new DiverterCommand(diverter),
-                    new IPIntakeCommand(intakePivot)))));
+            new BeltIntakeCommand(rightBelt),
+            new BeltIntakeCommand(leftBelt),
+            new DiverterCommand(diverter)));
 
     outakeButton.whileTrue(
         Commands.parallel(
-            new IPIntakeCommand(intakePivot),
-            Commands.sequence(
-                Commands.waitSeconds(0.45),
-                Commands.parallel(
-                    new BeltOutakeCommand(rightBelt),
-                    new BeltOutakeCommand(leftBelt),
-                    new DiverterCommand(diverter),
-                    new IROutakeCommand(intakeRoller)))));
+            new BeltOutakeCommand(rightBelt),
+            new BeltOutakeCommand(leftBelt),
+            new DiverterCommand(diverter),
+            new IROutakeCommand(intakeRoller)));
 
-    // adaptiveAimingButton.toggleOnTrue(
-    //     new AdaptiveHubAimingOnlyTurret(rightRotater, leftRotater, drive, true));
-    // adaptiveShooterTestAimingButton.toggleOnTrue(
-    //     new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
+    deployOutakeButton.onTrue(new IPIntakeCommand(intakePivot));
+    retractOutakeButton.onTrue(new IPStorageCommand(intakePivot));
 
-    panelButton3
-        .and(panelButton8.negate())
-        .whileTrue(
-            new AdaptiveHubNoMove(
-                rightRotater,
-                rightHood,
-                leftRotater,
-                leftHood,
-                drive,
-                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
+    panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
+    panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
+    panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
 
-    panelButton2
-        .and(panelButton8.negate())
-        .whileTrue(
-            new AdaptiveHubAiming(
-                rightRotater,
-                rightHood,
-                leftRotater,
-                leftHood,
-                drive,
-                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
-
-    panelButton1.toggleOnTrue(
-        new ShooterAdaptiveHubAiming(
-            rightShooter,
-            leftShooter,
-            drive,
-            (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
-
-    panelButton6
-        .and(panelButton8.negate())
-        .whileTrue(
-            new AdaptiveNoMove(
-                rightRotater,
-                rightHood,
-                leftRotater,
-                leftHood,
-                drive,
-                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
-
-    panelButton5
-        .and(panelButton8.negate())
-        .whileTrue(
-            new AdaptiveStorageAiming(
-                rightRotater,
-                rightHood,
-                leftRotater,
-                leftHood,
-                drive,
-                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
-
-    panelButton4.toggleOnTrue(
-        new ShooterAdaptiveStorageAiming(
-            rightShooter,
-            leftShooter,
-            drive,
-            (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
+    panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
+    panelButton5.and(panelButton8.negate()).whileTrue(adaptiveStorageAimingCommand());
+    panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
 
     panelButton7.onTrue(cancelActivePath());
-    panelButton8.whileTrue(forceHoodsDownAndIntake());
+
+    panelButton8.onTrue(
+      Commands.parallel(
+        new IPStorageCommand(intakePivot),
+      Commands.runOnce(() -> leftHood.setStoragePosition()),
+      Commands.runOnce(() -> rightHood.setStoragePosition())));
+
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
@@ -404,18 +319,82 @@ public class RobotContainer {
     return (Math.abs(joy.getY()) > 0.1) || (Math.abs(joy.getX()) > 0.1);
   }
 
+  private boolean isBlueAlliance() {
+    return DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red;
+  }
+
+  private Command adaptiveHubNoMoveCommand() {
+    return deferredCommand(
+        () ->
+            new AdaptiveHubNoMove(
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+        rightRotater,
+        rightHood,
+        leftRotater,
+        leftHood);
+  }
+
+  private Command adaptiveHubAimingCommand() {
+    return deferredCommand(
+        () -> new AdaptiveHubAiming(rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+        rightRotater,
+        rightHood,
+        leftRotater,
+        leftHood);
+  }
+
+  private Command adaptiveStorageNoMoveCommand() {
+    return deferredCommand(
+        () -> new AdaptiveNoMove(rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+        rightRotater,
+        rightHood,
+        leftRotater,
+        leftHood);
+  }
+
+  private Command adaptiveStorageAimingCommand() {
+    return deferredCommand(
+        () -> new AdaptiveStorageAiming(rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+        rightRotater,
+        rightHood,
+        leftRotater,
+        leftHood);
+  }
+
+  private Command shooterAdaptiveHubAimingCommand() {
+    return deferredCommand(
+        () -> new ShooterAdaptiveHubAiming(rightShooter, leftShooter, drive, isBlueAlliance()),
+        rightShooter,
+        leftShooter);
+  }
+
+  private Command shooterAdaptiveStorageAimingCommand() {
+    return deferredCommand(
+        () -> new ShooterAdaptiveStorageAiming(rightShooter, leftShooter, drive, isBlueAlliance()),
+        rightShooter,
+        leftShooter);
+  }
+
   private Command runTeleopPath(String name) {
-    PathPlannerPath path = paths.get(name);
-    if (path == null) {
-      return Commands.runOnce(() -> DriverStation.reportError("Unknown path name: " + name, false));
+    String pathFile = TELEOP_PATH_FILES.get(name);
+    if (pathFile == null) {
+      return Commands.runOnce(
+          () -> DriverStation.reportError("Unknown path name: " + name, false));
     }
 
     return Commands.defer(
         () -> {
           cancelActivePathNow();
 
-          final int myToken = ++activePathToken;
+          final PathPlannerPath path;
+          try {
+            path = PathPlannerPath.fromPathFile(pathFile);
+          } catch (Exception e) {
+            DriverStation.reportError("Failed to load path: " + pathFile, e.getStackTrace());
+            return Commands.none();
+          }
 
+          final int myToken = ++activePathToken;
           Command cmd =
               AutoBuilder.pathfindThenFollowPath(path, pathfindConstraints)
                   .withName("TeleopPath_" + name)
@@ -444,16 +423,13 @@ public class RobotContainer {
   }
 
   private void registerNamedCommands() {
-
-    System.out.println("Commands registered");
-
     NamedCommands.registerCommand(
         "StartPick",
         Commands.parallel(
             Commands.runOnce(() -> intakeRoller.getIO().intake()),
             Commands.sequence(
                 Commands.waitSeconds(0.35),
-                Commands.runOnce(() -> intakePivot.getIO().setIntakeSecondaryPosition()),
+                Commands.runOnce(() -> intakePivot.setIntakeSecondaryPosition()),
                 Commands.runOnce(() -> leftBelt.getIO().intake()),
                 Commands.runOnce(() -> rightBelt.getIO().intake()),
                 Commands.runOnce(() -> diverter.getIO().intake()))));
@@ -464,45 +440,21 @@ public class RobotContainer {
             Commands.runOnce(() -> intakeRoller.getIO().stop()),
             Commands.sequence(
                 Commands.waitSeconds(0.35),
-                Commands.runOnce(() -> intakePivot.getIO().setStoragePosition()),
+                Commands.runOnce(() -> intakePivot.setStoragePosition()),
                 Commands.runOnce(() -> leftBelt.getIO().stop()),
                 Commands.runOnce(() -> rightBelt.getIO().stop()),
                 Commands.runOnce(() -> diverter.getIO().stop()))));
 
     NamedCommands.registerCommand(
-        "AdaptiveStorageAimingShooter",
-        Commands.repeatingSequence(
-            new ShooterAdaptiveStorageAiming(
-                rightShooter,
-                leftShooter,
-                drive,
-                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red))));
+        "AdaptiveStorageAimingShooter", shooterAdaptiveStorageAimingCommand());
 
     NamedCommands.registerCommand(
-        "AdaptiveStorageAimingNoMove",
-        Commands.repeatingSequence(
-            new AdaptiveNoMove(
-                rightRotater,
-                rightHood,
-                leftRotater,
-                leftHood,
-                drive,
-                (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red))));
+        "AdaptiveStorageAimingNoMove", adaptiveStorageNoMoveCommand());
   }
 
-  private Command forceHoodsDownAndIntake() {
-    Command holdHoodsDown =
-        Commands.run(
-            () -> {
-              rightHood.getIO().setHoodPosition(0.0);
-              leftHood.getIO().setHoodPosition(0.0);
-            },
-            rightHood,
-            leftHood);
-
-    Command intake = Commands.parallel(new IPStorageCommand(intakePivot));
-
-    return holdHoodsDown.alongWith(intake).withName("ForceHoodsDownAndIntake");
+  private Command deferredCommand(
+      java.util.function.Supplier<Command> supplier, Subsystem... requirements) {
+    return Commands.defer(supplier, Set.of(requirements));
   }
 
   /**

@@ -4,9 +4,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Twist2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -15,32 +13,26 @@ import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
 import frc.robot.subsystems.turret.ShotTimeTable;
 import frc.robot.subsystems.turret.hood.Hood;
-import frc.robot.subsystems.turret.hood.HoodIO;
 import frc.robot.subsystems.turret.rotater.Rotater;
 import frc.robot.subsystems.turret.rotater.RotaterConstants;
-import frc.robot.subsystems.turret.rotater.RotaterIO;
 import frc.robot.util.FieldConstants;
 import org.littletonrobotics.junction.Logger;
 
-
 public class AdaptiveHubAiming extends Command {
-  private final RotaterIO rotaterIORight;
-  private final HoodIO hoodIORight;
-
-  private final RotaterIO rotaterIOLeft;
-  private final HoodIO hoodIOLeft;
-
+  private final Rotater rotaterRight;
+  private final Hood hoodRight;
+  private final Rotater rotaterLeft;
+  private final Hood hoodLeft;
   private final Drive drive;
   private final boolean isBlue;
-
-  private int runCounter;
 
   private static final double TURRET_X_INCHES = 6.5;
   private static final double TURRET_Y_INCHES = 6.75;
 
-  private static final int LOOKAHEAD_ITERS = 3;
-  private static final double TOF_EPSILON_SEC = 0.02;
-
+  private static final int LOOKAHEAD_ITERS = 4;
+  private static final double TOF_EPSILON_SEC = 0.005;
+  private static final double MAX_LEAD_TIME_SEC = 2.0;
+  private static final double SHOT_RELEASE_DELAY_SEC = 0.0;
   private static final double TOF_TABLE_MIN_M = 0.0;
   private static final double TOF_TABLE_MAX_M = 5.13;
 
@@ -51,13 +43,10 @@ public class AdaptiveHubAiming extends Command {
       Hood hoodLeft,
       Drive drive,
       boolean isBlueCheck) {
-
-    this.rotaterIORight = rotaterRight.getIO();
-    this.hoodIORight = hoodRight.getIO();
-
-    this.rotaterIOLeft = rotaterLeft.getIO();
-    this.hoodIOLeft = hoodLeft.getIO();
-
+    this.rotaterRight = rotaterRight;
+    this.hoodRight = hoodRight;
+    this.rotaterLeft = rotaterLeft;
+    this.hoodLeft = hoodLeft;
     this.drive = drive;
     this.isBlue = isBlueCheck;
 
@@ -65,49 +54,29 @@ public class AdaptiveHubAiming extends Command {
   }
 
   @Override
-  public void initialize() {
-    runCounter = 0;
-  }
-
-  @Override
   public void execute() {
-    Pose2d basePose = drive.getPose();
-    ChassisSpeeds robotSpeeds = drive.getRobotRelativeSpeeds();
+    Pose2d robotPose = drive.getPose();
+    ChassisSpeeds robotRelativeSpeeds = drive.getRobotRelativeSpeeds();
 
-    Pose3d turretPoseRight = predictTurretPose(basePose, robotSpeeds, true);
-    double rightDeg =
-        calculateTurretDegreesRobotRelative(
-            turretPoseRight, RotaterConstants.turretRightAngleLocation);
-    rotaterIORight.setTurnPosition(rightDeg);
+    AimSolution rightSolution =
+        solveAim(robotPose, robotRelativeSpeeds, true, RotaterConstants.turretRightAngleLocation);
+    rotaterRight.setTurnPosition(rightSolution.turretAngleDeg);
+    hoodRight.setHoodPosition(rightSolution.shotSetpoint.hoodPos());
+    logAimSolution("Right", rightSolution);
 
-    double distRight = hubDistance(turretPoseRight);
-    ShotSetpoint spRight = ShotTable.get(distRight);
-    hoodIORight.setHoodPosition(spRight.hoodPos());
-
-    // Left turret
-    Pose3d turretPoseLeft = predictTurretPose(basePose, robotSpeeds, false);
-    double leftDeg =
-        calculateTurretDegreesRobotRelative(
-            turretPoseLeft, RotaterConstants.turretLeftAngleLocation);
-    rotaterIOLeft.setTurnPosition(leftDeg);
-
-    double distLeft = hubDistance(turretPoseLeft);
-    ShotSetpoint spLeft = ShotTable.get(distLeft);
-    hoodIOLeft.setHoodPosition(spLeft.hoodPos());
-
-    runCounter++;
-    if (runCounter > 24) {
-      runCounter = 24;
-    }
+    AimSolution leftSolution =
+        solveAim(robotPose, robotRelativeSpeeds, false, RotaterConstants.turretLeftAngleLocation);
+    rotaterLeft.setTurnPosition(leftSolution.turretAngleDeg);
+    hoodLeft.setHoodPosition(leftSolution.shotSetpoint.hoodPos());
+    logAimSolution("Left", leftSolution);
   }
 
   @Override
   public void end(boolean interrupted) {
-    rotaterIORight.setVoltage(0.0);
-    rotaterIOLeft.setVoltage(0.0);
-
-    hoodIORight.setVoltage(0.0);
-    hoodIOLeft.setVoltage(0.0);
+    rotaterRight.stop();
+    rotaterLeft.stop();
+    hoodRight.stop();
+    hoodLeft.stop();
   }
 
   @Override
@@ -115,92 +84,168 @@ public class AdaptiveHubAiming extends Command {
     return false;
   }
 
-  private Transform3d robotToTurret(boolean isRightTurret) {
-    double xMeters = Units.inchesToMeters(TURRET_X_INCHES);
-    double yMeters = Units.inchesToMeters(isRightTurret ? -TURRET_Y_INCHES : TURRET_Y_INCHES);
-    return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
-  }
+  private AimSolution solveAim(
+      Pose2d robotPose,
+      ChassisSpeeds robotRelativeSpeeds,
+      boolean isRightTurret,
+      double turretMountAngleDeg) {
 
-  private Pose2d predictRobotPose(Pose2d basePose, ChassisSpeeds robotSpeeds, double dtSec) {
-    Twist2d twist =
-        new Twist2d(
-            robotSpeeds.vxMetersPerSecond * dtSec,
-            robotSpeeds.vyMetersPerSecond * dtSec,
-            robotSpeeds.omegaRadiansPerSecond * dtSec);
-    return basePose.exp(twist);
-  }
+    Translation2d hubField = getHubTranslation();
+    Translation2d turretOffsetRobot = getTurretOffsetRobot(isRightTurret);
+    Translation2d turretOffsetField = turretOffsetRobot.rotateBy(robotPose.getRotation());
+    Translation2d pivotFieldPosition = robotPose.getTranslation().plus(turretOffsetField);
 
-  private Pose3d predictTurretPose(
-    Pose2d basePose, ChassisSpeeds robotSpeeds, boolean isRightTurret) {
-    Pose2d predictedPose = basePose;
+    ChassisSpeeds fieldRelativeSpeeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
 
-    Pose3d turretPose = new Pose3d(predictedPose).transformBy(robotToTurret(isRightTurret));
-    double dist = hubDistance(turretPose);
-    double tof = flightTimeSecondsSafe(dist);
+    Translation2d pivotFieldVelocity =
+        computePivotFieldVelocity(
+            fieldRelativeSpeeds, turretOffsetField, robotRelativeSpeeds.omegaRadiansPerSecond);
+
+    Translation2d releasePivotFieldPosition =
+        addScaled(pivotFieldPosition, pivotFieldVelocity, SHOT_RELEASE_DELAY_SEC);
+    double shotDistanceMeters = releasePivotFieldPosition.getDistance(hubField);
+    ShotSetpoint shotSetpoint = ShotTable.get(shotDistanceMeters);
+
+    double tofSeconds = flightTimeSecondsSafe(shotDistanceMeters);
+    Translation2d aimPointField = hubField;
+    double aimPathDistanceMeters = shotDistanceMeters;
 
     for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
-      Pose2d newPredictedPose = predictRobotPose(basePose, robotSpeeds, tof);
-      Pose3d newTurretPose = new Pose3d(newPredictedPose).transformBy(robotToTurret(isRightTurret));
+      double leadTimeSeconds =
+          MathUtil.clamp(SHOT_RELEASE_DELAY_SEC + tofSeconds, 0.0, MAX_LEAD_TIME_SEC);
 
-      double newDist = hubDistance(newTurretPose);
-      double newTof = flightTimeSecondsSafe(newDist);
+      Translation2d newAimPointField = addScaled(hubField, pivotFieldVelocity, -leadTimeSeconds);
+      double newAimPathDistanceMeters = pivotFieldPosition.getDistance(newAimPointField);
+      double newTofSeconds = flightTimeSecondsSafe(newAimPathDistanceMeters);
 
-      if (Math.abs(newTof - tof) < TOF_EPSILON_SEC) {
-        predictedPose = newPredictedPose;
-        turretPose = newTurretPose;
-        dist = newDist;
-        tof = newTof;
+      aimPointField = newAimPointField;
+      aimPathDistanceMeters = newAimPathDistanceMeters;
+
+      if (Math.abs(newTofSeconds - tofSeconds) < TOF_EPSILON_SEC) {
+        tofSeconds = newTofSeconds;
         break;
       }
 
-      predictedPose = newPredictedPose;
-      turretPose = newTurretPose;
-      dist = newDist;
-      tof = newTof;
+      tofSeconds = newTofSeconds;
     }
 
-    Logger.recordOutput("AimDebug/PredictedTOF", tof);
-    Logger.recordOutput("AimDebug/PredictedDistance", dist);
+    double fieldAimAngleRad =
+        Math.atan2(
+            aimPointField.getY() - pivotFieldPosition.getY(),
+            aimPointField.getX() - pivotFieldPosition.getX());
 
-    return turretPose;
-  }
-
-  private double flightTimeSecondsSafe(double distanceMeters) {
-    double clamped = MathUtil.clamp(distanceMeters, TOF_TABLE_MIN_M, TOF_TABLE_MAX_M);
-    double tof = ShotTimeTable.getFlightTimeSeconds(clamped);
-    return MathUtil.clamp(tof, 0.0, 2.0);
-  }
-
-  public double calculateTurretDegreesRobotRelative(Pose3d turretPose, double turretMountAngleDeg) {
-    Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
-
-    double dx = hubPose.getX() - turretPose.getX();
-    double dy = hubPose.getY() - turretPose.getY();
-
-    double fieldAngleRad = Math.atan2(dy, dx);
-
-    double robotYawRad = turretPose.getRotation().getZ();
-
-    double turretRelativeRad = MathUtil.angleModulus(fieldAngleRad - robotYawRad);
-
+    double turretRelativeRad =
+        MathUtil.angleModulus(fieldAimAngleRad - robotPose.getRotation().getRadians());
     turretRelativeRad =
         MathUtil.angleModulus(turretRelativeRad - Math.toRadians(turretMountAngleDeg));
 
-    double aimFieldRad = robotYawRad + turretRelativeRad;
-    Logger.recordOutput(
-        "AimDebug/TurretAimPose",
-        new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(aimFieldRad)));
-    Logger.recordOutput(
-        "AimDebug/TurretToHubPose",
-        new Pose2d(turretPose.getX(), turretPose.getY(), new Rotation2d(fieldAngleRad)));
-
-    return Math.toDegrees(turretRelativeRad);
+    return new AimSolution(
+        Math.toDegrees(turretRelativeRad),
+        fieldAimAngleRad,
+        shotDistanceMeters,
+        aimPathDistanceMeters,
+        tofSeconds,
+        shotSetpoint,
+        pivotFieldPosition,
+        aimPointField,
+        pivotFieldVelocity);
   }
 
-  public double hubDistance(Pose3d turretPose) {
+  private Translation2d computePivotFieldVelocity(
+      ChassisSpeeds fieldRelativeSpeeds,
+      Translation2d turretOffsetField,
+      double omegaRadiansPerSecond) {
+    Translation2d centerFieldVelocity =
+        new Translation2d(
+            fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond);
+
+    Translation2d rotationalFieldVelocity =
+        new Translation2d(
+            -omegaRadiansPerSecond * turretOffsetField.getY(),
+            omegaRadiansPerSecond * turretOffsetField.getX());
+
+    return centerFieldVelocity.plus(rotationalFieldVelocity);
+  }
+
+  private Translation2d getTurretOffsetRobot(boolean isRightTurret) {
+    return new Translation2d(
+        Units.inchesToMeters(TURRET_X_INCHES),
+        Units.inchesToMeters(isRightTurret ? -TURRET_Y_INCHES : TURRET_Y_INCHES));
+  }
+
+  private Translation2d getHubTranslation() {
     Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
-    double dx = turretPose.getX() - hubPose.getX();
-    double dy = turretPose.getY() - hubPose.getY();
-    return Math.hypot(dx, dy);
+    return new Translation2d(hubPose.getX(), hubPose.getY());
+  }
+
+  private Translation2d addScaled(
+      Translation2d position, Translation2d velocity, double dtSeconds) {
+    return new Translation2d(
+        position.getX() + velocity.getX() * dtSeconds,
+        position.getY() + velocity.getY() * dtSeconds);
+  }
+
+  private double flightTimeSecondsSafe(double distanceMeters) {
+    double clampedDistance = MathUtil.clamp(distanceMeters, TOF_TABLE_MIN_M, TOF_TABLE_MAX_M);
+    double tofSeconds = ShotTimeTable.getFlightTimeSeconds(clampedDistance);
+    return MathUtil.clamp(tofSeconds, 0.0, MAX_LEAD_TIME_SEC);
+  }
+
+  private void logAimSolution(String key, AimSolution solution) {
+    Logger.recordOutput("AimDebug/" + key + "/TOFSeconds", solution.tofSeconds);
+    Logger.recordOutput("AimDebug/" + key + "/ShotDistanceMeters", solution.shotDistanceMeters);
+    Logger.recordOutput(
+        "AimDebug/" + key + "/AimPathDistanceMeters", solution.aimPathDistanceMeters);
+    Logger.recordOutput("AimDebug/" + key + "/TurretAngleDeg", solution.turretAngleDeg);
+    Logger.recordOutput(
+        "AimDebug/" + key + "/PivotVelocityXMps", solution.pivotFieldVelocity.getX());
+    Logger.recordOutput(
+        "AimDebug/" + key + "/PivotVelocityYMps", solution.pivotFieldVelocity.getY());
+
+    Logger.recordOutput(
+        "AimDebug/" + key + "/PivotPose",
+        new Pose2d(solution.pivotFieldPosition, new Rotation2d()));
+
+    Logger.recordOutput(
+        "AimDebug/" + key + "/AimPose",
+        new Pose2d(solution.pivotFieldPosition, Rotation2d.fromRadians(solution.fieldAimAngleRad)));
+
+    Logger.recordOutput(
+        "AimDebug/" + key + "/VirtualTargetPose",
+        new Pose2d(solution.aimPointField, new Rotation2d()));
+  }
+
+  private static final class AimSolution {
+    final double turretAngleDeg;
+    final double fieldAimAngleRad;
+    final double shotDistanceMeters;
+    final double aimPathDistanceMeters;
+    final double tofSeconds;
+    final ShotSetpoint shotSetpoint;
+    final Translation2d pivotFieldPosition;
+    final Translation2d aimPointField;
+    final Translation2d pivotFieldVelocity;
+
+    AimSolution(
+        double turretAngleDeg,
+        double fieldAimAngleRad,
+        double shotDistanceMeters,
+        double aimPathDistanceMeters,
+        double tofSeconds,
+        ShotSetpoint shotSetpoint,
+        Translation2d pivotFieldPosition,
+        Translation2d aimPointField,
+        Translation2d pivotFieldVelocity) {
+      this.turretAngleDeg = turretAngleDeg;
+      this.fieldAimAngleRad = fieldAimAngleRad;
+      this.shotDistanceMeters = shotDistanceMeters;
+      this.aimPathDistanceMeters = aimPathDistanceMeters;
+      this.tofSeconds = tofSeconds;
+      this.shotSetpoint = shotSetpoint;
+      this.pivotFieldPosition = pivotFieldPosition;
+      this.aimPointField = aimPointField;
+      this.pivotFieldVelocity = pivotFieldVelocity;
+    }
   }
 }

@@ -5,36 +5,28 @@ import frc.robot.subsystems.turret.shooter.Shooter;
 
 public class ShooterSetSpeedCommand extends Command {
   private final Shooter shooter;
-  private int runCounter;
+  private final double targetRPM;
 
   public ShooterSetSpeedCommand(Shooter shooter) {
+    this(shooter, 3200.0);
+  }
+
+  public ShooterSetSpeedCommand(Shooter shooter, double targetRPM) {
     this.shooter = shooter;
+    this.targetRPM = targetRPM;
     addRequirements(shooter);
   }
 
-  // Called when the command is initially scheduled.
-  @Override
-  public void initialize() {
-    runCounter = 0;
-  }
-
-  // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    shooter.getIO().setSpeed(3200);
-    runCounter++;
-    if (runCounter > 24) {
-      runCounter = 0;
-    }
+    shooter.setVelocityRPM(targetRPM);
   }
 
-  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    shooter.getIO().stopApplyingMotor();
+    shooter.stop();
   }
 
-  // Returns true when the command should end.
   @Override
   public boolean isFinished() {
     return false;

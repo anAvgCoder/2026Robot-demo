@@ -24,7 +24,7 @@ public class IntakePivotIOReal implements IntakePivotIO {
   private final SparkClosedLoopController closedLoop;
 
   private final DigitalInput magSwitch;
-  private boolean prevMagState = true;
+  private boolean prevMagState = false;
   private boolean hasBeenZeroed = false;
 
   private double goalRad = 0.0;
@@ -60,7 +60,10 @@ public class IntakePivotIOReal implements IntakePivotIO {
         5,
         () -> motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
-    if (!magSwitch.get()) {
+    boolean magTriggered = isMagTriggered();
+    prevMagState = magTriggered;
+
+    if (magTriggered) {
       enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
       goalRad = IntakePivotConstants.kMagSensorPositionRad;
       hasBeenZeroed = true;
@@ -68,7 +71,12 @@ public class IntakePivotIOReal implements IntakePivotIO {
       enc.setPosition(0.0);
       goalRad = 0.0;
     }
+
     closedLoop.setIAccum(0.0);
+  }
+
+  private boolean isMagTriggered() {
+    return !magSwitch.get();
   }
 
   private double getMeasuredPositionRad() {
@@ -83,6 +91,7 @@ public class IntakePivotIOReal implements IntakePivotIO {
   @Override
   public void setStoragePosition() {
     if (!hasBeenZeroed) {
+      goalRad = IntakePivotConstants.kStoragePosition;
       motor.setVoltage(IntakePivotConstants.kStorageCreepVolts);
       return;
     }
@@ -102,15 +111,14 @@ public class IntakePivotIOReal implements IntakePivotIO {
   @Override
   public void setPivotPosition(double positionRad) {
     goalRad = positionRad;
+
     double posRad = getMeasuredPositionRad();
     double errorRad = goalRad - posRad;
 
-    // Scale encoder range [0, -1] → physical angle [0, -π/2]
-    double ffAngleRad = posRad * (Math.PI / 2.0);
+    double ffAngleRad = posRad;
     double gravityFFVolts = IntakePivotConstants.kG * Math.cos(ffAngleRad);
 
-    // Static friction compensation — only applied when error exceeds tolerance
-    double ksFFVolts = 0.0; // It's unnecessary from when I last measured
+    double ksFFVolts = 0.0;
     if (Math.abs(errorRad) > IntakePivotConstants.kPosToleranceRad) {
       ksFFVolts = Math.copySign(IntakePivotConstants.kS, errorRad);
     }
@@ -132,6 +140,7 @@ public class IntakePivotIOReal implements IntakePivotIO {
   public void zeroToStorage() {
     enc.setPosition(IntakePivotConstants.kStoragePosition);
     goalRad = IntakePivotConstants.kStoragePosition;
+    hasBeenZeroed = true;
     closedLoop.setIAccum(0.0);
   }
 
@@ -139,23 +148,28 @@ public class IntakePivotIOReal implements IntakePivotIO {
   public void zeroToIntake() {
     enc.setPosition(IntakePivotConstants.kIntakeSecondaryPosition);
     goalRad = IntakePivotConstants.kIntakeSecondaryPosition;
+    hasBeenZeroed = true;
     closedLoop.setIAccum(0.0);
   }
 
   @Override
   public void updateInputs(IntakePivotIOInputs inputs) {
-    boolean mag = !magSwitch.get();
-    if (mag && !prevMagState) {
+    boolean magTriggered = isMagTriggered();
+    if (magTriggered && !prevMagState) {
       enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
-      closedLoop.setIAccum(0.0);
+      goalRad = IntakePivotConstants.kMagSensorPositionRad;
       hasBeenZeroed = true;
+      closedLoop.setIAccum(0.0);
     }
-    prevMagState = mag;
+    prevMagState = magTriggered;
 
-    inputs.position = enc.getPosition();
-    inputs.velocityRPM = enc.getVelocity();
+    inputs.positionRad = enc.getPosition();
+    inputs.velocityRadPerSec = enc.getVelocity();
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.supplyCurrentAmps = motor.getOutputCurrent();
     inputs.tempC = motor.getMotorTemperature();
+    inputs.magSensorTriggered = magTriggered;
+    inputs.hasBeenZeroed = hasBeenZeroed;
+    inputs.goalPositionRad = goalRad;
   }
 }
