@@ -11,7 +11,10 @@ import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.util.FieldConstants;
 
-/** Sets shooter wheel speed from current robot-to-storage-target distance without turret/hood control. */
+/**
+ * Sets shooter wheel speed from current robot-to-storage-target distance without turret/hood
+ * control.
+ */
 public class ShooterAdaptiveStorageAiming extends Command {
   private final Shooter shooterRight;
   private final Shooter shooterLeft;

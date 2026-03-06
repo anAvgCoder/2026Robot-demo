@@ -61,7 +61,9 @@ public class ShooterIOReal implements ShooterIO {
     tryUntilOk(
         motor,
         5,
-        () -> motor.configure(sparkConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
+        () ->
+            motor.configure(
+                sparkConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
   }
 
   @Override

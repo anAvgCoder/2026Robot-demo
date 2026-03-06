@@ -72,10 +72,10 @@ public class AdaptiveStorageAiming extends Command {
 
   @Override
   public void end(boolean interrupted) {
-    rotaterRight.stop();
-    rotaterLeft.stop();
-    hoodRight.stop();
-    hoodLeft.stop();
+    rotaterRight.setVoltage(0.0);
+    rotaterLeft.setVoltage(0.0);
+    hoodRight.setVoltage(0.0);
+    hoodLeft.setVoltage(0.0);
   }
 
   @Override
@@ -114,8 +114,7 @@ public class AdaptiveStorageAiming extends Command {
       double leadTimeSeconds =
           MathUtil.clamp(SHOT_RELEASE_DELAY_SEC + tofSeconds, 0.0, MAX_LEAD_TIME_SEC);
 
-      Translation2d newAimPointField =
-          addScaled(targetField, pivotFieldVelocity, -leadTimeSeconds);
+      Translation2d newAimPointField = addScaled(targetField, pivotFieldVelocity, -leadTimeSeconds);
       double newAimPathDistanceMeters = pivotFieldPosition.getDistance(newAimPointField);
       double newTofSeconds = flightTimeSecondsSafe(newAimPathDistanceMeters);
 

@@ -32,8 +32,8 @@ public class RotaterConstants {
   public static final double kMaxAngleDeg = 135.0;
 
   // Motion constraints for the turret profile controller
-  public static final double kMaxVelRadPerSec = 20.0;
-  public static final double kMaxAccelRadPerSec2 = 45.0;
+  public static final double kMaxVelRadPerSec = 45.0;
+  public static final double kMaxAccelRadPerSec2 = 75.0;
 
   // Gains TODO: TUNE
   // Units here are effectively volts-per-radian, etc., because the closed-loop output is applied

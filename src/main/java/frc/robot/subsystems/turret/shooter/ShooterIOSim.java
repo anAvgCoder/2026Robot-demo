@@ -46,9 +46,15 @@ public class ShooterIOSim implements ShooterIO {
     if (closedLoopActive) {
       double velocityErrorRPM = goalVelocityRPM - motorSim.getAngularVelocityRPM();
       double ffVolts =
-          goalVelocityRPM / ShooterConstants.kNeoVortexFreeSpeedRPM * ShooterConstants.kNominalVoltage;
+          goalVelocityRPM
+              / ShooterConstants.kNeoVortexFreeSpeedRPM
+              * ShooterConstants.kNominalVoltage;
       double fbVolts = velocityErrorRPM * ShooterConstants.kSimVelocityKpVoltsPerRPM;
-      appliedVolts = MathUtil.clamp(ffVolts + fbVolts, -ShooterConstants.kNominalVoltage, ShooterConstants.kNominalVoltage);
+      appliedVolts =
+          MathUtil.clamp(
+              ffVolts + fbVolts,
+              -ShooterConstants.kNominalVoltage,
+              ShooterConstants.kNominalVoltage);
     }
 
     motorSim.setInputVoltage(appliedVolts);

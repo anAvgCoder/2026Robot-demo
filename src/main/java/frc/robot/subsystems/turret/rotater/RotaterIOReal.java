@@ -17,49 +17,37 @@ import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
 import org.littletonrobotics.junction.Logger;
 
 public class RotaterIOReal implements RotaterIO {
   private final SparkBase motor;
+
   private final CANcoder cancoder;
   private final StatusSignal<Angle> absPosSig;
-  private final StatusSignal<AngularVelocity> velSig;
+
   private final ProfiledPIDController controller;
 
   private final String logPrefix;
-  private final double encoderOffsetRad;
-  private final double closedLoopOutputSign;
-
-  private double goalRad = 0.0;
-  private boolean closedLoopActive = false;
 
   public RotaterIOReal(int canId, int coderId) {
     motor = new SparkMax(canId, MotorType.kBrushless);
     cancoder = new CANcoder(coderId);
 
-    logPrefix = "Rotater/" + canId;
-    encoderOffsetRad =
-        canId == RotaterConstants.kCanIdRight
-            ? RotaterConstants.kAbsEncoderOffsetRightRad
-            : RotaterConstants.kAbsEncoderOffsetLeftRad;
-    closedLoopOutputSign =
-        canId == RotaterConstants.kCanIdRight
-            ? RotaterConstants.kClosedLoopOutputSignRight
-            : RotaterConstants.kClosedLoopOutputSignLeft;
+    logPrefix = "Rotater/" + canId + "/";
 
     absPosSig = cancoder.getAbsolutePosition();
-    velSig = cancoder.getVelocity();
 
-    BaseStatusSignal.setUpdateFrequencyForAll(100.0, absPosSig, velSig);
+    BaseStatusSignal.setUpdateFrequencyForAll(100.0, absPosSig);
     cancoder.optimizeBusUtilization();
 
     var cfg = new SparkMaxConfig();
-    cfg.inverted(
-            canId == RotaterConstants.kCanIdRight
-                ? RotaterConstants.kInvertedRight
-                : RotaterConstants.kInvertedLeft)
-        .idleMode(IdleMode.kBrake)
+    if (canId == RotaterConstants.kCanIdRight) {
+      cfg.inverted(RotaterConstants.kInvertedRight);
+    } else {
+      cfg.inverted(RotaterConstants.kInvertedLeft);
+    }
+
+    cfg.idleMode(IdleMode.kBrake)
         .smartCurrentLimit(RotaterConstants.kCurrentLimitAmps)
         .voltageCompensation(12.0);
 
@@ -81,88 +69,45 @@ public class RotaterIOReal implements RotaterIO {
     controller.setTolerance(
         RotaterConstants.kPosToleranceRad, RotaterConstants.kVelToleranceRadPerSec);
 
-    double measuredPosition = getMeasuredAngleRad();
-    double measuredVelocity = getMeasuredVelocityRadPerSec();
-    goalRad = measuredPosition;
-    controller.reset(measuredPosition, measuredVelocity);
+    controller.reset(getMeasuredAngleRad());
+  }
+
+  private double getMeasuredAngleRad() {
+    absPosSig.refresh();
+    double rot = absPosSig.getValueAsDouble();
+    return Units.rotationsToRadians(rot);
   }
 
   @Override
   public void setVoltage(double volts) {
-    closedLoopActive = false;
-    motor.setVoltage(MathUtil.clamp(volts, -12.0, 12.0));
+    motor.setVoltage(volts);
   }
 
   @Override
   public void setTurnPosition(double goalDegrees) {
-    double measuredPosition = getMeasuredAngleRad();
-    double measuredVelocity = getMeasuredVelocityRadPerSec();
+    double goalRad = Units.degreesToRadians(goalDegrees);
+    double meas = getMeasuredAngleRad();
+    double goal = MathUtil.clamp(goalRad, -135.0 / 180.0 * Math.PI, 135.0 / 180.0 * Math.PI);
 
-    if (!closedLoopActive) {
-      controller.reset(measuredPosition, measuredVelocity);
-    }
+    double out = controller.calculate(meas, goal);
 
-    closedLoopActive = true;
-    goalRad =
-        MathUtil.clamp(
-            Units.degreesToRadians(goalDegrees),
-            RotaterConstants.kMinAngleRad,
-            RotaterConstants.kMaxAngleRad);
+    double capped = MathUtil.clamp(out, -1.0, 1.0);
 
-    double controllerOutputVolts = controller.calculate(measuredPosition, goalRad);
-    double appliedVolts =
-        MathUtil.clamp(
-            closedLoopOutputSign * controllerOutputVolts,
-            -RotaterConstants.kMaxVolts,
-            RotaterConstants.kMaxVolts);
+    motor.set(-capped);
 
-    motor.setVoltage(appliedVolts);
-
-    var setpoint = controller.getSetpoint();
-    Logger.recordOutput(logPrefix + "/GoalRad", goalRad);
-    Logger.recordOutput(logPrefix + "/MeasuredRad", measuredPosition);
-    Logger.recordOutput(logPrefix + "/MeasuredVelRadPerSec", measuredVelocity);
-    Logger.recordOutput(logPrefix + "/ProfilePosRad", setpoint.position);
-    Logger.recordOutput(logPrefix + "/ProfileVelRadPerSec", setpoint.velocity);
-    Logger.recordOutput(logPrefix + "/AppliedClosedLoopVolts", appliedVolts);
-  }
-
-  @Override
-  public void stop() {
-    closedLoopActive = false;
-    motor.stopMotor();
-  }
-
-  @Override
-  public boolean isAtGoal() {
-    return closedLoopActive && controller.atGoal();
+    var sp = controller.getSetpoint();
+    Logger.recordOutput("TurnRioTest/GoalRad", goal);
+    Logger.recordOutput("TurnRioTest/MeasRad", meas);
+    Logger.recordOutput(logPrefix + "ProfilePosRad", sp.position);
+    Logger.recordOutput(logPrefix + "ProfileVelRadPerSec", sp.velocity);
+    Logger.recordOutput(logPrefix + "OutputCmd", capped);
   }
 
   @Override
   public void updateInputs(RotaterIOInputs inputs) {
-    double measuredPosition = getMeasuredAngleRad();
-    double measuredVelocity = getMeasuredVelocityRadPerSec();
-
-    inputs.positionRad = measuredPosition;
-    inputs.velocityRadPerSec = measuredVelocity;
+    inputs.positionRad = getMeasuredAngleRad();
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.supplyCurrentAmps = motor.getOutputCurrent();
     inputs.tempC = motor.getMotorTemperature();
-    inputs.goalPositionRad = goalRad;
-    inputs.goalVelocityRadPerSec = controller.getSetpoint().velocity;
-    inputs.closedLoopActive = closedLoopActive;
-    inputs.atGoal = isAtGoal();
-  }
-
-  private double getMeasuredAngleRad() {
-    BaseStatusSignal.refreshAll(absPosSig, velSig);
-    double absoluteRotations = absPosSig.getValueAsDouble();
-    double angleRad = Units.rotationsToRadians(absoluteRotations) - encoderOffsetRad;
-    return MathUtil.angleModulus(angleRad);
-  }
-
-  private double getMeasuredVelocityRadPerSec() {
-    BaseStatusSignal.refreshAll(absPosSig, velSig);
-    return Units.rotationsToRadians(velSig.getValueAsDouble());
   }
 }

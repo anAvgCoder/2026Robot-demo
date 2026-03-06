@@ -47,8 +47,7 @@ public class HoodConstants {
   public static final double kPositionFactorRadPerMotorRot = (2.0 * Math.PI) / kGearRatio;
 
   // Motor RPM -> hood rad/s
-  public static final double kVelocityFactorRadPerSecPerRPM =
-      (2.0 * Math.PI) / (kGearRatio * 60.0);
+  public static final double kVelocityFactorRadPerSecPerRPM = (2.0 * Math.PI) / (kGearRatio * 60.0);
 
   private HoodConstants() {}
 }

@@ -8,9 +8,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -102,7 +100,7 @@ public class RobotContainer {
   private static final JoystickButton rightJoy7Button = new JoystickButton(rightJoy, 7);
   private static final JoystickButton rightJoy8Button = new JoystickButton(rightJoy, 8);
   private static final JoystickButton rightJoy9Button = new JoystickButton(rightJoy, 9);
-  private static final JoystickButton rightJoy10Button = new JoystickButton(rightJoy,10);
+  private static final JoystickButton rightJoy10Button = new JoystickButton(rightJoy, 10);
 
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
   private static final JoystickButton deployOutakeButton = new JoystickButton(rightJoy, 2);
@@ -114,7 +112,6 @@ public class RobotContainer {
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton retractOutakeButton = new JoystickButton(leftJoy, 2);
   private static final JoystickButton syncYawButton = new JoystickButton(leftJoy, 4);
-  
 
   private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
@@ -273,6 +270,7 @@ public class RobotContainer {
 
     intakeButton.whileTrue(
         Commands.parallel(
+            new IPIntakeCommand(intakePivot),
             new IRIntakeCommand(intakeRoller),
             new BeltIntakeCommand(rightBelt),
             new BeltIntakeCommand(leftBelt),
@@ -288,30 +286,40 @@ public class RobotContainer {
     deployOutakeButton.onTrue(new IPIntakeCommand(intakePivot));
     retractOutakeButton.onTrue(new IPStorageCommand(intakePivot));
 
-    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
-      leftRotater.setTurnPosition(0); 
-      rightRotater.setTurnPosition(0);}
-    ));
-    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
-      leftRotater.setTurnPosition(60); 
-      rightRotater.setTurnPosition(60);}
-    ));
-    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
-      leftRotater.setTurnPosition(90); 
-      rightRotater.setTurnPosition(90);}
-    ));
-    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
-      leftRotater.setTurnPosition(-60); 
-      rightRotater.setTurnPosition(-60);}
-    ));
-    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
-      leftRotater.setTurnPosition(-90); 
-      rightRotater.setTurnPosition(-90);}
-    ));
+    panelButton14.onTrue(
+        Commands.runOnce(
+            () -> {
+              leftRotater.setTurnPosition(0);
+              rightRotater.setTurnPosition(0);
+            }));
+    panelButton13.onTrue(
+        Commands.runOnce(
+            () -> {
+              leftRotater.setTurnPosition(-60);
+              rightRotater.setTurnPosition(-60);
+            }));
+    panelButton11.onTrue(
+        Commands.runOnce(
+            () -> {
+              leftRotater.setTurnPosition(-90);
+              rightRotater.setTurnPosition(-90);
+            }));
+    panelButton12.onTrue(
+        Commands.runOnce(
+            () -> {
+              leftRotater.setTurnPosition(60);
+              rightRotater.setTurnPosition(60);
+            }));
+    panelButton9.onTrue(
+        Commands.runOnce(
+            () -> {
+              leftRotater.setTurnPosition(90);
+              rightRotater.setTurnPosition(90);
+            }));
 
     panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
     panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
-    
+
     panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
     panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
 
@@ -321,11 +329,10 @@ public class RobotContainer {
     panelButton7.onTrue(cancelActivePath());
 
     panelButton8.onTrue(
-      Commands.parallel(
-        new IPStorageCommand(intakePivot),
-      Commands.runOnce(() -> leftHood.setStoragePosition()),
-      Commands.runOnce(() -> rightHood.setStoragePosition())));
-
+        Commands.parallel(
+            new IPStorageCommand(intakePivot),
+            Commands.runOnce(() -> leftHood.setStoragePosition()),
+            Commands.runOnce(() -> rightHood.setStoragePosition())));
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
@@ -335,14 +342,15 @@ public class RobotContainer {
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
 
-    panelButton15.onTrue(
-        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
-            .ignoringDisable(true));
+    // panelButton15.onTrue(
+    //     Commands.runOnce(() ->
+    // drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
+    //         .ignoringDisable(true));
 
     leftJoy3Button.onTrue(runTeleopPath("ST Push Balls"));
-    panelButton11.onTrue(runTeleopPath("ST Clear Depot"));
+    // panelButton11.onTrue(runTeleopPath("ST Clear Depot"));
     rightJoy4Button.onTrue(runTeleopPath("OP Push Balls"));
-    panelButton13.onTrue(runTeleopPath("OP Clear Depot"));
+    // panelButton13.onTrue(runTeleopPath("OP Clear Depot"));
   }
 
   public boolean getClampedTurn(Joystick joy) {
@@ -370,7 +378,9 @@ public class RobotContainer {
 
   private Command adaptiveHubAimingCommand() {
     return deferredCommand(
-        () -> new AdaptiveHubAiming(rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+        () ->
+            new AdaptiveHubAiming(
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
         rightRotater,
         rightHood,
         leftRotater,
@@ -379,7 +389,9 @@ public class RobotContainer {
 
   private Command adaptiveStorageNoMoveCommand() {
     return deferredCommand(
-        () -> new AdaptiveNoMove(rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+        () ->
+            new AdaptiveNoMove(
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
         rightRotater,
         rightHood,
         leftRotater,
@@ -388,7 +400,9 @@ public class RobotContainer {
 
   private Command adaptiveStorageAimingCommand() {
     return deferredCommand(
-        () -> new AdaptiveStorageAiming(rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+        () ->
+            new AdaptiveStorageAiming(
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
         rightRotater,
         rightHood,
         leftRotater,
@@ -412,8 +426,7 @@ public class RobotContainer {
   private Command runTeleopPath(String name) {
     String pathFile = TELEOP_PATH_FILES.get(name);
     if (pathFile == null) {
-      return Commands.runOnce(
-          () -> DriverStation.reportError("Unknown path name: " + name, false));
+      return Commands.runOnce(() -> DriverStation.reportError("Unknown path name: " + name, false));
     }
 
     return Commands.defer(
@@ -482,8 +495,7 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "AdaptiveStorageAimingShooter", shooterAdaptiveStorageAimingCommand());
 
-    NamedCommands.registerCommand(
-        "AdaptiveStorageAimingNoMove", adaptiveStorageNoMoveCommand());
+    NamedCommands.registerCommand("AdaptiveStorageAimingNoMove", adaptiveStorageNoMoveCommand());
   }
 
   private Command deferredCommand(

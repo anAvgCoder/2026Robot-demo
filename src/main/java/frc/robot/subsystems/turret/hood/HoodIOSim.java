@@ -41,7 +41,8 @@ public class HoodIOSim implements HoodIO {
   @Override
   public void setVoltage(double volts) {
     closedLoopActive = false;
-    appliedVolts = MathUtil.clamp(volts, -HoodConstants.kMaxManualVolts, HoodConstants.kMaxManualVolts);
+    appliedVolts =
+        MathUtil.clamp(volts, -HoodConstants.kMaxManualVolts, HoodConstants.kMaxManualVolts);
     velocityRadPerSec =
         (appliedVolts / HoodConstants.kMaxManualVolts) * HoodConstants.kMaxVelRadPerSec;
     integrate();
@@ -104,7 +105,8 @@ public class HoodIOSim implements HoodIO {
 
   private void integrate() {
     positionRad += velocityRadPerSec * LOOP_PERIOD_SEC;
-    positionRad = MathUtil.clamp(positionRad, HoodConstants.kMinAngleRad, HoodConstants.kMaxAngleRad);
+    positionRad =
+        MathUtil.clamp(positionRad, HoodConstants.kMinAngleRad, HoodConstants.kMaxAngleRad);
 
     if ((positionRad <= HoodConstants.kMinAngleRad && velocityRadPerSec < 0.0)
         || (positionRad >= HoodConstants.kMaxAngleRad && velocityRadPerSec > 0.0)) {

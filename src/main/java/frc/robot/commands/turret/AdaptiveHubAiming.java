@@ -73,10 +73,10 @@ public class AdaptiveHubAiming extends Command {
 
   @Override
   public void end(boolean interrupted) {
-    rotaterRight.stop();
-    rotaterLeft.stop();
-    hoodRight.stop();
-    hoodLeft.stop();
+    rotaterRight.setVoltage(0.0);
+    rotaterLeft.setVoltage(0.0);
+    hoodRight.setVoltage(0.0);
+    hoodLeft.setVoltage(0.0);
   }
 
   @Override

@@ -50,7 +50,8 @@ public class Hood extends SubsystemBase {
   }
 
   public void setVoltage(double volts) {
-    manualVolts = MathUtil.clamp(volts, -HoodConstants.kMaxManualVolts, HoodConstants.kMaxManualVolts);
+    manualVolts =
+        MathUtil.clamp(volts, -HoodConstants.kMaxManualVolts, HoodConstants.kMaxManualVolts);
     controlMode = ControlMode.MANUAL_VOLTAGE;
   }
 

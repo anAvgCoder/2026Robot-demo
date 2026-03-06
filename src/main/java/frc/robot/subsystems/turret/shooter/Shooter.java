@@ -49,7 +49,8 @@ public class Shooter extends SubsystemBase {
 
   public boolean isAtSpeed() {
     return controlMode == ControlMode.CLOSED_LOOP_VELOCITY
-        && Math.abs(inputs.goalVelocityRPM - inputs.velocityRPM) <= ShooterConstants.kVelocityToleranceRPM;
+        && Math.abs(inputs.goalVelocityRPM - inputs.velocityRPM)
+            <= ShooterConstants.kVelocityToleranceRPM;
   }
 
   public double getVelocityRPM() {
