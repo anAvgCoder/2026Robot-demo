@@ -22,14 +22,7 @@ import frc.robot.subsystems.turret.rotater.RotaterIO;
 import frc.robot.util.FieldConstants;
 import org.littletonrobotics.junction.Logger;
 
-/**
- * Adaptive hub aiming with stable shoot-on-the-move lookahead.
- *
- * <p>Approach: - Snapshot base pose once per execute() - Snapshot measured chassis speeds once per
- * execute() - Iteratively predict future robot pose at time-of-flight (TOF) - Compute turret pivot
- * position from predicted pose + robot->turret transform - Aim turret at hub, apply turret mount
- * offset - Set hood & shooter from shot table based on predicted distance
- */
+
 public class AdaptiveHubAiming extends Command {
   private final RotaterIO rotaterIORight;
   private final HoodIO hoodIORight;
@@ -42,15 +35,12 @@ public class AdaptiveHubAiming extends Command {
 
   private int runCounter;
 
-  // Robot origin -> turret pivot (VERIFY these are from YOUR odometry origin)
   private static final double TURRET_X_INCHES = 6.5;
   private static final double TURRET_Y_INCHES = 6.75;
 
-  // SOTM settings
   private static final int LOOKAHEAD_ITERS = 3;
-  private static final double TOF_EPSILON_SEC = 0.02; // early exit if TOF converges within 20ms
+  private static final double TOF_EPSILON_SEC = 0.02;
 
-  // ShotTimeTable distance range (from the values you posted earlier)
   private static final double TOF_TABLE_MIN_M = 0.0;
   private static final double TOF_TABLE_MAX_M = 5.13;
 
@@ -81,11 +71,9 @@ public class AdaptiveHubAiming extends Command {
 
   @Override
   public void execute() {
-    // Snapshot state once for this loop (prevents iteration instability)
     Pose2d basePose = drive.getPose();
-    ChassisSpeeds robotSpeeds = drive.getRobotRelativeSpeeds(); // measured, robot-relative
+    ChassisSpeeds robotSpeeds = drive.getRobotRelativeSpeeds();
 
-    // Right turret
     Pose3d turretPoseRight = predictTurretPose(basePose, robotSpeeds, true);
     double rightDeg =
         calculateTurretDegreesRobotRelative(
@@ -124,8 +112,6 @@ public class AdaptiveHubAiming extends Command {
 
   @Override
   public boolean isFinished() {
-    // Teleop: held button should run continuously
-    // Auto: finishes after ~0.5s like your original intent (24 cycles at 20ms)
     return false;
   }
 
@@ -135,10 +121,6 @@ public class AdaptiveHubAiming extends Command {
     return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
   }
 
-  /**
-   * Predict future robot pose using constant robot-relative speeds and Pose2d.exp(Twist2d). This is
-   * more correct than field-frame x+=vx*dt when omega != 0.
-   */
   private Pose2d predictRobotPose(Pose2d basePose, ChassisSpeeds robotSpeeds, double dtSec) {
     Twist2d twist =
         new Twist2d(
@@ -148,15 +130,10 @@ public class AdaptiveHubAiming extends Command {
     return basePose.exp(twist);
   }
 
-  /**
-   * Shoot-on-the-move turret pose prediction: 1) Start from base pose 2) Use current distance ->
-   * TOF 3) Predict robot pose at TOF 4) Recompute distance/TOF a few times to converge
-   */
   private Pose3d predictTurretPose(
-      Pose2d basePose, ChassisSpeeds robotSpeeds, boolean isRightTurret) {
+    Pose2d basePose, ChassisSpeeds robotSpeeds, boolean isRightTurret) {
     Pose2d predictedPose = basePose;
 
-    // Initial turret pose & distance from base
     Pose3d turretPose = new Pose3d(predictedPose).transformBy(robotToTurret(isRightTurret));
     double dist = hubDistance(turretPose);
     double tof = flightTimeSecondsSafe(dist);
@@ -168,7 +145,6 @@ public class AdaptiveHubAiming extends Command {
       double newDist = hubDistance(newTurretPose);
       double newTof = flightTimeSecondsSafe(newDist);
 
-      // Early exit if converged
       if (Math.abs(newTof - tof) < TOF_EPSILON_SEC) {
         predictedPose = newPredictedPose;
         turretPose = newTurretPose;
@@ -183,42 +159,33 @@ public class AdaptiveHubAiming extends Command {
       tof = newTof;
     }
 
-    // Debug (optional but helpful)
     Logger.recordOutput("AimDebug/PredictedTOF", tof);
     Logger.recordOutput("AimDebug/PredictedDistance", dist);
 
     return turretPose;
   }
 
-  /** Safe wrapper to prevent ShotTimeTable null/unboxing when distance is out of range. */
   private double flightTimeSecondsSafe(double distanceMeters) {
     double clamped = MathUtil.clamp(distanceMeters, TOF_TABLE_MIN_M, TOF_TABLE_MAX_M);
     double tof = ShotTimeTable.getFlightTimeSeconds(clamped);
-    // Hard clamp for sanity (prevents crazy lead if table is weird)
     return MathUtil.clamp(tof, 0.0, 2.0);
   }
 
-  /** Robot-relative turret angle in degrees, with mount/zero offset applied. */
   public double calculateTurretDegreesRobotRelative(Pose3d turretPose, double turretMountAngleDeg) {
     Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
 
     double dx = hubPose.getX() - turretPose.getX();
     double dy = hubPose.getY() - turretPose.getY();
 
-    // Field-frame direction turret pivot -> hub
     double fieldAngleRad = Math.atan2(dy, dx);
 
-    // Robot yaw from pose estimator (turretPose rotation is robot pose rotation)
     double robotYawRad = turretPose.getRotation().getZ();
 
-    // Robot-relative aim
     double turretRelativeRad = MathUtil.angleModulus(fieldAngleRad - robotYawRad);
 
-    // Apply mount/zero offset (THIS FIXES YOUR ORIGINAL BUG)
     turretRelativeRad =
         MathUtil.angleModulus(turretRelativeRad - Math.toRadians(turretMountAngleDeg));
 
-    // Debug poses
     double aimFieldRad = robotYawRad + turretRelativeRad;
     Logger.recordOutput(
         "AimDebug/TurretAimPose",
