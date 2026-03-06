@@ -96,13 +96,25 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
+
+  private static final JoystickButton rightJoy5Button = new JoystickButton(rightJoy, 5);
+  private static final JoystickButton rightJoy6Button = new JoystickButton(rightJoy, 6);
+  private static final JoystickButton rightJoy7Button = new JoystickButton(rightJoy, 7);
+  private static final JoystickButton rightJoy8Button = new JoystickButton(rightJoy, 8);
+  private static final JoystickButton rightJoy9Button = new JoystickButton(rightJoy, 9);
+  private static final JoystickButton rightJoy10Button = new JoystickButton(rightJoy,10);
+
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
   private static final JoystickButton deployOutakeButton = new JoystickButton(rightJoy, 2);
   private static final JoystickButton fiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
 
+  private static final JoystickButton leftJoy3Button = new JoystickButton(leftJoy, 3);
+  private static final JoystickButton rightJoy4Button = new JoystickButton(rightJoy, 4);
+
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton retractOutakeButton = new JoystickButton(leftJoy, 2);
   private static final JoystickButton syncYawButton = new JoystickButton(leftJoy, 4);
+  
 
   private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
@@ -276,13 +288,35 @@ public class RobotContainer {
     deployOutakeButton.onTrue(new IPIntakeCommand(intakePivot));
     retractOutakeButton.onTrue(new IPStorageCommand(intakePivot));
 
-    panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
-    panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
-    panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
+    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
+      leftRotater.setTurnPosition(0); 
+      rightRotater.setTurnPosition(0);}
+    ));
+    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
+      leftRotater.setTurnPosition(60); 
+      rightRotater.setTurnPosition(60);}
+    ));
+    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
+      leftRotater.setTurnPosition(90); 
+      rightRotater.setTurnPosition(90);}
+    ));
+    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
+      leftRotater.setTurnPosition(-60); 
+      rightRotater.setTurnPosition(-60);}
+    ));
+    rightJoy5Button.whileTrue(Commands.runOnce(() -> {
+      leftRotater.setTurnPosition(-90); 
+      rightRotater.setTurnPosition(-90);}
+    ));
 
+    panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
     panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
-    panelButton5.and(panelButton8.negate()).whileTrue(adaptiveStorageAimingCommand());
+    
+    panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
     panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
+
+    panelButton5.and(panelButton8.negate()).whileTrue(adaptiveStorageAimingCommand());
+    panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
 
     panelButton7.onTrue(cancelActivePath());
 
@@ -305,9 +339,9 @@ public class RobotContainer {
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
             .ignoringDisable(true));
 
-    panelButton9.onTrue(runTeleopPath("ST Push Balls"));
+    leftJoy3Button.onTrue(runTeleopPath("ST Push Balls"));
     panelButton11.onTrue(runTeleopPath("ST Clear Depot"));
-    panelButton12.onTrue(runTeleopPath("OP Push Balls"));
+    rightJoy4Button.onTrue(runTeleopPath("OP Push Balls"));
     panelButton13.onTrue(runTeleopPath("OP Clear Depot"));
   }
 
