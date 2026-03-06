@@ -11,6 +11,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -21,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
 import frc.robot.commands.belt.BeltOutakeCommand;
 import frc.robot.commands.diverter.DiverterCommand;
@@ -99,17 +101,14 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
+  private static final JoystickButton adaptiveAimingButton = new JoystickButton(buttonPanel, 6);
+  private static final JoystickButton adaptiveStorageButton = new JoystickButton(buttonPanel, 3);
 
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
-  private static final JoystickButton adaptiveAimingButton = new JoystickButton(rightJoy, 2);
   private static final JoystickButton FiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
 
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton syncYawButton = new JoystickButton(leftJoy, 4);
-  private static final JoystickButton adaptiveStorageButton = new JoystickButton(leftJoy, 2);
-
-  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(buttonPanel, 3);
-  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(buttonPanel, 6);
 
   private static final JoystickButton STCloseButton = new JoystickButton(buttonPanel, 5);
   private static final JoystickButton STMidButton = new JoystickButton(buttonPanel, 2);
@@ -120,6 +119,9 @@ public class RobotContainer {
 
   private static final JoystickButton testingButon1 = new JoystickButton(buttonPanel, 14);
   private static final JoystickButton testingButton2 = new JoystickButton(buttonPanel, 15);
+
+  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
+  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -249,31 +251,31 @@ public class RobotContainer {
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
 
-    // drive.setDefaultCommand(
-    //     DriveCommands.joystickDrive(
-    //         drive,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-    //         () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
+    drive.setDefaultCommand(
+        DriveCommands.joystickDrive(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
-    // syncYawButton.onTrue(
-    //     DriveCommands.joystickDriveAtAngle(
-    //         drive,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-    //         () ->
-    //             MathUtil.angleModulus(
-    //                 Math.PI
-    //                     + Math.atan2(
-    //                         getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-    //                         getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0))));
+    syncYawButton.toggleOnTrue(
+        DriveCommands.joystickDriveAtAngle(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+            () ->
+                MathUtil.angleModulus(
+                    Math.PI
+                        + Math.atan2(
+                            getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+                            getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0))));
 
-    // FiftyPercentDriveButton.toggleOnTrue(
-    //     DriveCommands.joystickDrive(
-    //         drive,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
-    //         () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
+    FiftyPercentDriveButton.toggleOnTrue(
+        DriveCommands.joystickDrive(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
+            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
 
     intakeButton.whileTrue(
         Commands.parallel(
@@ -302,7 +304,7 @@ public class RobotContainer {
     // adaptiveShooterTestAimingButton.toggleOnTrue(
     //     new TestHoodShooterCommand(rightShooter, rightHood, rightBelt));
 
-    adaptiveAimingButton.toggleOnTrue(
+    adaptiveAimingButton.whileTrue(
         new AdaptiveHubAiming(
             rightRotater,
             rightShooter,
@@ -313,7 +315,7 @@ public class RobotContainer {
             drive,
             (DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red)));
 
-    adaptiveStorageButton.toggleOnTrue(
+    adaptiveStorageButton.whileTrue(
         new AdaptiveStorageAiming(
             rightRotater,
             rightShooter,
