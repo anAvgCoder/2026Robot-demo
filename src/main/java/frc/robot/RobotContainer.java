@@ -356,6 +356,9 @@ public class RobotContainer {
     //     Commands.runOnce(() ->
     // drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
     //         .ignoringDisable(true));
+    leftJoy3Button.onTrue(
+        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
+            .ignoringDisable(true));
 
     // leftJoy3Button.onTrue(runTeleopPath("ST Push Balls"));
     // panelButton11.onTrue(runTeleopPath("ST Clear Depot"));
@@ -421,14 +424,18 @@ public class RobotContainer {
 
   private Command shooterAdaptiveHubAimingCommand() {
     return deferredCommand(
-        () -> new ShooterAdaptiveHubAiming(rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
+        () ->
+            new ShooterAdaptiveHubAiming(
+                rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
         rightShooter,
         leftShooter);
   }
 
   private Command shooterAdaptiveStorageAimingCommand() {
     return deferredCommand(
-        () -> new ShooterAdaptiveStorageAiming(rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
+        () ->
+            new ShooterAdaptiveStorageAiming(
+                rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
         rightShooter,
         leftShooter);
   }
@@ -508,7 +515,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    // return autoChooser.get();
-    return null;
+    return autoChooser.get();
+    // return null;
   }
 }

@@ -22,7 +22,11 @@ public class ShooterAdaptiveHubAiming extends Command {
   private static final double TURRET_Y_INCHES = 6.75;
 
   public ShooterAdaptiveHubAiming(
-      Shooter shooterRight, Shooter shooterLeft, Drive drive, boolean isBlueCheck, ShotTable shotTable) {
+      Shooter shooterRight,
+      Shooter shooterLeft,
+      Drive drive,
+      boolean isBlueCheck,
+      ShotTable shotTable) {
     this.shooterRight = shooterRight;
     this.shooterLeft = shooterLeft;
     this.drive = drive;
