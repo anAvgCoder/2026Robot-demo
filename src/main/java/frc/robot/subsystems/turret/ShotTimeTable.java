@@ -9,22 +9,22 @@ public class ShotTimeTable {
 
   static {
     // key = distanceMeters, value = flightTimeSeconds
-    table.put(0.00, 0.95);
-    table.put(1.00, 0.95);
-    table.put(1.13, 0.95);
-    table.put(1.44, 1.05);
-    table.put(2.03, 1.05);
-    table.put(2.33, 1.35);
-    table.put(2.65, 1.56);
-    table.put(2.98, 1.64);
-    table.put(3.33, 1.70);
-    table.put(3.71, 1.67);
-    table.put(3.96, 1.62);
-    table.put(4.48, 1.70);
-    table.put(5.13, 1.70);
-    table.put(10.00, 1.70);
+    table.put(0.00, 1.23);
+    table.put(1.55, 1.23);
+    table.put(1.86, 1.24);
+    table.put(2.14, 1.31);
+    table.put(2.45, 1.28);
+    table.put(2.73, 1.34);
+    table.put(3.06, 1.38);
+    table.put(3.42, 1.40);
+    table.put(3.74, 1.21);
+    table.put(4.05, 1.36);
+    table.put(4.44, 1.34);
+    table.put(4.90, 1.42);
+    table.put(5.34, 1.30);
+    table.put(7.50, 1.5);
+    table.put(10.00, 1.60);
     table.put(15.00, 1.70);
-    table.put(20.00, 1.70);
   }
 
   public static double getFlightTimeSeconds(double distanceMeters) {

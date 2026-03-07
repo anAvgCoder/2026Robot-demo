@@ -53,6 +53,7 @@ import frc.robot.subsystems.questnav.QuestNavSystem;
 import frc.robot.subsystems.questnav.QuestNavSystemConstants;
 import frc.robot.subsystems.questnav.QuestNavSystemIO;
 import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
+import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.hood.Hood;
 import frc.robot.subsystems.turret.hood.HoodConstants;
 import frc.robot.subsystems.turret.hood.HoodIO;
@@ -86,6 +87,8 @@ public class RobotContainer {
   private final Rotater rightRotater;
   private final Hood rightHood;
   private final Shooter rightShooter;
+
+  private final ShotTable shotTable;
 
   // Joysticks
   private static final Joystick leftJoy = new Joystick(0);
@@ -227,6 +230,8 @@ public class RobotContainer {
         break;
     }
 
+    shotTable = new ShotTable();
+
     // Must happen before any PathPlanner path/auto is constructed.
     registerNamedCommands();
 
@@ -327,6 +332,12 @@ public class RobotContainer {
 
     panelButton7.onTrue(cancelActivePath());
 
+    panelButton15.onTrue(
+        Commands.runOnce(
+            () -> {
+              shotTable.setMultiFactor(shotTable.getMultiFactor() + 0.05);
+            }));
+
     panelButton8.onTrue(
         Commands.parallel(
             new IPStorageCommand(intakePivot),
@@ -368,7 +379,7 @@ public class RobotContainer {
     return deferredCommand(
         () ->
             new AdaptiveHubNoMove(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
         rightRotater,
         rightHood,
         leftRotater,
@@ -379,7 +390,7 @@ public class RobotContainer {
     return deferredCommand(
         () ->
             new AdaptiveHubAiming(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
         rightRotater,
         rightHood,
         leftRotater,
@@ -390,7 +401,7 @@ public class RobotContainer {
     return deferredCommand(
         () ->
             new AdaptiveNoMove(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
         rightRotater,
         rightHood,
         leftRotater,
@@ -401,7 +412,7 @@ public class RobotContainer {
     return deferredCommand(
         () ->
             new AdaptiveStorageAiming(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance()),
+                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
         rightRotater,
         rightHood,
         leftRotater,
@@ -410,14 +421,14 @@ public class RobotContainer {
 
   private Command shooterAdaptiveHubAimingCommand() {
     return deferredCommand(
-        () -> new ShooterAdaptiveHubAiming(rightShooter, leftShooter, drive, isBlueAlliance()),
+        () -> new ShooterAdaptiveHubAiming(rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
         rightShooter,
         leftShooter);
   }
 
   private Command shooterAdaptiveStorageAimingCommand() {
     return deferredCommand(
-        () -> new ShooterAdaptiveStorageAiming(rightShooter, leftShooter, drive, isBlueAlliance()),
+        () -> new ShooterAdaptiveStorageAiming(rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
         rightShooter,
         leftShooter);
   }

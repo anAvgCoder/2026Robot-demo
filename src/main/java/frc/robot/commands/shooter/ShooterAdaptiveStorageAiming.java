@@ -20,17 +20,18 @@ public class ShooterAdaptiveStorageAiming extends Command {
   private final Shooter shooterLeft;
   private final Drive drive;
   private final boolean isBlue;
+  private final ShotTable shotTable;
 
   private static final double TURRET_X_INCHES = 6.5;
   private static final double TURRET_Y_INCHES = 6.75;
 
   public ShooterAdaptiveStorageAiming(
-      Shooter shooterRight, Shooter shooterLeft, Drive drive, boolean isBlueCheck) {
+      Shooter shooterRight, Shooter shooterLeft, Drive drive, boolean isBlueCheck, ShotTable shotTable) {
     this.shooterRight = shooterRight;
     this.shooterLeft = shooterLeft;
     this.drive = drive;
     this.isBlue = isBlueCheck;
-
+    this.shotTable = shotTable;
     addRequirements(shooterRight, shooterLeft);
   }
 
@@ -38,12 +39,12 @@ public class ShooterAdaptiveStorageAiming extends Command {
   public void execute() {
     Pose3d turretPoseRight = getTurretPose(true);
     double distRight = calculateTargetDistance(turretPoseRight);
-    ShotSetpoint shotRight = ShotTable.get(distRight);
+    ShotSetpoint shotRight = shotTable.get(distRight);
     shooterRight.setVelocityRPM(shotRight.shooterSpeed());
 
     Pose3d turretPoseLeft = getTurretPose(false);
     double distLeft = calculateTargetDistance(turretPoseLeft);
-    ShotSetpoint shotLeft = ShotTable.get(distLeft);
+    ShotSetpoint shotLeft = shotTable.get(distLeft);
     shooterLeft.setVelocityRPM(shotLeft.shooterSpeed());
   }
 

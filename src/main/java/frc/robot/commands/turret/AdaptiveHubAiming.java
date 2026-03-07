@@ -25,6 +25,7 @@ public class AdaptiveHubAiming extends Command {
   private final Hood hoodLeft;
   private final Drive drive;
   private final boolean isBlue;
+  private final ShotTable shotTable;
 
   private static final double TURRET_X_INCHES = 6.5;
   private static final double TURRET_Y_INCHES = 6.75;
@@ -42,12 +43,14 @@ public class AdaptiveHubAiming extends Command {
       Rotater rotaterLeft,
       Hood hoodLeft,
       Drive drive,
-      boolean isBlueCheck) {
+      boolean isBlueCheck,
+      ShotTable shotTable) {
     this.rotaterRight = rotaterRight;
     this.hoodRight = hoodRight;
     this.rotaterLeft = rotaterLeft;
     this.hoodLeft = hoodLeft;
     this.drive = drive;
+    this.shotTable = shotTable;
     this.isBlue = isBlueCheck;
 
     addRequirements(rotaterRight, hoodRight, rotaterLeft, hoodLeft);
@@ -105,7 +108,7 @@ public class AdaptiveHubAiming extends Command {
     Translation2d releasePivotFieldPosition =
         addScaled(pivotFieldPosition, pivotFieldVelocity, SHOT_RELEASE_DELAY_SEC);
     double shotDistanceMeters = releasePivotFieldPosition.getDistance(hubField);
-    ShotSetpoint shotSetpoint = ShotTable.get(shotDistanceMeters);
+    ShotSetpoint shotSetpoint = this.shotTable.get(shotDistanceMeters);
 
     double tofSeconds = flightTimeSecondsSafe(shotDistanceMeters);
     Translation2d aimPointField = hubField;

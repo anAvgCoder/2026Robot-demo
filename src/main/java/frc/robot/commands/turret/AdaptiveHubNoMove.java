@@ -25,18 +25,23 @@ public class AdaptiveHubNoMove extends Command {
   private final Drive drive;
   private final boolean isBlue;
 
+  private final ShotTable shotTable;
+
   public AdaptiveHubNoMove(
       Rotater rotaterRight,
       Hood hoodRight,
       Rotater rotaterLeft,
       Hood hoodLeft,
       Drive drive,
-      boolean isBlueCheck) {
+      boolean isBlueCheck,
+      ShotTable shotTable) {
     this.rotaterRight = rotaterRight;
     this.hoodRight = hoodRight;
     this.rotaterLeft = rotaterLeft;
     this.hoodLeft = hoodLeft;
     this.drive = drive;
+    this.shotTable = shotTable;
+
     this.isBlue = isBlueCheck;
 
     addRequirements(rotaterRight, hoodRight, rotaterLeft, hoodLeft);
@@ -48,14 +53,14 @@ public class AdaptiveHubNoMove extends Command {
     rotaterRight.setTurnPosition(
         calculateTurretDegreesRobotRelative(
             turretPoseRight, RotaterConstants.turretRightAngleLocation));
-    ShotSetpoint shotRight = ShotTable.get(calculateAdjustedHubDistance(turretPoseRight));
+    ShotSetpoint shotRight = shotTable.get(calculateAdjustedHubDistance(turretPoseRight));
     hoodRight.setHoodPosition(shotRight.hoodPos());
 
     Pose3d turretPoseLeft = getTurretPose(false);
     rotaterLeft.setTurnPosition(
         calculateTurretDegreesRobotRelative(
             turretPoseLeft, RotaterConstants.turretLeftAngleLocation));
-    ShotSetpoint shotLeft = ShotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
+    ShotSetpoint shotLeft = shotTable.get(calculateAdjustedHubDistance(turretPoseLeft));
     hoodLeft.setHoodPosition(shotLeft.hoodPos());
   }
 
