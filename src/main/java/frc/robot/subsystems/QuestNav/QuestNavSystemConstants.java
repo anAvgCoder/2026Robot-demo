@@ -56,6 +56,13 @@ public class QuestNavSystemConstants {
           Units.inchesToMeters(ROBOT_TO_QUEST_INCHES_Z_DOUBLE),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 
+  public static final Pose3d ROBOT_TO_QUEST_RED_HUB =
+      new Pose3d(
+          Units.inchesToMeters(651.22-182.11+47.00/2+ROBOT_WIDTH_INCHES_BUMPER_HALF_DOUBLE - ROBOT_TO_QUEST_INCHES_X_DOUBLE),
+          Units.inchesToMeters(FieldConstants.FIELD_LENGTH_INCHES / 2),
+          Units.inchesToMeters(ROBOT_TO_QUEST_INCHES_Z_DOUBLE),
+          new Rotation3d(0, 0, Units.degreesToRadians(180)));
+
   public static final Matrix<N3, N1> questNavStdDevs =
       VecBuilder.fill(
           0.02, // Trust down to 2cm in X direction
