@@ -14,16 +14,8 @@ public class IPIntakeCommand extends Command {
 
   @Override
   public void initialize() {
-    runCounter = 0;
-  }
-
-  @Override
-  public void execute() {
     intakePivot.setIntakeExtended();
   }
-
-  @Override
-  public void end(boolean interrupted) {}
 
   @Override
   public boolean isFinished() {
