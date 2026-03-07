@@ -129,6 +129,10 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
+    // First update the quest pose frames. They get used later
+    questNavIO.runQuestCommand();
+    questNavIO.updateQuestStatus();
+
     if (DriverStation.isDisabled()) {
       for (var module : modules) {
         module.stop();
@@ -346,8 +350,6 @@ public class Drive extends SubsystemBase {
   }
 
   public void getQuestSwerveUpdates() {
-    questNavIO.updateLatestPoseFrames();
-
     PoseFrame[] poseFrames = questNavIO.getLatestPoseFrames();
     if (!questNavIO.isWorking() || poseFrames == null || poseFrames.length == 0) {
       return;

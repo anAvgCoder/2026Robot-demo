@@ -17,11 +17,4 @@ public class QuestNavSystem extends SubsystemBase {
   public QuestNavSystemIO getIO() {
     return this.io;
   }
-
-  @Override
-  public void periodic() {
-    io.runQuestCommand();
-
-    io.updateQuestStatus();
-  }
 }
