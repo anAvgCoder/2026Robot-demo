@@ -29,7 +29,7 @@ public class ShotTable {
     // key = distanceMeters
     table.put(0.00, new ShotSetpoint(0.0, 2235));
     table.put(1.55, new ShotSetpoint(0.0, 2235));
-    table.put(1.86, new ShotSetpoint(calculateHoodAngle(17), 2260));
+    table.put(1.86, new ShotSetpoint(calculateHoodAngle(18), 2260));
     table.put(2.14, new ShotSetpoint(calculateHoodAngle(18), 2310));
     table.put(2.45, new ShotSetpoint(calculateHoodAngle(19.5), 2360));
     table.put(2.73, new ShotSetpoint(calculateHoodAngle(20.5), 2410));
@@ -87,6 +87,6 @@ public class ShotTable {
     double normalized = (degrees - min) / (max - min);
 
     return MathUtil.clamp(
-        (normalized * HoodConstants.kMaxAngleRad + max - min), 0.0, HoodConstants.kMaxAngleRad);
+        (normalized * HoodConstants.kMaxAngleRad), 0.0, HoodConstants.kMaxAngleRad);
   }
 }

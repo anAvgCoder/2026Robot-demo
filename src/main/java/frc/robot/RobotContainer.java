@@ -295,6 +295,7 @@ public class RobotContainer {
             () -> {
               leftRotater.setTurnPosition(0);
               rightRotater.setTurnPosition(0);
+              leftHood.setHoodPosition(0.2);
             }));
     panelButton13.onTrue(
         Commands.runOnce(
@@ -321,28 +322,84 @@ public class RobotContainer {
               rightRotater.setTurnPosition(90);
             }));
 
-    panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
-    panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
+    // panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
+    // panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
 
-    panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
-    panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
+    // panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
+    // panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
 
-    panelButton5.and(panelButton8.negate()).whileTrue(adaptiveStorageAimingCommand());
-    panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
+    // panelButton5.and(panelButton8.negate()).whileTrue(adaptiveStorageAimingCommand());
+    // panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
 
-    panelButton7.onTrue(cancelActivePath());
+    // panelButton7.onTrue(cancelActivePath());
+
+    panelButton1.toggleOnTrue(
+        Commands.runOnce(
+            () -> {
+              leftShooter.setSpeed(3600);
+              rightShooter.setSpeed(3600);
+            }));
+    panelButton2.toggleOnTrue(
+        Commands.runOnce(
+            () -> {
+              leftShooter.setSpeed(3300);
+              rightShooter.setSpeed(3300);
+            }));
+    panelButton3.toggleOnTrue(
+        Commands.runOnce(
+            () -> {
+              leftShooter.setSpeed(3000);
+              rightShooter.setSpeed(3000);
+            }));
+    panelButton5.toggleOnTrue(
+        Commands.runOnce(
+            () -> {
+              leftShooter.setSpeed(4200);
+              rightShooter.setSpeed(4200);
+            }));
+    panelButton4.toggleOnTrue(
+        Commands.runOnce(
+            () -> {
+              leftShooter.stop();
+              rightShooter.stop();
+            }));
+    panelButton6.toggleOnTrue(
+        Commands.runOnce(
+            () -> {
+              leftShooter.setSpeed(3900);
+              rightShooter.setSpeed(3900);
+            }));
 
     panelButton15.onTrue(
         Commands.runOnce(
             () -> {
               shotTable.setMultiFactor(shotTable.getMultiFactor() + 0.05);
             }));
+    panelButton7.onTrue(
+        Commands.runOnce(
+            () -> {
+              shotTable.setMultiFactor(shotTable.getMultiFactor() - 0.05);
+            }));
 
     panelButton8.onTrue(
         Commands.parallel(
             new IPStorageCommand(intakePivot),
-            Commands.runOnce(() -> leftHood.setStoragePosition()),
-            Commands.runOnce(() -> rightHood.setStoragePosition())));
+            Commands.runOnce(() -> leftHood.setVoltage(-1.0))
+                .andThen(Commands.waitSeconds(0.25))
+                .andThen(
+                    Commands.runOnce(
+                        () -> {
+                          leftHood.zeroAtMin();
+                          leftHood.setVoltage(0.0);
+                        })),
+            Commands.runOnce(() -> rightHood.setVoltage(-1.0))
+                .andThen(Commands.waitSeconds(0.25))
+                .andThen(
+                    Commands.runOnce(
+                        () -> {
+                          rightHood.zeroAtMin();
+                          rightHood.setVoltage(0.0);
+                        }))));
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
@@ -356,9 +413,10 @@ public class RobotContainer {
     //     Commands.runOnce(() ->
     // drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
     //         .ignoringDisable(true));
-    leftJoy3Button.onTrue(
-        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
-            .ignoringDisable(true));
+    // leftJoy3Button.onTrue(
+    //     Commands.runOnce(() ->
+    // drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
+    //         .ignoringDisable(true));
 
     // leftJoy3Button.onTrue(runTeleopPath("ST Push Balls"));
     // panelButton11.onTrue(runTeleopPath("ST Clear Depot"));

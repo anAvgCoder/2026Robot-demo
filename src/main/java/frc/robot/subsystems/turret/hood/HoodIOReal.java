@@ -82,17 +82,7 @@ public class HoodIOReal implements HoodIO {
     double meas = enc.getPosition();
     double goal = MathUtil.clamp(position, HoodConstants.kMinAngleRad, HoodConstants.kMaxAngleRad);
 
-    if (Double.isNaN(lastGoalRad)
-        || Math.abs(goal - lastGoalRad) > HoodConstants.kPosToleranceRad) {
-      if (Double.isNaN(lastGoalRad)) {
-        // First call since boot / idle — reset profile to current state
-        controller.reset(meas, 0.0);
-      }
-      controller.setGoal(goal);
-      lastGoalRad = goal;
-    }
-
-    double out = controller.calculate(meas);
+    double out = controller.calculate(meas, goal);
 
     if (controller.atGoal()) {
       out = 0.0;
@@ -117,6 +107,8 @@ public class HoodIOReal implements HoodIO {
   public void updateInputs(HoodIOInputs inputs) {
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.supplyCurrentAmps = motor.getOutputCurrent();
+    inputs.positionRad = enc.getPosition();
+    inputs.velocityRadPerSec = enc.getVelocity();
     inputs.tempC = motor.getMotorTemperature();
   }
 }
