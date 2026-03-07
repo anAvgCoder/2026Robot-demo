@@ -7,7 +7,7 @@ import edu.wpi.first.math.interpolation.InverseInterpolator;
 import frc.robot.subsystems.turret.hood.HoodConstants;
 
 public class ShotTable {
-  private static double shooterMultiFactor = 1.0;
+  private static double shooterMultiFactor = 1.3;
 
   public record ShotSetpoint(double hoodPos, double shooterSpeed) {
 

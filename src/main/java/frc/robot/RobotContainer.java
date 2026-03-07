@@ -295,7 +295,6 @@ public class RobotContainer {
             () -> {
               leftRotater.setTurnPosition(0);
               rightRotater.setTurnPosition(0);
-              leftHood.setHoodPosition(0.2);
             }));
     panelButton13.onTrue(
         Commands.runOnce(
@@ -338,36 +337,48 @@ public class RobotContainer {
             () -> {
               leftShooter.setSpeed(3600);
               rightShooter.setSpeed(3600);
+              leftHood.setHoodPosition(0.3);
+              rightHood.setHoodPosition(0.3);
             }));
     panelButton2.toggleOnTrue(
         Commands.runOnce(
             () -> {
               leftShooter.setSpeed(3300);
               rightShooter.setSpeed(3300);
+              leftHood.setHoodPosition(0.3);
+              rightHood.setHoodPosition(0.3);
             }));
     panelButton3.toggleOnTrue(
         Commands.runOnce(
             () -> {
               leftShooter.setSpeed(3000);
               rightShooter.setSpeed(3000);
+              leftHood.setHoodPosition(0.3);
+              rightHood.setHoodPosition(0.3);
             }));
     panelButton5.toggleOnTrue(
         Commands.runOnce(
             () -> {
               leftShooter.setSpeed(4200);
               rightShooter.setSpeed(4200);
+              leftHood.setHoodPosition(0.3);
+              rightHood.setHoodPosition(0.3);
             }));
     panelButton4.toggleOnTrue(
         Commands.runOnce(
             () -> {
               leftShooter.stop();
               rightShooter.stop();
+              leftHood.setHoodPosition(0.3);
+              rightHood.setHoodPosition(0.3);
             }));
     panelButton6.toggleOnTrue(
         Commands.runOnce(
             () -> {
               leftShooter.setSpeed(3900);
               rightShooter.setSpeed(3900);
+              leftHood.setHoodPosition(0.3);
+              rightHood.setHoodPosition(0.3);
             }));
 
     panelButton15.onTrue(
