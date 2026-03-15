@@ -7,9 +7,12 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.drive.DriveConstants;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
 import java.util.ArrayList;
+
+import org.littletonrobotics.junction.Logger;
 
 public class QuestNavSensor extends SubsystemBase {
   private final QuestNav quest;
@@ -26,8 +29,10 @@ public class QuestNavSensor extends SubsystemBase {
   private boolean questWorking;
   private boolean questFlagged;
   private boolean flagConfirmed;
+  private boolean ignoreFlags;
 
   // saved velocities
+  private double lastV;
   private double lastVx;
   private double lastVy;
   private double lastWz;
@@ -36,32 +41,66 @@ public class QuestNavSensor extends SubsystemBase {
     this.quest = new QuestNav();
 
     last6PoseFrames = new ArrayList<>();
-
+    
     zeroQuestPose(defaultInitialPose);
+    
+    ignoreFlags = false;
+    clearFlags();
+    Logger.recordOutput("QuestSensor/ignoreFlags", false);
   }
 
   public void runPeriodicUpdates() {
     quest.commandPeriodic();
 
-    isWorking();
-    hasFlags();
+    // call order matters
     readLatestPoseFrames();
     updateVelocities();
+    hasFlags();
+    isWorking();
   }
 
   public boolean isWorking() {
     questWorking = quest.isConnected() && quest.isTracking() && !flagConfirmed;
 
+    Logger.recordOutput("QuestSensor/isWorking", questWorking);
     return questWorking;
   }
 
   public boolean hasFlags() {
-    questFlagged = false;
-    // keep using quest with warning or until flag can be assigned
-    // check only rotation updates
-    // check pose jumps
+    Logger.recordOutput("QuestSensor/flagConfirmed", flagConfirmed);
 
+    if (flagConfirmed || ignoreFlags) {
+        questFlagged = true;
+    }
+
+    if (!flagConfirmed && last6PoseFrames.size() > 1) {
+        Pose3d lastPose = last6PoseFrames.get(last6PoseFrames.size() - 1).questPose3d();
+        Pose3d firstPose = last6PoseFrames.get(0).questPose3d();
+        
+        // check only rotation updates
+        questFlagged |= lastPose.getX() == firstPose.getX() && lastPose.getY() == firstPose.getY();
+
+        // check pose jumps
+        questFlagged |= lastV > DriveConstants.maxSpeedMetersPerSec;
+        questFlagged |= lastWz > DriveConstants.maxSpeedMetersPerSec / DriveConstants.driveBaseRadius;
+    }
+
+    Logger.recordOutput("QuestSensor/hasFlag", questFlagged);
     return questFlagged;
+  }
+
+  public void confirmFlag() {
+    flagConfirmed = true;
+  }
+
+  public void clearFlags() {
+    questFlagged = false;
+    Logger.recordOutput("QuestSensor/flagsLastCleared", RobotController.getFPGATime() / 1e6);
+  }
+
+  public void toggleIgnoreFlags() {
+    ignoreFlags = !ignoreFlags;
+    Logger.recordOutput("QuestSensor/ignoreFlags", ignoreFlags);
   }
 
   public void zeroQuestPose(Pose3d pose) {
@@ -203,6 +242,14 @@ public class QuestNavSensor extends SubsystemBase {
   }
 
   private void updateVelocities() {
+    if (last6PoseFrames.size() < 2) {
+        lastV = 0;
+        lastVx = 0;
+        lastVy = 0;
+        lastWz = 0;
+        return;
+    }
+
     PoseFrame frame2 = last6PoseFrames.get(last6PoseFrames.size() - 1);
     PoseFrame frame1 = last6PoseFrames.get(last6PoseFrames.size() - 2);
 
@@ -213,11 +260,13 @@ public class QuestNavSensor extends SubsystemBase {
 
     lastVx = (pose2.getX() - pose1.getX()) / dt;
     lastVy = (pose2.getY() - pose1.getY()) / dt;
+    lastV = Math.sqrt(lastVx * lastVx + lastVy * lastVy);
+
     lastWz = (pose2.getRotation().getZ() - pose1.getRotation().getZ()) / dt;
   }
 
   public double getLinearVelocity() {
-    return Math.sqrt(lastVx * lastVx + lastVy * lastVy);
+    return lastV;
   }
 
   public double getYawVelocity() {

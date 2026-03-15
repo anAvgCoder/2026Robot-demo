@@ -72,6 +72,7 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
+  private final QuestNavSensor questSensor;
   private final Belt leftBelt;
   private final Belt rightBelt;
   private final IntakePivot intakePivot;
@@ -148,12 +149,14 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    questSensor = new QuestNavSensor();
+
     switch (Constants.currentMode) {
       case REAL:
         drive =
             new Drive(
                 new GyroIOPigeon2(),
-                new QuestNavSensor(),
+                questSensor,
                 new ModuleIOSpark(0),
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
@@ -183,7 +186,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIO() {},
-                new QuestNavSensor(),
+                questSensor,
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim(),
@@ -207,7 +210,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIO() {},
-                new QuestNavSensor(),
+                questSensor,
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {},
@@ -330,30 +333,40 @@ public class RobotContainer {
 
     // panelButton7.onTrue(cancelActivePath());
 
-    panelButton1.toggleOnTrue(
-        Commands.runOnce(
-            () -> {
-              leftShooter.setSpeed(3600);
-              rightShooter.setSpeed(3600);
-              leftHood.setHoodPosition(0.3);
-              rightHood.setHoodPosition(0.3);
-            }));
-    panelButton2.toggleOnTrue(
-        Commands.runOnce(
-            () -> {
-              leftShooter.setSpeed(3300);
-              rightShooter.setSpeed(3300);
-              leftHood.setHoodPosition(0.3);
-              rightHood.setHoodPosition(0.3);
-            }));
-    panelButton3.toggleOnTrue(
-        Commands.runOnce(
-            () -> {
-              leftShooter.setSpeed(3000);
-              rightShooter.setSpeed(3000);
-              leftHood.setHoodPosition(0.3);
-              rightHood.setHoodPosition(0.3);
-            }));
+    // panelButton1.toggleOnTrue(
+    //     Commands.runOnce(
+    //         () -> {
+    //           leftShooter.setSpeed(3600);
+    //           rightShooter.setSpeed(3600);
+    //           leftHood.setHoodPosition(0.3);
+    //           rightHood.setHoodPosition(0.3);
+    //         }));
+    // panelButton2.toggleOnTrue(
+    //     Commands.runOnce(
+    //         () -> {
+    //           leftShooter.setSpeed(3300);
+    //           rightShooter.setSpeed(3300);
+    //           leftHood.setHoodPosition(0.3);
+    //           rightHood.setHoodPosition(0.3);
+    //         }));
+    // panelButton3.toggleOnTrue(
+    //     Commands.runOnce(
+    //         () -> {
+    //           leftShooter.setSpeed(3000);
+    //           rightShooter.setSpeed(3000);
+    //           leftHood.setHoodPosition(0.3);
+    //           rightHood.setHoodPosition(0.3);
+    //         }));
+    panelButton1.onTrue(
+      Commands.runOnce(() -> questSensor.toggleIgnoreFlags())
+    );
+    panelButton2.onTrue(
+      Commands.runOnce(() -> questSensor.clearFlags())
+    );
+    panelButton3.onTrue(
+      Commands.runOnce(() -> questSensor.confirmFlag())
+    );
+
     panelButton5.toggleOnTrue(
         Commands.runOnce(
             () -> {
