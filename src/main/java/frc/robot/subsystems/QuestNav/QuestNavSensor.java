@@ -19,10 +19,11 @@ public class QuestNavSensor extends SubsystemBase {
 
   // quest pose
   private PoseFrame[] latestPoseFrames;
-  private int preZeroFrameCount;
   private ArrayList<PoseFrame> last6PoseFrames;
-
+  private int preZeroFrameCount;
+  
   private Pose3d defaultInitialPose;
+  private Pose2d lastRobotPose;
 
   // quest states
   private int batteryPercent;
@@ -115,6 +116,12 @@ public class QuestNavSensor extends SubsystemBase {
     for (PoseFrame frame : latestPoseFrames) {
       samplePoseFrame(frame);
     }
+
+    lastRobotPose = last6PoseFrames
+        .get(last6PoseFrames.size() - 1)
+        .questPose3d()
+        .transformBy(ROBOT_TO_QUEST.inverse())
+        .toPose2d();
   }
 
   private void zeroPoseFrames(Pose3d pose) {
@@ -234,11 +241,7 @@ public class QuestNavSensor extends SubsystemBase {
   }
 
   public Pose2d getLastRobotPose() {
-    return last6PoseFrames
-        .get(last6PoseFrames.size() - 1)
-        .questPose3d()
-        .transformBy(ROBOT_TO_QUEST.inverse())
-        .toPose2d();
+    return lastRobotPose;
   }
 
   private void updateVelocities() {

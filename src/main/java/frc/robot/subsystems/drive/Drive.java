@@ -129,7 +129,6 @@ public class Drive extends SubsystemBase {
   public void periodic() {
     // First update the quest pose frames. They get used later
     quest.runPeriodicUpdates();
-    ;
 
     if (DriverStation.isDisabled()) {
       for (var module : modules) {
@@ -172,10 +171,12 @@ public class Drive extends SubsystemBase {
           rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
         }
 
-        poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+        if (quest.isWorking()) {
+          poseEstimator.resetPosition(quest.getLastRobotPose().getRotation(), modulePositions, quest.getLastRobotPose());
+        } else {
+          poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
+        }
       }
-
-      getQuestSwerveUpdates();
     } finally {
       odometryLock.unlock();
     }
@@ -315,20 +316,20 @@ public class Drive extends SubsystemBase {
     return getPose().getRotation();
   }
 
-  public void setPose(Pose3d pose) {
+  public void setPose(Pose3d robotPose) {
     odometryLock.lock();
     try {
-      Pose2d robotPose2d = pose.toPose2d();
+      Pose2d robotPose2d = robotPose.toPose2d();
 
-      gyroIO.setYaw(robotPose2d.getRotation());
       rawGyroRotation = robotPose2d.getRotation();
+      gyroIO.setYaw(rawGyroRotation);
 
-      quest.zeroQuestPose(pose);
+      quest.zeroQuestPose(robotPose.transformBy(QuestNavConstants.ROBOT_TO_QUEST));
 
       poseEstimator.resetPosition(
           rawGyroRotation,
           getModulePositions(),
-          pose.transformBy(QuestNavConstants.ROBOT_TO_QUEST.inverse()).toPose2d());
+          robotPose2d);
     } finally {
       odometryLock.unlock();
     }
@@ -347,25 +348,25 @@ public class Drive extends SubsystemBase {
     quest.zeroQuestPose(pose);
   }
 
-  public void getQuestSwerveUpdates() {
-    PoseFrame[] poseFrames = quest.getLatestPoseFrames();
-    if (!quest.isWorking() || poseFrames == null || poseFrames.length == 0) {
-      return;
-    }
+  // public void getQuestSwerveUpdates() {
+  //   PoseFrame[] poseFrames = quest.getLatestPoseFrames();
+  //   if (!quest.isWorking() || poseFrames == null || poseFrames.length == 0) {
+  //     return;
+  //   }
 
-    for (PoseFrame frame : poseFrames) {
-      double ts = frame.dataTimestamp();
-      if (ts <= lastQuestVisionTimestamp) {
-        continue;
-      }
-      lastQuestVisionTimestamp = ts;
+  //   for (PoseFrame frame : poseFrames) {
+  //     double ts = frame.dataTimestamp();
+  //     if (ts <= lastQuestVisionTimestamp) {
+  //       continue;
+  //     }
+  //     lastQuestVisionTimestamp = ts;
 
-      poseEstimator.addVisionMeasurement(
-          frame.questPose3d().transformBy(QuestNavConstants.ROBOT_TO_QUEST.inverse()).toPose2d(),
-          ts,
-          QuestNavConstants.questNavStdDevs);
-    }
-  }
+  //     poseEstimator.addVisionMeasurement(
+  //         frame.questPose3d().transformBy(QuestNavConstants.ROBOT_TO_QUEST.inverse()).toPose2d(),
+  //         ts,
+  //         QuestNavConstants.questNavStdDevs);
+  //   }
+  // }
 
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,
