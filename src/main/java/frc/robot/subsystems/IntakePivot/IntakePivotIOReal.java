@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakepivot;
+package frc.robot.subsystems.intakePivot;
 
 import static frc.robot.util.SparkUtil.tryUntilOk;
 

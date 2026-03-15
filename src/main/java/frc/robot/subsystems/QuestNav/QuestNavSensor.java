@@ -1,0 +1,230 @@
+package frc.robot.subsystems.questNav;
+
+import static frc.robot.subsystems.questNav.QuestNavConstants.ROBOT_TO_QUEST;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import gg.questnav.questnav.PoseFrame;
+import gg.questnav.questnav.QuestNav;
+import java.util.ArrayList;
+
+public class QuestNavSensor extends SubsystemBase {
+  private final QuestNav quest;
+
+  // quest pose
+  private PoseFrame[] latestPoseFrames;
+  private int preZeroFrameCount;
+  private ArrayList<PoseFrame> last6PoseFrames;
+
+  private Pose3d defaultInitialPose;
+
+  // quest states
+  private int batteryPercent;
+  private boolean questWorking;
+  private boolean questFlagged;
+  private boolean flagConfirmed;
+
+  // saved velocities
+  private double lastVx;
+  private double lastVy;
+  private double lastWz;
+
+  public QuestNavSensor() {
+    this.quest = new QuestNav();
+
+    last6PoseFrames = new ArrayList<>();
+
+    zeroQuestPose(defaultInitialPose);
+  }
+
+  public void runPeriodicUpdates() {
+    quest.commandPeriodic();
+
+    isWorking();
+    hasFlags();
+    readLatestPoseFrames();
+    updateVelocities();
+  }
+
+  public boolean isWorking() {
+    questWorking = quest.isConnected() && quest.isTracking() && !flagConfirmed;
+
+    return questWorking;
+  }
+
+  public boolean hasFlags() {
+    questFlagged = false;
+    // keep using quest with warning or until flag can be assigned
+    // check only rotation updates
+    // check pose jumps
+
+    return questFlagged;
+  }
+
+  public void zeroQuestPose(Pose3d pose) {
+    quest.setPose(pose);
+    zeroPoseFrames(pose);
+  }
+
+  // Must be called only ONE time per loop
+  private void readLatestPoseFrames() {
+    latestPoseFrames = quest.getAllUnreadPoseFrames();
+
+    for (PoseFrame frame : latestPoseFrames) {
+      samplePoseFrame(frame);
+    }
+  }
+
+  private void zeroPoseFrames(Pose3d pose) {
+    last6PoseFrames.clear();
+
+    preZeroFrameCount = latestPoseFrames[latestPoseFrames.length - 1].frameCount();
+
+    PoseFrame zeroFrame =
+        new PoseFrame(
+            pose,
+            RobotController.getFPGATime() / 1e6,
+            quest.getAppTimestamp().getAsDouble(),
+            preZeroFrameCount + 1,
+            quest.isTracking());
+
+    latestPoseFrames = new PoseFrame[] {zeroFrame};
+
+    samplePoseFrame(zeroFrame);
+  }
+
+  public void samplePoseFrame(PoseFrame frame) {
+    last6PoseFrames.add(frame);
+
+    // Remove old poseFrames
+    while (last6PoseFrames.size() > 6) {
+      last6PoseFrames.remove(0);
+    }
+  }
+
+  public PoseFrame[] getLatestPoseFrames() {
+    if (latestPoseFrames != null) {
+      return new PoseFrame[0];
+    } else {
+      return latestPoseFrames;
+    }
+  }
+
+  // Predicts robot x, y, and yaw
+  // z, roll & pitch are copied from last pose sample
+  // sampleStep is step between pose indexes used for each velocity calculation
+  public Pose3d predictPoseFromLast6PoseFrames(int sampleStep, double targetTimestamp) {
+    if (last6PoseFrames.size() < 2) {
+      // add something so that this doesn't get used for predictions
+      return Pose3d.kZero;
+    }
+
+    double tSeconds = targetTimestamp - RobotController.getFPGATime() / 1e6;
+
+    // Pose frames
+    PoseFrame first = last6PoseFrames.get(0);
+    PoseFrame initRef = last6PoseFrames.get(sampleStep);
+
+    PoseFrame last = last6PoseFrames.get(last6PoseFrames.size() - 1);
+    PoseFrame finalRef = last6PoseFrames.get(last6PoseFrames.size() - sampleStep - 1);
+
+    // Poses
+    Pose3d firstPose = first.questPose3d();
+    Pose3d initRefPose = initRef.questPose3d();
+
+    Pose3d lastPose = last.questPose3d();
+    Pose3d finalRefPose = finalRef.questPose3d();
+
+    Rotation3d lastRot = lastPose.getRotation();
+
+    // Timestamps
+    double firstTime = first.dataTimestamp();
+    double initRefTime = initRef.dataTimestamp();
+
+    double lastTime = last.dataTimestamp();
+    double finalRefTime = finalRef.dataTimestamp();
+
+    // seconds
+    double dt = lastTime - firstTime;
+
+    double ax = 0;
+    double ay = 0;
+    double aYaw = 0;
+
+    // force minimum step
+    if (sampleStep < 1) {
+      sampleStep = 1;
+    }
+
+    // cap sampleStep to pose number
+    if (last6PoseFrames.size() < 2 * (sampleStep + 1)) {
+      sampleStep = last6PoseFrames.size() / 2 - 1;
+    }
+
+    double t1 = (initRefTime - firstTime);
+    double t2 = (lastTime - finalRefTime);
+
+    // meters / second
+    double vix = (initRefPose.getX() - firstPose.getX()) / t1;
+    double viy = (initRefPose.getY() - firstPose.getY()) / t1;
+
+    double vfx = (lastPose.getX() - finalRefPose.getX()) / t2;
+    double vfy = (lastPose.getY() - finalRefPose.getY()) / t2;
+
+    // radians / second
+    double wiz = (initRefPose.getRotation().getZ() - firstPose.getRotation().getZ()) / t2;
+    double wfz = (lastPose.getRotation().getZ() - finalRefPose.getRotation().getZ()) / t2;
+
+    ax = (vfx - vix) / (dt - (t1 + t2));
+    ay = (vfy - viy) / (dt - (t1 + t2));
+    aYaw = (wfz - wiz) / (dt - (t1 + t2));
+
+    double xPred = lastPose.getX() + vfx * tSeconds + ax * tSeconds * tSeconds;
+    double yPred = lastPose.getY() + vfy * tSeconds + ay * tSeconds * tSeconds;
+
+    Rotation3d rotPred =
+        new Rotation3d(
+            lastRot.getX(),
+            lastRot.getY(),
+            lastRot.getZ() + wfz * tSeconds + aYaw * tSeconds * tSeconds);
+
+    return new Pose3d(xPred, yPred, lastPose.getZ(), rotPred);
+  }
+
+  public Pose2d getLastRobotPose() {
+    return last6PoseFrames
+        .get(last6PoseFrames.size() - 1)
+        .questPose3d()
+        .transformBy(ROBOT_TO_QUEST.inverse())
+        .toPose2d();
+  }
+
+  private void updateVelocities() {
+    PoseFrame frame2 = last6PoseFrames.get(last6PoseFrames.size() - 1);
+    PoseFrame frame1 = last6PoseFrames.get(last6PoseFrames.size() - 2);
+
+    Pose3d pose2 = frame2.questPose3d();
+    Pose3d pose1 = frame1.questPose3d();
+
+    double dt = frame2.dataTimestamp() - frame1.dataTimestamp();
+
+    lastVx = (pose2.getX() - pose1.getX()) / dt;
+    lastVy = (pose2.getY() - pose1.getY()) / dt;
+    lastWz = (pose2.getRotation().getZ() - pose1.getRotation().getZ()) / dt;
+  }
+
+  public double getLinearVelocity() {
+    return Math.sqrt(lastVx * lastVx + lastVy * lastVy);
+  }
+
+  public double getYawVelocity() {
+    return lastWz;
+  }
+
+  public int getQuestBattery() {
+    return batteryPercent;
+  }
+}

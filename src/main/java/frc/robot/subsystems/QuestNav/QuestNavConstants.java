@@ -1,4 +1,4 @@
-package frc.robot.subsystems.questnav;
+package frc.robot.subsystems.questNav;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -10,7 +10,7 @@ import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
 import frc.robot.util.FieldConstants;
 
-public class QuestNavSystemConstants {
+public class QuestNavConstants {
 
   public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = 10.75;
   public static double ROBOT_TO_QUEST_INCHES_Z_DOUBLE = 13.5;
@@ -58,7 +58,12 @@ public class QuestNavSystemConstants {
 
   public static final Pose3d ROBOT_TO_QUEST_RED_HUB =
       new Pose3d(
-          Units.inchesToMeters(651.22-182.11+47.00/2+ROBOT_WIDTH_INCHES_BUMPER_HALF_DOUBLE - ROBOT_TO_QUEST_INCHES_X_DOUBLE),
+          Units.inchesToMeters(
+              651.22
+                  - 182.11
+                  + 47.00 / 2
+                  + ROBOT_WIDTH_INCHES_BUMPER_HALF_DOUBLE
+                  - ROBOT_TO_QUEST_INCHES_X_DOUBLE),
           Units.inchesToMeters(FieldConstants.FIELD_LENGTH_INCHES / 2),
           Units.inchesToMeters(ROBOT_TO_QUEST_INCHES_Z_DOUBLE),
           new Rotation3d(0, 0, Units.degreesToRadians(180)));

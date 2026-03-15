@@ -9,7 +9,6 @@ package frc.robot.subsystems.drive;
 
 import static edu.wpi.first.units.Units.*;
 import static frc.robot.subsystems.drive.DriveConstants.*;
-import static frc.robot.subsystems.questnav.QuestNavSystemConstants.questNavStdDevs;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
@@ -40,9 +39,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
-import frc.robot.subsystems.questnav.QuestNavSystem;
-import frc.robot.subsystems.questnav.QuestNavSystemConstants;
-import frc.robot.subsystems.questnav.QuestNavSystemIO;
+import frc.robot.subsystems.questNav.QuestNavConstants;
+import frc.robot.subsystems.questNav.QuestNavSensor;
 import frc.robot.util.LocalADStarAK;
 import gg.questnav.questnav.PoseFrame;
 import java.util.concurrent.locks.Lock;
@@ -53,7 +51,7 @@ import org.littletonrobotics.junction.Logger;
 public class Drive extends SubsystemBase {
   static final Lock odometryLock = new ReentrantLock();
 
-  private final QuestNavSystemIO questNavIO;
+  private final QuestNavSensor quest;
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
@@ -81,14 +79,14 @@ public class Drive extends SubsystemBase {
 
   public Drive(
       GyroIO gyroIO,
-      QuestNavSystem questNavSystem,
+      QuestNavSensor quest,
       ModuleIO flModuleIO,
       ModuleIO frModuleIO,
       ModuleIO blModuleIO,
       ModuleIO brModuleIO) {
 
     this.gyroIO = gyroIO;
-    this.questNavIO = questNavSystem.getIO();
+    this.quest = quest;
     modules[0] = new Module(flModuleIO, 0);
     modules[1] = new Module(frModuleIO, 1);
     modules[2] = new Module(blModuleIO, 2);
@@ -130,8 +128,8 @@ public class Drive extends SubsystemBase {
   @Override
   public void periodic() {
     // First update the quest pose frames. They get used later
-    questNavIO.runQuestCommand();
-    questNavIO.updateQuestStatus();
+    quest.runPeriodicUpdates();
+    ;
 
     if (DriverStation.isDisabled()) {
       for (var module : modules) {
@@ -183,7 +181,7 @@ public class Drive extends SubsystemBase {
     }
 
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
-    Logger.recordOutput("QuestBotPosition", questNavIO.getLastRobotPose());
+    Logger.recordOutput("QuestBotPosition", quest.getLastRobotPose());
   }
 
   public void runVelocity(ChassisSpeeds speeds) {
@@ -325,12 +323,12 @@ public class Drive extends SubsystemBase {
       gyroIO.setYaw(robotPose2d.getRotation());
       rawGyroRotation = robotPose2d.getRotation();
 
-      questNavIO.resetQuestPoseZero(pose);
+      quest.zeroQuestPose(pose);
 
       poseEstimator.resetPosition(
           rawGyroRotation,
           getModulePositions(),
-          pose.transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse()).toPose2d());
+          pose.transformBy(QuestNavConstants.ROBOT_TO_QUEST.inverse()).toPose2d());
     } finally {
       odometryLock.unlock();
     }
@@ -346,12 +344,12 @@ public class Drive extends SubsystemBase {
   }
 
   public void resetQuestPose(Pose3d pose) {
-    questNavIO.resetQuestPoseZero(pose);
+    quest.zeroQuestPose(pose);
   }
 
   public void getQuestSwerveUpdates() {
-    PoseFrame[] poseFrames = questNavIO.getLatestPoseFrames();
-    if (!questNavIO.isWorking() || poseFrames == null || poseFrames.length == 0) {
+    PoseFrame[] poseFrames = quest.getLatestPoseFrames();
+    if (!quest.isWorking() || poseFrames == null || poseFrames.length == 0) {
       return;
     }
 
@@ -363,12 +361,9 @@ public class Drive extends SubsystemBase {
       lastQuestVisionTimestamp = ts;
 
       poseEstimator.addVisionMeasurement(
-          frame
-              .questPose3d()
-              .transformBy(QuestNavSystemConstants.ROBOT_TO_QUEST.inverse())
-              .toPose2d(),
+          frame.questPose3d().transformBy(QuestNavConstants.ROBOT_TO_QUEST.inverse()).toPose2d(),
           ts,
-          questNavStdDevs);
+          QuestNavConstants.questNavStdDevs);
     }
   }
 
@@ -393,7 +388,7 @@ public class Drive extends SubsystemBase {
     return maxSpeedMetersPerSec / driveBaseRadius;
   }
 
-  public QuestNavSystemIO getQuestNavSystemIO() {
-    return questNavIO;
+  public QuestNavSensor getQuestNavSensor() {
+    return quest;
   }
 }

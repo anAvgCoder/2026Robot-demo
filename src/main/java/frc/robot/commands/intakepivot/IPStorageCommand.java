@@ -1,7 +1,7 @@
 package frc.robot.commands.intakepivot;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.intakepivot.IntakePivot;
+import frc.robot.subsystems.intakePivot.IntakePivot;
 
 public class IPStorageCommand extends Command {
   private final IntakePivot intakePivot;

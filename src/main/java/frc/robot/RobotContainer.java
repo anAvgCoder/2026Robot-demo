@@ -40,19 +40,17 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
-import frc.robot.subsystems.intakepivot.IntakePivot;
-import frc.robot.subsystems.intakepivot.IntakePivotConstants;
-import frc.robot.subsystems.intakepivot.IntakePivotIO;
-import frc.robot.subsystems.intakepivot.IntakePivotIOReal;
-import frc.robot.subsystems.intakepivot.IntakePivotIOSim;
-import frc.robot.subsystems.intakeroller.IntakeRoller;
-import frc.robot.subsystems.intakeroller.IntakeRollerIO;
-import frc.robot.subsystems.intakeroller.IntakeRollerIOReal;
-import frc.robot.subsystems.intakeroller.IntakeRollerIOSim;
-import frc.robot.subsystems.questnav.QuestNavSystem;
-import frc.robot.subsystems.questnav.QuestNavSystemConstants;
-import frc.robot.subsystems.questnav.QuestNavSystemIO;
-import frc.robot.subsystems.questnav.QuestNavSystemIOReal;
+import frc.robot.subsystems.intakePivot.IntakePivot;
+import frc.robot.subsystems.intakePivot.IntakePivotConstants;
+import frc.robot.subsystems.intakePivot.IntakePivotIO;
+import frc.robot.subsystems.intakePivot.IntakePivotIOReal;
+import frc.robot.subsystems.intakePivot.IntakePivotIOSim;
+import frc.robot.subsystems.intakeRoller.IntakeRoller;
+import frc.robot.subsystems.intakeRoller.IntakeRollerIO;
+import frc.robot.subsystems.intakeRoller.IntakeRollerIOReal;
+import frc.robot.subsystems.intakeRoller.IntakeRollerIOSim;
+import frc.robot.subsystems.questNav.QuestNavConstants;
+import frc.robot.subsystems.questNav.QuestNavSensor;
 import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.hood.Hood;
 import frc.robot.subsystems.turret.hood.HoodConstants;
@@ -155,7 +153,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIOPigeon2(),
-                new QuestNavSystem(new QuestNavSystemIOReal()),
+                new QuestNavSensor(),
                 new ModuleIOSpark(0),
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
@@ -185,7 +183,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIO() {},
-                new QuestNavSystem(new QuestNavSystemIO() {}),
+                new QuestNavSensor(),
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim(),
@@ -209,7 +207,7 @@ public class RobotContainer {
         drive =
             new Drive(
                 new GyroIO() {},
-                new QuestNavSystem(new QuestNavSystemIO() {}),
+                new QuestNavSensor(),
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {},
@@ -413,11 +411,11 @@ public class RobotContainer {
                         }))));
 
     resetQuestPoseRedButton.onTrue(
-        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_RED))
+        Commands.runOnce(() -> drive.setPose(QuestNavConstants.ROBOT_TO_QUEST_RED))
             .ignoringDisable(true));
 
     resetQuestPoseBlueButton.onTrue(
-        Commands.runOnce(() -> drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE))
+        Commands.runOnce(() -> drive.setPose(QuestNavConstants.ROBOT_TO_QUEST_BLUE))
             .ignoringDisable(true));
 
     // panelButton15.onTrue(

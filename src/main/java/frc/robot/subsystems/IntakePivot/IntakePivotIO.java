@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakepivot;
+package frc.robot.subsystems.intakePivot;
 
 import org.littletonrobotics.junction.AutoLog;
 

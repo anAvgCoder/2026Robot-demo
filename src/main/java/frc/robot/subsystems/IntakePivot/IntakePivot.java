@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakepivot;
+package frc.robot.subsystems.intakePivot;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import org.littletonrobotics.junction.Logger;
