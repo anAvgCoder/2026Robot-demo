@@ -40,7 +40,7 @@ public class ShooterIOReal implements ShooterIO {
     sparkConfig
         .closedLoop
         .pid(ShooterConstants.kP, 0.0, 0.0, ClosedLoopSlot.kSlot0)
-        .outputRange(-1.0, 1.0, ClosedLoopSlot.kSlot0);
+        .outputRange(0, 1.0, ClosedLoopSlot.kSlot0);
 
     sparkConfig
         .closedLoop

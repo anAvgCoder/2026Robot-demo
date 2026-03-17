@@ -42,7 +42,6 @@ import frc.robot.Constants.Mode;
 import frc.robot.subsystems.questNav.QuestNavConstants;
 import frc.robot.subsystems.questNav.QuestNavSensor;
 import frc.robot.util.LocalADStarAK;
-import gg.questnav.questnav.PoseFrame;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.littletonrobotics.junction.AutoLogOutput;
@@ -76,6 +75,8 @@ public class Drive extends SubsystemBase {
 
   private final SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
+
+  private double speedScale = 1;
 
   public Drive(
       GyroIO gyroIO,
@@ -172,7 +173,8 @@ public class Drive extends SubsystemBase {
         }
 
         if (quest.isWorking()) {
-          poseEstimator.resetPosition(quest.getLastRobotPose().getRotation(), modulePositions, quest.getLastRobotPose());
+          poseEstimator.resetPosition(
+              quest.getLastRobotPose().getRotation(), modulePositions, quest.getLastRobotPose());
         } else {
           poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
         }
@@ -326,10 +328,7 @@ public class Drive extends SubsystemBase {
 
       quest.zeroQuestPose(robotPose.transformBy(QuestNavConstants.ROBOT_TO_QUEST));
 
-      poseEstimator.resetPosition(
-          rawGyroRotation,
-          getModulePositions(),
-          robotPose2d);
+      poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), robotPose2d);
     } finally {
       odometryLock.unlock();
     }
@@ -382,14 +381,24 @@ public class Drive extends SubsystemBase {
   }
 
   public double getMaxLinearSpeedMetersPerSec() {
-    return maxSpeedMetersPerSec;
+    return maxSpeedMetersPerSec * speedScale;
   }
 
   public double getMaxAngularSpeedRadPerSec() {
-    return maxSpeedMetersPerSec / driveBaseRadius;
+    return (maxSpeedMetersPerSec / driveBaseRadius) * speedScale;
   }
 
   public QuestNavSensor getQuestNavSensor() {
     return quest;
+  }
+
+  public void setSpeedFifty() {
+
+    speedScale = .5;
+  }
+
+  public void setSpeedFull() {
+
+    speedScale = 1;
   }
 }

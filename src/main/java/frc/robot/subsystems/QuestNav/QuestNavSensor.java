@@ -11,7 +11,6 @@ import frc.robot.subsystems.drive.DriveConstants;
 import gg.questnav.questnav.PoseFrame;
 import gg.questnav.questnav.QuestNav;
 import java.util.ArrayList;
-
 import org.littletonrobotics.junction.Logger;
 
 public class QuestNavSensor extends SubsystemBase {
@@ -21,7 +20,7 @@ public class QuestNavSensor extends SubsystemBase {
   private PoseFrame[] latestPoseFrames;
   private ArrayList<PoseFrame> last6PoseFrames;
   private int preZeroFrameCount;
-  
+
   private Pose3d defaultInitialPose;
   private Pose2d lastRobotPose;
 
@@ -42,9 +41,9 @@ public class QuestNavSensor extends SubsystemBase {
     this.quest = new QuestNav();
 
     last6PoseFrames = new ArrayList<>();
-    
+
     zeroQuestPose(defaultInitialPose);
-    
+
     ignoreFlags = false;
     clearFlags();
     Logger.recordOutput("QuestSensor/ignoreFlags", false);
@@ -71,19 +70,19 @@ public class QuestNavSensor extends SubsystemBase {
     Logger.recordOutput("QuestSensor/flagConfirmed", flagConfirmed);
 
     if (flagConfirmed || ignoreFlags) {
-        questFlagged = true;
+      questFlagged = true;
     }
 
     if (!flagConfirmed && last6PoseFrames.size() > 1) {
-        Pose3d lastPose = last6PoseFrames.get(last6PoseFrames.size() - 1).questPose3d();
-        Pose3d firstPose = last6PoseFrames.get(0).questPose3d();
-        
-        // check only rotation updates
-        questFlagged |= lastPose.getX() == firstPose.getX() && lastPose.getY() == firstPose.getY();
+      Pose3d lastPose = last6PoseFrames.get(last6PoseFrames.size() - 1).questPose3d();
+      Pose3d firstPose = last6PoseFrames.get(0).questPose3d();
 
-        // check pose jumps
-        questFlagged |= lastV > DriveConstants.maxSpeedMetersPerSec;
-        questFlagged |= lastWz > DriveConstants.maxSpeedMetersPerSec / DriveConstants.driveBaseRadius;
+      // check only rotation updates
+      questFlagged |= lastPose.getX() == firstPose.getX() && lastPose.getY() == firstPose.getY();
+
+      // check pose jumps
+      questFlagged |= lastV > DriveConstants.maxSpeedMetersPerSec;
+      questFlagged |= lastWz > DriveConstants.maxSpeedMetersPerSec / DriveConstants.driveBaseRadius;
     }
 
     Logger.recordOutput("QuestSensor/hasFlag", questFlagged);
@@ -105,8 +104,10 @@ public class QuestNavSensor extends SubsystemBase {
   }
 
   public void zeroQuestPose(Pose3d pose) {
-    quest.setPose(pose);
-    zeroPoseFrames(pose);
+    if (quest.isConnected()) {
+      quest.setPose(pose);
+      zeroPoseFrames(pose);
+    }
   }
 
   // Must be called only ONE time per loop
@@ -117,11 +118,15 @@ public class QuestNavSensor extends SubsystemBase {
       samplePoseFrame(frame);
     }
 
-    lastRobotPose = last6PoseFrames
-        .get(last6PoseFrames.size() - 1)
-        .questPose3d()
-        .transformBy(ROBOT_TO_QUEST.inverse())
-        .toPose2d();
+    // todo fix for no frames from quest without quest causes a crash
+    if (last6PoseFrames.size() > 0) {
+      lastRobotPose =
+          last6PoseFrames
+              .get(last6PoseFrames.size() - 1)
+              .questPose3d()
+              .transformBy(ROBOT_TO_QUEST.inverse())
+              .toPose2d();
+    }
   }
 
   private void zeroPoseFrames(Pose3d pose) {
@@ -246,11 +251,11 @@ public class QuestNavSensor extends SubsystemBase {
 
   private void updateVelocities() {
     if (last6PoseFrames.size() < 2) {
-        lastV = 0;
-        lastVx = 0;
-        lastVy = 0;
-        lastWz = 0;
-        return;
+      lastV = 0;
+      lastVx = 0;
+      lastVy = 0;
+      lastWz = 0;
+      return;
     }
 
     PoseFrame frame2 = last6PoseFrames.get(last6PoseFrames.size() - 1);

@@ -7,7 +7,7 @@ public class HoodConstants {
   public static final int kRightCanId = 40;
   public static final int kLeftCanId = 41;
   public static final boolean kInverted = false;
-  public static final int kCurrentLimitAmps = 15;
+  public static final int kCurrentLimitAmps = 20;
 
   // Hood range (radians)
   public static final double kMinAngleRad = 0.0;

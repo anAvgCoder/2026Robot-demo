@@ -4,6 +4,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -105,14 +106,14 @@ public class RobotContainer {
 
   private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
   private static final JoystickButton deployOutakeButton = new JoystickButton(rightJoy, 2);
-  private static final JoystickButton fiftyPercentDriveButton = new JoystickButton(rightJoy, 3);
+  private static final JoystickButton fiftyPercentDriveButton = new JoystickButton(leftJoy, 4);
 
   private static final JoystickButton leftJoy3Button = new JoystickButton(leftJoy, 3);
   private static final JoystickButton rightJoy4Button = new JoystickButton(rightJoy, 4);
 
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton retractOutakeButton = new JoystickButton(leftJoy, 2);
-  private static final JoystickButton syncYawButton = new JoystickButton(leftJoy, 4);
+  private static final JoystickButton syncYawButton = new JoystickButton(rightJoy, 3);
 
   private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
@@ -254,17 +255,17 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.8 : 0.0));
 
-    // syncYawButton.whileTrue(
-    //     DriveCommands.joystickDriveAtAngle(
-    //         drive,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
-    //         () ->
-    //             MathUtil.angleModulus(
-    //                 Math.PI
-    //                     + Math.atan2(
-    //                         getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
-    //                         getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0))));
+    syncYawButton.whileTrue(
+        DriveCommands.joystickDriveAtAngle(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
+            () ->
+                MathUtil.angleModulus(
+                    // Math.PI +
+                    Math.atan2(
+                        getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
+                        getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0))));
 
     // fiftyPercentDriveButton.whileTrue(
     //     DriveCommands.joystickDrive(
@@ -272,6 +273,17 @@ public class RobotContainer {
     //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
     //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
     //         () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
+
+    fiftyPercentDriveButton.whileTrue(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedFifty();
+            }));
+    fiftyPercentDriveButton.whileFalse(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedFull();
+            }));
 
     intakeButton.whileTrue(
         Commands.parallel(
@@ -357,47 +369,41 @@ public class RobotContainer {
     //           leftHood.setHoodPosition(0.3);
     //           rightHood.setHoodPosition(0.3);
     //         }));
-    panelButton1.onTrue(
-      Commands.runOnce(() -> questSensor.toggleIgnoreFlags())
-    );
-    panelButton2.onTrue(
-      Commands.runOnce(() -> questSensor.clearFlags())
-    );
-    panelButton3.onTrue(
-      Commands.runOnce(() -> questSensor.confirmFlag())
-    );
+    panelButton1.onTrue(Commands.runOnce(() -> questSensor.toggleIgnoreFlags()));
+    panelButton2.onTrue(Commands.runOnce(() -> questSensor.clearFlags()));
+    panelButton3.onTrue(Commands.runOnce(() -> questSensor.confirmFlag()));
 
-    panelButton5.toggleOnTrue(
+    panelButton5.whileTrue(
         Commands.runOnce(
             () -> {
-              leftShooter.setSpeed(4200);
-              rightShooter.setSpeed(4200);
-              leftHood.setHoodPosition(0.3);
-              rightHood.setHoodPosition(0.3);
+              leftShooter.setSpeed(3000);
+              rightShooter.setSpeed(3000);
+              leftHood.setHoodPosition(0.42);
+              rightHood.setHoodPosition(0.42);
             }));
-    panelButton4.toggleOnTrue(
+    panelButton4.whileTrue(
         Commands.runOnce(
             () -> {
               leftShooter.stop();
               rightShooter.stop();
-              leftHood.setHoodPosition(0.3);
-              rightHood.setHoodPosition(0.3);
+              leftHood.setHoodPosition(0.0);
+              rightHood.setHoodPosition(0.0);
             }));
-    panelButton6.toggleOnTrue(
+    panelButton6.whileTrue(
         Commands.runOnce(
             () -> {
-              leftShooter.setSpeed(3900);
-              rightShooter.setSpeed(3900);
-              leftHood.setHoodPosition(0.3);
-              rightHood.setHoodPosition(0.3);
+              leftShooter.setSpeed(2700);
+              rightShooter.setSpeed(2700);
+              leftHood.setHoodPosition(0.1);
+              rightHood.setHoodPosition(0.1);
             }));
 
-    panelButton15.onTrue(
+    panelButton15.whileTrue(
         Commands.runOnce(
             () -> {
               shotTable.setMultiFactor(shotTable.getMultiFactor() + 0.05);
             }));
-    panelButton7.onTrue(
+    panelButton7.whileTrue(
         Commands.runOnce(
             () -> {
               shotTable.setMultiFactor(shotTable.getMultiFactor() - 0.05);

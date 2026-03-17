@@ -34,7 +34,7 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
 
   @Override
   public void intake() {
-    motor.set(-0.8);
+    motor.set(-0.9);
   }
 
   @Override
