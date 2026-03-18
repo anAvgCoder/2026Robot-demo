@@ -97,6 +97,11 @@ public class DriveConstants {
   public static final double turnPIDMinInput = 0; // Radians
   public static final double turnPIDMaxInput = 2 * Math.PI; // Radians
 
+
+  public static final double normalSpeedFactor = .8;
+  public static final double fullSpeedFactor = 1;
+  public static final double intakeSpeedFactor = .5;
+
   // PathPlanner configuration
   public static final PathConstraints PATH_CONSTRAINTS = new PathConstraints(4.5, 7, 12.566, 24);
 

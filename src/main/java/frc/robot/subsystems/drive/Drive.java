@@ -392,13 +392,18 @@ public class Drive extends SubsystemBase {
     return quest;
   }
 
-  public void setSpeedFifty() {
+  public void setSpeedIntake() {
 
-    speedScale = .5;
+    speedScale = DriveConstants.intakeSpeedFactor;
   }
 
   public void setSpeedFull() {
 
-    speedScale = 1;
+    speedScale = DriveConstants.fullSpeedFactor;
+  }
+
+  public void setSpeedNormal() {
+
+    speedScale = DriveConstants.normalSpeedFactor;
   }
 }

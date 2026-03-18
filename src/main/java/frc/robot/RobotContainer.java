@@ -96,24 +96,32 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
-
+  private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
+  private static final JoystickButton deployOutakeButton = new JoystickButton(rightJoy, 2);
+  private static final JoystickButton syncYawButton = new JoystickButton(rightJoy, 3);
+  private static final JoystickButton rightJoy4Button = new JoystickButton(rightJoy, 4);
   private static final JoystickButton rightJoy5Button = new JoystickButton(rightJoy, 5);
   private static final JoystickButton rightJoy6Button = new JoystickButton(rightJoy, 6);
   private static final JoystickButton rightJoy7Button = new JoystickButton(rightJoy, 7);
   private static final JoystickButton rightJoy8Button = new JoystickButton(rightJoy, 8);
   private static final JoystickButton rightJoy9Button = new JoystickButton(rightJoy, 9);
   private static final JoystickButton rightJoy10Button = new JoystickButton(rightJoy, 10);
-
-  private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
-  private static final JoystickButton deployOutakeButton = new JoystickButton(rightJoy, 2);
-  private static final JoystickButton fiftyPercentDriveButton = new JoystickButton(leftJoy, 4);
-
-  private static final JoystickButton leftJoy3Button = new JoystickButton(leftJoy, 3);
-  private static final JoystickButton rightJoy4Button = new JoystickButton(rightJoy, 4);
+  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
+  
 
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton retractOutakeButton = new JoystickButton(leftJoy, 2);
-  private static final JoystickButton syncYawButton = new JoystickButton(rightJoy, 3);
+  private static final JoystickButton leftJoy3Button = new JoystickButton(leftJoy, 3);
+  private static final JoystickButton leftJoy4Button = new JoystickButton(leftJoy, 4);
+
+  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
+
+ 
+  
+
+  
+  
+  
 
   private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
@@ -130,9 +138,7 @@ public class RobotContainer {
   private static final JoystickButton panelButton14 = new JoystickButton(buttonPanel, 14);
   private static final JoystickButton panelButton15 = new JoystickButton(buttonPanel, 15);
 
-  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
-  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
-
+ 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
   private int activePathToken = 0;
@@ -248,13 +254,31 @@ public class RobotContainer {
    * <p>Hold-style controls use whileTrue so the command is canceled automatically on release.
    */
   private void configureButtonBindings() {
+
+
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
-            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.8 : 0.0));
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
+            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
+
+    //  all this is driven off pose unless manual position is selected, then will stay manual until
+    //    re-enable of auto button is selected  (start shooter in blue button bottom row will redo auto run) 
+    //       (shooter stop will be removed in comp)
+    //        
+    //   shooter default command 
+    //     shooter always runs 
+    //     hoods are automatic
+
+    //   shooter should aways track robot pose for close side
+    //     shooter should track to outpost and other when in mid field
+    //    hoods should go down automatically when approaching trench - also disable belts temporarily
+
+
+
+    
     syncYawButton.whileTrue(
         DriveCommands.joystickDriveAtAngle(
             drive,
@@ -267,23 +291,62 @@ public class RobotContainer {
                         getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
                         getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0))));
 
-    // fiftyPercentDriveButton.whileTrue(
-    //     DriveCommands.joystickDrive(
-    //         drive,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.5 : 0.0,
-    //         () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.5 : 0.0,
-    //         () -> getClampedTurn(leftJoy) ? -leftJoy.getX() * 0.5 : 0.0));
+    
 
-    fiftyPercentDriveButton.whileTrue(
+    rightJoy4Button.whileTrue(
         Commands.runOnce(
             () -> {
-              drive.setSpeedFifty();
+              drive.setSpeedIntake();
             }));
-    fiftyPercentDriveButton.whileFalse(
+    rightJoy4Button.whileFalse(
         Commands.runOnce(
             () -> {
-              drive.setSpeedFull();
+              drive.setSpeedNormal();
             }));
+
+
+
+    // key button board maps
+    //  top right button 1        -   60 angle
+    //  top middle buttone 2      -   zero angle for shooters
+    //  top left button 3         -   60 angle
+    //  top 2 row right button 4  -   90 angle
+    //  top 2 row middle button 5 -   force hood down - maybe add belt and intake stop
+    //  top 2 row left button 6   -   90 angle
+
+    // lower panel from top 
+    //  row 1     turn turets set degree from current position
+    //  row 2     hood up down
+    //  row 3     speed up down
+    //  row 4     shooter and hood enable and disable for testing only (to override default command)
+
+
+
+    // joystick trigger right trigger will do intake and speed robot to intake pace  (intake out if not out) run belts
+
+    // joystick right button 2 (middle top below hat) is drive to angle
+    
+    // joystick button button 3 is turbo speed (100% power)
+    // joystick button button 4 is turbo speed (100% power)
+
+    //  joystick left trigger is outtake
+
+    //  joystick left button 2 is intake in while held goes back out after
+
+    //  joystick 3 and 4 will be sweep left and right
+
+
+    //  reset blue (if no photonvision)
+
+    //  reset red (if not photonvision)
+
+    //  reset blue hub (no photonvision)
+
+    // reset red hub (no photonvision)
+
+
+
+
 
     intakeButton.whileTrue(
         Commands.parallel(
@@ -344,6 +407,9 @@ public class RobotContainer {
     // panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
 
     // panelButton7.onTrue(cancelActivePath());
+
+
+
 
     // panelButton1.toggleOnTrue(
     //     Commands.runOnce(
