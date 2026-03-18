@@ -30,6 +30,8 @@ public class QuestNavSensor extends SubsystemBase {
   private boolean questFlagged;
   private boolean flagConfirmed;
   private boolean ignoreFlags;
+  private boolean poseJumpFlag;
+  private boolean dofFlag;
 
   // saved velocities
   private double lastV;
@@ -41,9 +43,11 @@ public class QuestNavSensor extends SubsystemBase {
     this.quest = new QuestNav();
 
     last6PoseFrames = new ArrayList<>();
+    latestPoseFrames = new PoseFrame[0];
 
     zeroQuestPose(defaultInitialPose);
 
+    flagConfirmed = false;
     ignoreFlags = false;
     clearFlags();
     Logger.recordOutput("QuestSensor/ignoreFlags", false);
@@ -60,7 +64,7 @@ public class QuestNavSensor extends SubsystemBase {
   }
 
   public boolean isWorking() {
-    questWorking = quest.isConnected() && quest.isTracking() && !flagConfirmed;
+    questWorking = quest.isConnected() && quest.isTracking() && (!flagConfirmed || ignoreFlags);
 
     Logger.recordOutput("QuestSensor/isWorking", questWorking);
     return questWorking;
@@ -69,23 +73,30 @@ public class QuestNavSensor extends SubsystemBase {
   public boolean hasFlags() {
     Logger.recordOutput("QuestSensor/flagConfirmed", flagConfirmed);
 
-    if (flagConfirmed || ignoreFlags) {
+    if (ignoreFlags) {
+      clearFlags();
+    } else if (flagConfirmed) {
       questFlagged = true;
     }
 
-    if (!flagConfirmed && last6PoseFrames.size() > 1) {
+    if ((!flagConfirmed || ignoreFlags) && last6PoseFrames.size() > 1) {
       Pose3d lastPose = last6PoseFrames.get(last6PoseFrames.size() - 1).questPose3d();
       Pose3d firstPose = last6PoseFrames.get(0).questPose3d();
 
       // check only rotation updates
-      questFlagged |= lastPose.getX() == firstPose.getX() && lastPose.getY() == firstPose.getY();
+      dofFlag = lastPose.getX() == firstPose.getX() && lastPose.getY() == firstPose.getY();
 
       // check pose jumps
-      questFlagged |= lastV > DriveConstants.maxSpeedMetersPerSec;
-      questFlagged |= lastWz > DriveConstants.maxSpeedMetersPerSec / DriveConstants.driveBaseRadius;
+      poseJumpFlag = lastV > DriveConstants.maxSpeedMetersPerSec;
+      poseJumpFlag |= lastWz > DriveConstants.maxSpeedMetersPerSec / DriveConstants.driveBaseRadius;
+
+      questFlagged = dofFlag || poseJumpFlag;
     }
 
     Logger.recordOutput("QuestSensor/hasFlag", questFlagged);
+    Logger.recordOutput("QuestSensor/Flags/dofFlag", dofFlag);
+    Logger.recordOutput("QuestSensor/Flags/poseJumpFlag", poseJumpFlag);
+
     return questFlagged;
   }
 
@@ -94,13 +105,21 @@ public class QuestNavSensor extends SubsystemBase {
   }
 
   public void clearFlags() {
+    flagConfirmed = false;
     questFlagged = false;
+    poseJumpFlag = false;
+    dofFlag = false;
+
     Logger.recordOutput("QuestSensor/flagsLastCleared", RobotController.getFPGATime() / 1e6);
   }
 
   public void toggleIgnoreFlags() {
     ignoreFlags = !ignoreFlags;
     Logger.recordOutput("QuestSensor/ignoreFlags", ignoreFlags);
+
+    if (ignoreFlags) {
+      clearFlags();
+    }
   }
 
   public void zeroQuestPose(Pose3d pose) {
@@ -112,13 +131,15 @@ public class QuestNavSensor extends SubsystemBase {
 
   // Must be called only ONE time per loop
   private void readLatestPoseFrames() {
-    latestPoseFrames = quest.getAllUnreadPoseFrames();
+    if (quest.isTracking()) {
+      latestPoseFrames = quest.getAllUnreadPoseFrames();
+    }
 
     for (PoseFrame frame : latestPoseFrames) {
       samplePoseFrame(frame);
     }
 
-    // todo fix for no frames from quest without quest causes a crash
+    // save latest robot pose
     if (last6PoseFrames.size() > 0) {
       lastRobotPose =
           last6PoseFrames
@@ -132,7 +153,11 @@ public class QuestNavSensor extends SubsystemBase {
   private void zeroPoseFrames(Pose3d pose) {
     last6PoseFrames.clear();
 
-    preZeroFrameCount = latestPoseFrames[latestPoseFrames.length - 1].frameCount();
+    if (latestPoseFrames.length > 0) {
+      preZeroFrameCount = latestPoseFrames[latestPoseFrames.length - 1].frameCount();
+    } else {
+      preZeroFrameCount = 0;
+    }
 
     PoseFrame zeroFrame =
         new PoseFrame(
