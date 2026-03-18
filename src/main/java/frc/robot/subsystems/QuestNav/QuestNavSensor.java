@@ -45,6 +45,8 @@ public class QuestNavSensor extends SubsystemBase {
     last6PoseFrames = new ArrayList<>();
     latestPoseFrames = new PoseFrame[0];
 
+    defaultInitialPose = Pose3d.kZero;
+
     zeroQuestPose(defaultInitialPose);
 
     flagConfirmed = false;
