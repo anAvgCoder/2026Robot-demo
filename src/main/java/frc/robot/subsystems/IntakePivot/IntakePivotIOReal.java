@@ -1,5 +1,7 @@
 package frc.robot.subsystems.intakePivot;
 
+import static frc.robot.util.SparkUtil.tryUntilOk;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -14,8 +16,6 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.DigitalInput;
 import frc.robot.Constants;
-
-import static frc.robot.util.SparkUtil.tryUntilOk;
 
 public class IntakePivotIOReal implements IntakePivotIO {
   private static final ClosedLoopSlot kPidSlot = ClosedLoopSlot.kSlot0;

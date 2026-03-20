@@ -10,6 +10,13 @@ package frc.robot;
 import com.revrobotics.util.StatusLogger;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.littletonrobotics.junction.LogFileUtil;
 import org.littletonrobotics.junction.LoggedRobot;
 import org.littletonrobotics.junction.Logger;
@@ -27,6 +34,9 @@ import org.littletonrobotics.urcl.URCL;
 public class Robot extends LoggedRobot {
   private Command autonomousCommand;
   private RobotContainer robotContainer;
+  private final Map<String, List<String>> subsystemCommands = new HashMap<>();
+  private final List<String> noRequirementCommands = new ArrayList<>();
+  private final Set<String> knownSubsystems = new HashSet<>();
 
   public Robot() {
     // Record metadata
@@ -75,6 +85,20 @@ public class Robot extends LoggedRobot {
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our autonomous chooser on the dashboard.
     robotContainer = new RobotContainer();
+
+    CommandScheduler.getInstance()
+        .onCommandExecute(
+            command -> {
+              if (command.getRequirements().isEmpty()) {
+                noRequirementCommands.add(command.getName());
+              } else {
+                for (Subsystem req : command.getRequirements()) {
+                  subsystemCommands
+                      .computeIfAbsent(req.getName(), k -> new ArrayList<>())
+                      .add(command.getName());
+                }
+              }
+            });
   }
 
   /** This function is called periodically during all modes. */
@@ -89,10 +113,35 @@ public class Robot extends LoggedRobot {
     // finished or interrupted commands, and running subsystem periodic() methods.
     // This must be called from the robot's periodic block in order for anything in
     // the Command-based framework to work.
+
+    // Clear collections before scheduler run
+    subsystemCommands.clear();
+    noRequirementCommands.clear();
+    // Run scheduler (populates running commands via onCommandExecute)
     CommandScheduler.getInstance().run();
 
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);
+
+    // Log per-subsystem commands
+    for (var entry : subsystemCommands.entrySet()) {
+      List<String> cmds = entry.getValue();
+      Logger.recordOutput("Command/" + entry.getKey(), String.join(", ", cmds));
+      if (cmds.size() > 1) {
+        Logger.recordOutput("Command/" + entry.getKey() + "/Conflict", true);
+      }
+    }
+
+    // Log idle subsystems
+    for (String name : knownSubsystems) {
+      if (!subsystemCommands.containsKey(name)) {
+        Logger.recordOutput("Command/" + name, "");
+      }
+    }
+    knownSubsystems.addAll(subsystemCommands.keySet());
+
+    // Log no-requirement commands
+    Logger.recordOutput("Command/NoSubsystem", noRequirementCommands.toArray(new String[0]));
   }
 
   /** This function is called once when the robot is disabled. */

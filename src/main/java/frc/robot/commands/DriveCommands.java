@@ -114,7 +114,8 @@ public class DriveCommands {
                         : drive.getRotation()));
           }
         },
-        drive);
+        drive)
+        .withName("joystickDrive");
   }
 
   /**
@@ -189,7 +190,8 @@ public class DriveCommands {
             drive)
 
         // Reset PID controller when command starts
-        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()));
+        .beforeStarting(() -> angleController.reset(drive.getRotation().getRadians()))
+        .withName("joystickDriveAtAngle");
   }
 
   /**
