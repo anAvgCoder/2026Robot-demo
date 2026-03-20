@@ -39,6 +39,11 @@ public class IntakeRollerIOSim implements IntakeRollerIO {
   }
 
   @Override
+  public void setPaused(boolean value) {
+    // TODO put in sim for pause
+  }
+
+  @Override
   public void updateInputs(IntakeRollerIOInputs inputs) {
     this.inputs = inputs;
   }

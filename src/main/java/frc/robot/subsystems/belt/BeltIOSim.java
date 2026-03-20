@@ -39,6 +39,11 @@ public class BeltIOSim implements BeltIO {
   }
 
   @Override
+  public void setPaused(boolean value) {
+    // TODO put in sim for pause
+  }
+
+  @Override
   public void updateInputs(BeltIOInputs inputs) {
     this.inputs = inputs;
   }

@@ -12,6 +12,11 @@ public class BeltIOReal implements BeltIO {
   private final SparkBase motor;
   private final SparkMaxConfig sparkConfig;
 
+  private boolean paused = false;
+
+  private double speed = 0;
+  private double prevSpeed = 0;
+
   public BeltIOReal(int canId) {
     super();
     motor = new SparkMax(canId, MotorType.kBrushless);
@@ -43,23 +48,53 @@ public class BeltIOReal implements BeltIO {
 
   @Override
   public void intake() {
-    motor.set(0.8);
+    speed = .9;
+
+    // motor.set(0.9);
   }
 
   @Override
   public void outake() {
-    motor.set(-0.8);
+
+    speed = -.8;
+
+    // motor.set(-0.8);
   }
 
   @Override
   public void stop() {
-    motor.set(0);
+
+    speed = 0;
+
+    // motor.set(0);
+  }
+
+  @Override
+  public void setPaused(boolean value) {
+    this.paused = value;
   }
 
   @Override
   public void updateInputs(BeltIO.BeltIOInputs inputs) {
+
+    // called from periodic
+    if (paused) {
+
+      motor.set(0);
+      prevSpeed = 0; // trigger resend of speed when unpaused
+    } else {
+
+      if (prevSpeed != speed) {
+        //  check to see if speed has changed from previous loop
+        // and only send changes
+        motor.set(speed);
+        prevSpeed = speed;
+      }
+    }
+
     inputs.supplyCurrent = motor.getOutputCurrent();
     inputs.velocityRPM = motor.getEncoder().getVelocity();
     inputs.tempCelcius = motor.getMotorTemperature();
+    inputs.paused = paused;
   }
 }

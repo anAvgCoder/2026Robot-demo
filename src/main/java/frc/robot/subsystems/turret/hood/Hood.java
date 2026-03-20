@@ -94,9 +94,14 @@ public class Hood extends SubsystemBase {
 
   @Override
   public void periodic() {
+    
     switch (controlMode) {
       case POSITION:
-        io.setHoodPosition(targetPositionRad);
+        if (io.getPaused()) {
+          io.setHoodPosition(0);
+        } else {
+          io.setHoodPosition(targetPositionRad);
+        }
         break;
       case MANUAL_VOLTAGE:
         io.setVoltage(manualVolts);
@@ -112,5 +117,16 @@ public class Hood extends SubsystemBase {
     Logger.recordOutput(logKey + "/TargetPositionRad", targetPositionRad);
     Logger.recordOutput(logKey + "/TargetPositionDeg", Units.radiansToDegrees(targetPositionRad));
     Logger.recordOutput(logKey + "/ManualVolts", manualVolts);
+    Logger.recordOutput(logKey + "/Paused", io.getPaused());
+  }
+
+  public void pause() {
+
+    io.setPaused(true);
+  }
+
+  public void resume() {
+
+    io.setPaused(false);
   }
 }

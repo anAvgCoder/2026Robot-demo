@@ -108,7 +108,7 @@ public class RobotContainer {
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
 
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
-  private static final JoystickButton retractOutakeButton = new JoystickButton(leftJoy, 2);
+  private static final JoystickButton leftJoy2Button = new JoystickButton(leftJoy, 2);
   private static final JoystickButton leftJoy3Button = new JoystickButton(leftJoy, 3);
   private static final JoystickButton leftJoy4Button = new JoystickButton(leftJoy, 4);
 
@@ -159,8 +159,8 @@ public class RobotContainer {
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
         diverter = new Diverter(new DiverterIOReal());
-        leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft));
-        rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight));
+        leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft), "BeltLeft");
+        rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight), "BeltRight");
         intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
         intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
 
@@ -168,15 +168,15 @@ public class RobotContainer {
         leftRotater =
             new Rotater(
                 new RotaterIOReal(RotaterConstants.kCanIdLeft, RotaterConstants.kCanIdLeftCoder),
-                "LeftRotater");
-        leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId), "LeftHood");
+                "RotaterLeft");
+        leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId), "HoodLeft");
 
         rightShooter = new Shooter(new ShooterIOReal(44));
         rightRotater =
             new Rotater(
                 new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder),
-                "RightRotater");
-        rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId), "RightHood");
+                "RotaterRight");
+        rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId), "HoodRight");
         break;
 
       case SIM:
@@ -189,8 +189,8 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim());
         diverter = new Diverter(new DiverterIOSim());
-        leftBelt = new Belt(new BeltIOSim());
-        rightBelt = new Belt(new BeltIOSim());
+        leftBelt = new Belt(new BeltIOSim(), "BeltLeft");
+        rightBelt = new Belt(new BeltIOSim(), "BeltRight");
         intakePivot = new IntakePivot(new IntakePivotIOSim());
         intakeRoller = new IntakeRoller(new IntakeRollerIOSim());
 
@@ -213,8 +213,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {});
         diverter = new Diverter(new DiverterIOSim());
-        leftBelt = new Belt(new BeltIOSim() {});
-        rightBelt = new Belt(new BeltIOSim() {});
+        leftBelt = new Belt(new BeltIOSim() {}, "BeltLeft");
+        rightBelt = new Belt(new BeltIOSim() {}, "BeltRIght");
         intakePivot = new IntakePivot(new IntakePivotIO() {});
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
 
@@ -332,6 +332,8 @@ public class RobotContainer {
             new IROutakeCommand(intakeRoller)));
 
     //  joystick left button 2 is intake in while held goes back out after
+    leftJoy2Button.onTrue(new IPStorageCommand(intakePivot));
+    leftJoy2Button.onFalse(new IPIntakeCommand(intakePivot));
 
     //  joystick 3 and 4 will be sweep left and right
 
@@ -345,37 +347,59 @@ public class RobotContainer {
 
     // deployOutakeButton.onTrue(new IPIntakeCommand(intakePivot));
 
-    retractOutakeButton.onTrue(new IPStorageCommand(intakePivot));
-
-    panelButton14.onTrue(
+    panelButton2.onTrue(
         Commands.runOnce(
             () -> {
               leftRotater.setTurnPosition(0);
               rightRotater.setTurnPosition(0);
             }));
-    panelButton13.onTrue(
+    panelButton3.onTrue(
         Commands.runOnce(
             () -> {
               leftRotater.setTurnPosition(-60);
               rightRotater.setTurnPosition(-60);
             }));
-    panelButton11.onTrue(
+    panelButton6.onTrue(
         Commands.runOnce(
             () -> {
               leftRotater.setTurnPosition(-90);
               rightRotater.setTurnPosition(-90);
             }));
-    panelButton12.onTrue(
+    panelButton1.onTrue(
         Commands.runOnce(
             () -> {
               leftRotater.setTurnPosition(60);
               rightRotater.setTurnPosition(60);
             }));
-    panelButton9.onTrue(
+    panelButton4.onTrue(
         Commands.runOnce(
             () -> {
               leftRotater.setTurnPosition(90);
               rightRotater.setTurnPosition(90);
+            }));
+
+    // hood down belt intake stop
+    panelButton5.onTrue(
+        Commands.runOnce(
+            () -> {
+              leftHood.pause();
+              rightHood.pause();
+              rightBelt.pause();
+              leftBelt.pause();
+              diverter.pause();
+              intakeRoller.pause();
+            }));
+
+    // hood down belt intake stop resume where at
+    panelButton5.onFalse(
+        Commands.runOnce(
+            () -> {
+              leftHood.resume();
+              rightHood.resume();
+              rightBelt.resume();
+              leftBelt.resume();
+              diverter.resume();
+              intakeRoller.resume();
             }));
 
     // panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
@@ -413,65 +437,72 @@ public class RobotContainer {
     //           leftHood.setHoodPosition(0.3);
     //           rightHood.setHoodPosition(0.3);
     //         }));
-    panelButton1.onTrue(Commands.runOnce(() -> questSensor.toggleIgnoreFlags()));
-    panelButton2.onTrue(Commands.runOnce(() -> questSensor.clearFlags()));
-    panelButton3.onTrue(Commands.runOnce(() -> questSensor.confirmFlag()));
+    // panelButton1.onTrue(Commands.runOnce(() -> questSensor.toggleIgnoreFlags()));
+    // panelButton2.onTrue(Commands.runOnce(() -> questSensor.clearFlags()));
+    // panelButton3.onTrue(Commands.runOnce(() -> questSensor.confirmFlag()));
 
-    panelButton5.whileTrue(
-        Commands.runOnce(
-            () -> {
-              leftShooter.setSpeed(3000);
-              rightShooter.setSpeed(3000);
-              leftHood.setHoodPosition(0.42);
-              rightHood.setHoodPosition(0.42);
-            }));
-    panelButton4.whileTrue(
+    // panelButton5.whileTrue(
+    //    Commands.runOnce(
+    //        () -> {
+    //          leftShooter.setSpeed(3000);
+    //          rightShooter.setSpeed(3000);
+    //          leftHood.setHoodPosition(0.42);
+    //          rightHood.setHoodPosition(0.42);
+    //        }));
+
+    panelButton15.onTrue(
         Commands.runOnce(
             () -> {
               leftShooter.stop();
               rightShooter.stop();
               leftHood.setHoodPosition(0.0);
               rightHood.setHoodPosition(0.0);
+              // turn automated aiming off
             }));
-    panelButton6.whileTrue(
+
+    panelButton14.onTrue(
         Commands.runOnce(
             () -> {
+              // this will enable auto aim and speed until manual position is set
               leftShooter.setSpeed(2700);
               rightShooter.setSpeed(2700);
-              leftHood.setHoodPosition(0.1);
-              rightHood.setHoodPosition(0.1);
+              leftHood.setHoodPosition(0.3);
+              rightHood.setHoodPosition(0.3);
             }));
 
-    panelButton15.whileTrue(
-        Commands.runOnce(
-            () -> {
-              shotTable.setMultiFactor(shotTable.getMultiFactor() + 0.05);
-            }));
-    panelButton7.whileTrue(
-        Commands.runOnce(
-            () -> {
-              shotTable.setMultiFactor(shotTable.getMultiFactor() - 0.05);
-            }));
+    /*
+        panelButton15.whileTrue(
+            Commands.runOnce(
+                () -> {
+                  shotTable.setMultiFactor(shotTable.getMultiFactor() + 0.05);
+                }));
+        panelButton7.whileTrue(
+            Commands.runOnce(
+                () -> {
+                  shotTable.setMultiFactor(shotTable.getMultiFactor() - 0.05);
+                }));
 
-    panelButton8.onTrue(
-        Commands.parallel(
-            new IPStorageCommand(intakePivot),
-            Commands.runOnce(() -> leftHood.setVoltage(-1.0))
-                .andThen(Commands.waitSeconds(0.25))
-                .andThen(
-                    Commands.runOnce(
-                        () -> {
-                          leftHood.zeroAtMin();
-                          leftHood.setVoltage(0.0);
-                        })),
-            Commands.runOnce(() -> rightHood.setVoltage(-1.0))
-                .andThen(Commands.waitSeconds(0.25))
-                .andThen(
-                    Commands.runOnce(
-                        () -> {
-                          rightHood.zeroAtMin();
-                          rightHood.setVoltage(0.0);
-                        }))));
+        panelButton8.onTrue(
+            Commands.parallel(
+                new IPStorageCommand(intakePivot),
+                Commands.runOnce(() -> leftHood.setVoltage(-1.0))
+                    .andThen(Commands.waitSeconds(0.25))
+                    .andThen(
+                        Commands.runOnce(
+                            () -> {
+                              leftHood.zeroAtMin();
+                              leftHood.setVoltage(0.0);
+                            })),
+                Commands.runOnce(() -> rightHood.setVoltage(-1.0))
+                    .andThen(Commands.waitSeconds(0.25))
+                    .andThen(
+                        Commands.runOnce(
+                            () -> {
+                              rightHood.zeroAtMin();
+                              rightHood.setVoltage(0.0);
+                            }))));
+
+    */
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(() -> drive.setPose(QuestNavConstants.ROBOT_TO_QUEST_RED))

@@ -20,4 +20,16 @@ public class IntakeRoller extends SubsystemBase implements IntakeRollerIO {
     io.updateInputs(inputs);
     Logger.processInputs("IntakeRoller", inputs);
   }
+
+  public void setPaused(boolean value) {
+    io.setPaused(value);
+  }
+
+  public void pause() {
+    io.setPaused(true);
+  }
+
+  public void resume() {
+    io.setPaused(false);
+  }
 }

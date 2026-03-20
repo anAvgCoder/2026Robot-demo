@@ -5,11 +5,13 @@ import org.littletonrobotics.junction.Logger;
 
 public class Belt extends SubsystemBase implements BeltIO {
   private final BeltIO io;
+  private String logkey = "";
 
   private final BeltIOInputsAutoLogged inputs = new BeltIOInputsAutoLogged();
 
-  public Belt(BeltIO io) {
+  public Belt(BeltIO io, String logkey) {
     this.io = io;
+    this.logkey = logkey;
   }
 
   public BeltIO getIO() {
@@ -18,6 +20,14 @@ public class Belt extends SubsystemBase implements BeltIO {
 
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("BeltLeft", inputs);
+    Logger.processInputs(logkey, inputs);
+  }
+
+  public void pause() {
+    io.setPaused(true);
+  }
+
+  public void resume() {
+    io.setPaused(false);
   }
 }

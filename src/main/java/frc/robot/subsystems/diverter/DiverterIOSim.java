@@ -39,6 +39,11 @@ public class DiverterIOSim implements DiverterIO {
   }
 
   @Override
+  public void setPaused(boolean value) {
+    // TODO put in sim for pause
+  }
+
+  @Override
   public void updateInputs(DiverterIOInputs inputs) {
     this.inputs = inputs;
   }

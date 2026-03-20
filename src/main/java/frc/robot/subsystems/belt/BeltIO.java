@@ -9,6 +9,7 @@ public interface BeltIO {
     public double supplyCurrent;
     public double velocityRPM;
     public double tempCelcius;
+    public boolean paused;
   }
 
   public default void updateInputs(BeltIOInputs inputs) {}
@@ -18,4 +19,6 @@ public interface BeltIO {
   public default void outake() {}
 
   public default void stop() {}
+
+  public default void setPaused(boolean value) {}
 }

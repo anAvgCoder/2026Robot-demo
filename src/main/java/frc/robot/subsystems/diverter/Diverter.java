@@ -18,6 +18,18 @@ public class Diverter extends SubsystemBase implements DiverterIO {
 
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("IntakeRoller", inputs);
+    Logger.processInputs("Diverter", inputs);
+  }
+
+  public void setPaused(boolean value) {
+    io.setPaused(value);
+  }
+
+  public void pause() {
+    io.setPaused(true);
+  }
+
+  public void resume() {
+    io.setPaused(false);
   }
 }

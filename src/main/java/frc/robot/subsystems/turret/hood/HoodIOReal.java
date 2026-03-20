@@ -21,6 +21,8 @@ public class HoodIOReal implements HoodIO {
 
   private final ProfiledPIDController controller;
 
+  private boolean paused = false;
+
   private final String logPrefix;
   private double lastGoalRad = Double.NaN;
 
@@ -75,6 +77,18 @@ public class HoodIOReal implements HoodIO {
     motor.setVoltage(volts);
     // Invalidate so the controller resets on the next setHoodPosition call
     lastGoalRad = Double.NaN;
+  }
+
+  @Override
+  public void setPaused(boolean value) {
+
+    this.paused = value;
+  }
+
+  @Override
+  public boolean getPaused() {
+
+    return paused;
   }
 
   @Override

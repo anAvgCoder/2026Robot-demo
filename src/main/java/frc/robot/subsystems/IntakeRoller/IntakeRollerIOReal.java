@@ -12,6 +12,10 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
   private final SparkBase motor;
   private final SparkMaxConfig sparkConfig;
 
+  private boolean paused = false;
+  private double speed = 0;
+  private double prevSpeed = 0;
+
   public IntakeRollerIOReal() {
     super();
     motor = new SparkMax(IntakeRollerConstants.KCanId, MotorType.kBrushless);
@@ -34,23 +38,43 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
 
   @Override
   public void intake() {
-    motor.set(-0.9);
+    speed = -0.9;
   }
 
   @Override
   public void outake() {
-    motor.set(0.8);
+    speed = 0.8;
   }
 
   @Override
   public void stop() {
-    motor.set(0);
+    speed = 0;
+  }
+
+  @Override
+  public void setPaused(boolean value) {
+
+    this.paused = value;
   }
 
   @Override
   public void updateInputs(IntakeRollerIOInputs inputs) {
+
+    //  called from periodic
+    if (paused) {
+
+      motor.set(0);
+      prevSpeed = 0;
+    } else {
+      if (prevSpeed != speed) {
+        motor.set(speed);
+        prevSpeed = speed;
+      }
+    }
+
     inputs.supplyCurrent = motor.getOutputCurrent();
     inputs.velocityRPM = motor.getEncoder().getVelocity();
     inputs.tempCelcius = motor.getMotorTemperature();
+    inputs.paused = paused;
   }
 }

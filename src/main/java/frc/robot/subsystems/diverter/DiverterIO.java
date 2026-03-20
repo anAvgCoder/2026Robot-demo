@@ -10,6 +10,7 @@ public interface DiverterIO {
     public double supplyCurrent;
     public double velocityRPM;
     public double tempCelcius;
+    public boolean paused;
   }
 
   public default void updateInputs(DiverterIOInputs inputs) {}
@@ -19,4 +20,6 @@ public interface DiverterIO {
   public default void outake() {}
 
   public default void stop() {}
+
+  public void setPaused(boolean value);
 }

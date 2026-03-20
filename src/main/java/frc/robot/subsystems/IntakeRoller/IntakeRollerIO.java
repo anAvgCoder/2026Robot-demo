@@ -10,6 +10,7 @@ public interface IntakeRollerIO {
     public double supplyCurrent;
     public double velocityRPM;
     public double tempCelcius;
+    public boolean paused;
   }
 
   public default void updateInputs(IntakeRollerIOInputs inputs) {}
@@ -19,4 +20,6 @@ public interface IntakeRollerIO {
   public default void outake() {}
 
   public default void stop() {}
+
+  public default void setPaused(boolean value) {}
 }

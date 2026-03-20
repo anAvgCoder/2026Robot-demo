@@ -15,6 +15,7 @@ public interface HoodIO {
     public boolean closedLoopActive = false;
     public boolean atGoal = false;
     public boolean zeroed = false;
+    public boolean paused = false;
   }
 
   /** Sets manual voltage directly to the hood motor. */
@@ -36,6 +37,12 @@ public interface HoodIO {
   public default boolean isZeroed() {
     return false;
   }
+
+  public default boolean getPaused() {
+    return false;
+  }
+
+  public default void setPaused(boolean value) {}
 
   public default void updateInputs(HoodIOInputs inputs) {}
 }
