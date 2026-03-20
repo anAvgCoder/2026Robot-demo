@@ -41,8 +41,9 @@ public class DriveCommands {
   private static final double WHEEL_RADIUS_MAX_VELOCITY = 0.25; // Rad/Sec
   private static final double WHEEL_RADIUS_RAMP_RATE = 0.05; // Rad/Sec^2
 
-  private static final SlewRateLimiter xLimiter = new SlewRateLimiter(15);
-  private static final SlewRateLimiter yLimiter = new SlewRateLimiter(15);
+  private static final SlewRateLimiter xLimiter = new SlewRateLimiter(4);
+  private static final SlewRateLimiter yLimiter = new SlewRateLimiter(4);
+  private static final SlewRateLimiter rotLimiter = new SlewRateLimiter(1);
 
   private DriveCommands() {}
 
@@ -122,10 +123,7 @@ public class DriveCommands {
    * absolute rotation with a joystick.
    */
   public static Command joystickDriveAtAngle(
-      Drive drive,
-      DoubleSupplier xSupplier,
-      DoubleSupplier ySupplier,
-      DoubleSupplier rotationSupplier) {
+      Drive drive, DoubleSupplier xSupplier, DoubleSupplier ySupplier) {
 
     // Create PID controller
     ProfiledPIDController angleController =
@@ -139,14 +137,38 @@ public class DriveCommands {
     // Construct command
     return Commands.run(
             () -> {
+
               // Get linear velocity
-              Translation2d linearVelocity =
+              Translation2d linearVelocity2 =
                   getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
 
+              double x = xLimiter.calculate(linearVelocity2.getX());
+              double y = yLimiter.calculate(linearVelocity2.getY());
+
+              // Get linear velocity
+              // Translation2d linearVelocity =
+              //    getLinearVelocityFromJoysticks(xSupplier.getAsDouble(),
+              // ySupplier.getAsDouble());
+
+              Translation2d linearVelocity = getLinearVelocityFromJoysticks(x, y);
+
               // Calculate angular speed
-              double omega =
-                  angleController.calculate(
-                      drive.getRotation().getRadians(), rotationSupplier.getAsDouble());
+              //
+              //   we need to calculate the turn to be towards the
+              //   driver station wall when on that side and away from the hub when in center
+              //
+              //   need the pose to look at the range in the field
+              //
+              double turn =
+                  MathUtil.angleModulus(
+                      // Math.PI +
+                      Math.atan2(y, Math.abs(x) * -1));
+
+              double rotLimit = rotLimiter.calculate(turn);
+
+              double omega = angleController.calculate(drive.getRotation().getRadians(), turn);
+
+              // log the turn
 
               // Convert to field relative speeds & send command
               ChassisSpeeds speeds =

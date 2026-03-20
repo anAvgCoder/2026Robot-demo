@@ -4,7 +4,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -96,9 +95,9 @@ public class RobotContainer {
   private static final Joystick buttonPanel = new Joystick(2);
 
   // Buttons
-  private static final JoystickButton intakeButton = new JoystickButton(rightJoy, 1);
-  private static final JoystickButton deployOutakeButton = new JoystickButton(rightJoy, 2);
-  private static final JoystickButton syncYawButton = new JoystickButton(rightJoy, 3);
+  private static final JoystickButton rightJoy1Button = new JoystickButton(rightJoy, 1);
+  private static final JoystickButton rightJoy2Button = new JoystickButton(rightJoy, 2);
+  private static final JoystickButton rightJoy3Button = new JoystickButton(rightJoy, 3);
   private static final JoystickButton rightJoy4Button = new JoystickButton(rightJoy, 4);
   private static final JoystickButton rightJoy5Button = new JoystickButton(rightJoy, 5);
   private static final JoystickButton rightJoy6Button = new JoystickButton(rightJoy, 6);
@@ -107,7 +106,6 @@ public class RobotContainer {
   private static final JoystickButton rightJoy9Button = new JoystickButton(rightJoy, 9);
   private static final JoystickButton rightJoy10Button = new JoystickButton(rightJoy, 10);
   private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
-  
 
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton retractOutakeButton = new JoystickButton(leftJoy, 2);
@@ -115,13 +113,6 @@ public class RobotContainer {
   private static final JoystickButton leftJoy4Button = new JoystickButton(leftJoy, 4);
 
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
-
- 
-  
-
-  
-  
-  
 
   private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
@@ -138,7 +129,6 @@ public class RobotContainer {
   private static final JoystickButton panelButton14 = new JoystickButton(buttonPanel, 14);
   private static final JoystickButton panelButton15 = new JoystickButton(buttonPanel, 15);
 
- 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
   private int activePathToken = 0;
@@ -255,7 +245,6 @@ public class RobotContainer {
    */
   private void configureButtonBindings() {
 
-
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
@@ -263,48 +252,19 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
-
     //  all this is driven off pose unless manual position is selected, then will stay manual until
-    //    re-enable of auto button is selected  (start shooter in blue button bottom row will redo auto run) 
+    //    re-enable of auto button is selected  (start shooter in blue button bottom row will redo
+    // auto run)
     //       (shooter stop will be removed in comp)
-    //        
-    //   shooter default command 
-    //     shooter always runs 
+    //
+    //   shooter default command
+    //     shooter always runs
     //     hoods are automatic
 
     //   shooter should aways track robot pose for close side
     //     shooter should track to outpost and other when in mid field
-    //    hoods should go down automatically when approaching trench - also disable belts temporarily
-
-
-
-    
-    syncYawButton.whileTrue(
-        DriveCommands.joystickDriveAtAngle(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
-            () ->
-                MathUtil.angleModulus(
-                    // Math.PI +
-                    Math.atan2(
-                        getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0,
-                        getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0))));
-
-    
-
-    rightJoy4Button.whileTrue(
-        Commands.runOnce(
-            () -> {
-              drive.setSpeedIntake();
-            }));
-    rightJoy4Button.whileFalse(
-        Commands.runOnce(
-            () -> {
-              drive.setSpeedNormal();
-            }));
-
-
+    //    hoods should go down automatically when approaching trench - also disable belts
+    // temporarily
 
     // key button board maps
     //  top right button 1        -   60 angle
@@ -314,27 +274,66 @@ public class RobotContainer {
     //  top 2 row middle button 5 -   force hood down - maybe add belt and intake stop
     //  top 2 row left button 6   -   90 angle
 
-    // lower panel from top 
+    // lower panel from top
     //  row 1     turn turets set degree from current position
     //  row 2     hood up down
     //  row 3     speed up down
     //  row 4     shooter and hood enable and disable for testing only (to override default command)
 
+    // joystick trigger right trigger will do intake and speed robot to intake pace  (intake out if
+    // not out) run belts
 
-
-    // joystick trigger right trigger will do intake and speed robot to intake pace  (intake out if not out) run belts
+    // joystick right button 1 (trigger) is intake
+    rightJoy1Button.whileTrue(
+        Commands.parallel(
+            new IPIntakeCommand(intakePivot),
+            new IRIntakeCommand(intakeRoller),
+            new BeltIntakeCommand(rightBelt),
+            new BeltIntakeCommand(leftBelt),
+            new DiverterCommand(diverter)));
 
     // joystick right button 2 (middle top below hat) is drive to angle
-    
-    // joystick button button 3 is turbo speed (100% power)
-    // joystick button button 4 is turbo speed (100% power)
+    rightJoy2Button.whileTrue(
+        DriveCommands.joystickDriveAtAngle(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0));
+
+    // joystick button button 3 is full speed
+    rightJoy3Button.whileTrue(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedFull();
+            }));
+    rightJoy3Button.onFalse(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedNormal();
+            }));
+
+    // joystick button button 4 is intake speed
+    rightJoy4Button.whileTrue(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedIntake();
+            }));
+    rightJoy4Button.onFalse(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedNormal();
+            }));
 
     //  joystick left trigger is outtake
+    outakeButton.whileTrue(
+        Commands.parallel(
+            new BeltOutakeCommand(rightBelt),
+            new BeltOutakeCommand(leftBelt),
+            new DiverterCommand(diverter),
+            new IROutakeCommand(intakeRoller)));
 
     //  joystick left button 2 is intake in while held goes back out after
 
     //  joystick 3 and 4 will be sweep left and right
-
 
     //  reset blue (if no photonvision)
 
@@ -344,26 +343,8 @@ public class RobotContainer {
 
     // reset red hub (no photonvision)
 
+    // deployOutakeButton.onTrue(new IPIntakeCommand(intakePivot));
 
-
-
-
-    intakeButton.whileTrue(
-        Commands.parallel(
-            new IPIntakeCommand(intakePivot),
-            new IRIntakeCommand(intakeRoller),
-            new BeltIntakeCommand(rightBelt),
-            new BeltIntakeCommand(leftBelt),
-            new DiverterCommand(diverter)));
-
-    outakeButton.whileTrue(
-        Commands.parallel(
-            new BeltOutakeCommand(rightBelt),
-            new BeltOutakeCommand(leftBelt),
-            new DiverterCommand(diverter),
-            new IROutakeCommand(intakeRoller)));
-
-    deployOutakeButton.onTrue(new IPIntakeCommand(intakePivot));
     retractOutakeButton.onTrue(new IPStorageCommand(intakePivot));
 
     panelButton14.onTrue(
@@ -407,9 +388,6 @@ public class RobotContainer {
     // panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
 
     // panelButton7.onTrue(cancelActivePath());
-
-
-
 
     // panelButton1.toggleOnTrue(
     //     Commands.runOnce(

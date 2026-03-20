@@ -60,14 +60,21 @@ public class IntakePivotIOReal implements IntakePivotIO {
         5,
         () -> motor.configure(cfg, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters));
 
+    // digital IO is inverse logic for switches
     if (!magSwitch.get()) {
+
+      // switch is a little outside of zero so set to offset when detected
       enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
       goalRad = IntakePivotConstants.kMagSensorPositionRad;
       hasBeenZeroed = true;
-    } else {
+    }
+    //  TODO --- otherwise set to zero - this needs to be looked at
+    else {
       enc.setPosition(0.0);
       goalRad = 0.0;
+      hasBeenZeroed = false; // this will force a draw in on enablement
     }
+
     closedLoop.setIAccum(0.0);
   }
 
@@ -82,11 +89,21 @@ public class IntakePivotIOReal implements IntakePivotIO {
 
   @Override
   public void setStoragePosition() {
+
+    // ------------------------------------------------
+    // so if we have not been zeroed then set a pull
+    //   in voltage until we hit limit switch
+    // ------------------------------------------------
     if (!hasBeenZeroed) {
       motor.setVoltage(IntakePivotConstants.kStorageCreepVolts);
-      return;
     }
-    setPivotPosition(IntakePivotConstants.kStoragePosition);
+    // ---------------------------------------------------------
+    // otherwise set the position under position control PID
+    // ---------------------------------------------------------
+    else {
+
+      setPivotPosition(IntakePivotConstants.kStoragePosition);
+    }
   }
 
   @Override
@@ -119,6 +136,9 @@ public class IntakePivotIOReal implements IntakePivotIO {
     ffVolts =
         MathUtil.clamp(ffVolts, -IntakePivotConstants.kMaxVolts, IntakePivotConstants.kMaxVolts);
 
+    // -----------------------------------------
+    // closed loop control to set the position
+    // -----------------------------------------
     closedLoop.setSetpoint(
         goalRad, SparkBase.ControlType.kPosition, kPidSlot, ffVolts, ArbFFUnits.kVoltage);
   }
@@ -144,16 +164,27 @@ public class IntakePivotIOReal implements IntakePivotIO {
 
   @Override
   public void updateInputs(IntakePivotIOInputs inputs) {
+
+    // digital io in on switches is inverse when
+    // active so to have true we need a not clause
     boolean mag = !magSwitch.get();
+
+    // todo need to look at this
+    //  this is called from periodic and will reset to zero when needed if not zero
     if (mag && !prevMagState) {
       enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
       closedLoop.setIAccum(0.0);
       hasBeenZeroed = true;
     }
+
+    //  this gets overwritten in each loop does the logic above do what we need
     prevMagState = mag;
 
     inputs.appliedVolts = motor.getAppliedOutput() * motor.getBusVoltage();
     inputs.supplyCurrentAmps = motor.getOutputCurrent();
     inputs.tempC = motor.getMotorTemperature();
+    inputs.magSensorTriggered = mag;
+    inputs.hasBeenZeroed = hasBeenZeroed;
+    inputs.isAtGoal = isAtGoal();
   }
 }

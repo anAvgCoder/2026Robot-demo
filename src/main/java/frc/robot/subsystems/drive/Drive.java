@@ -76,7 +76,7 @@ public class Drive extends SubsystemBase {
   private final SwerveDrivePoseEstimator poseEstimator =
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
-  private double speedScale = 1;
+  private double speedScale = DriveConstants.normalSpeedFactor;
 
   public Drive(
       GyroIO gyroIO,
@@ -128,6 +128,9 @@ public class Drive extends SubsystemBase {
 
   @Override
   public void periodic() {
+
+    Logger.recordOutput("Swerve/Speed", speedScale);
+
     // First update the quest pose frames. They get used later
     quest.runPeriodicUpdates();
 

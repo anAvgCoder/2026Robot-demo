@@ -13,6 +13,7 @@ public interface IntakePivotIO {
     public boolean magSensorTriggered = false;
     public boolean hasBeenZeroed = false;
     public double goalPositionRad = 0.0;
+    public boolean isAtGoal = false;
   }
 
   public default void setVoltage(double volts) {}
