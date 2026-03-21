@@ -1,13 +1,14 @@
 package frc.robot.subsystems.intakePivot;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
 public class IntakePivot extends SubsystemBase {
   public enum Target {
     STORAGE,
-    INTAKE_PRIMARY,
-    INTAKE_SECONDARY,
+    EXTENDED,
+    MANUAL_POSITION,
     MANUAL_VOLTAGE,
     DISABLED
   }
@@ -15,41 +16,33 @@ public class IntakePivot extends SubsystemBase {
   private final IntakePivotIO io;
   private final IntakePivotIOInputsAutoLogged inputs = new IntakePivotIOInputsAutoLogged();
 
-  private Target target = Target.STORAGE;
-  private double manualVolts = 0.0;
+  @AutoLogOutput private Target target = Target.STORAGE;
+  @AutoLogOutput private double manualVolts = 0.0;
+  @AutoLogOutput private double goalRad = IntakePivotConstants.kMagSensorPositionRad;
+  @AutoLogOutput private boolean hasBeenZeroed = false;
 
   public IntakePivot(IntakePivotIO io) {
     this.io = io;
   }
 
-  public void setTarget(Target target) {
-    this.target = target;
-  }
-
-  public Target getTarget() {
-    return target;
-  }
-
   public void setStoragePosition() {
     target = Target.STORAGE;
+    goalRad = IntakePivotConstants.kStoragePosition;
   }
 
-  public void setIntakePrimaryPosition() {
-    target = Target.INTAKE_PRIMARY;
+  public void setIntakeExtended() {
+    target = Target.EXTENDED;
+    goalRad = IntakePivotConstants.kExtendedPosition;
   }
 
-  public void setIntakeSecondaryPosition() {
-    target = Target.INTAKE_SECONDARY;
-  }
-
-  public void setPivotPosition(double positionRad) {
-    target = Target.DISABLED;
-    io.setPivotPosition(positionRad);
+  public void setManualPosition(double positionRad) {
+    target = Target.MANUAL_POSITION;
+    goalRad = positionRad;
   }
 
   public void setManualVoltage(double volts) {
-    manualVolts = volts;
     target = Target.MANUAL_VOLTAGE;
+    manualVolts = volts;
   }
 
   public void stop() {
@@ -57,41 +50,37 @@ public class IntakePivot extends SubsystemBase {
     target = Target.DISABLED;
   }
 
-  public boolean isAtGoal() {
-    return io.isAtGoal();
-  }
-
-  public void zeroToStorage() {
-    io.zeroToStorage();
-  }
-
-  public void zeroToIntake() {
-    io.zeroToIntake();
-  }
-
   @Override
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("IntakePivot", inputs);
-    Logger.recordOutput("IntakePivot/Target", target.toString());
-    Logger.recordOutput("IntakePivot/ManualVolts", manualVolts);
+
+    if (!hasBeenZeroed) {
+      hasBeenZeroed = this.io.seekHome();
+      if (!hasBeenZeroed) {
+        // must be zeroed before we can start obeying intent
+        return;
+      }
+    }
 
     switch (target) {
       case STORAGE:
-        io.setStoragePosition();
-        break;
-      case INTAKE_PRIMARY:
-        io.setIntakePrimaryPosition();
-        break;
-      case INTAKE_SECONDARY:
-        io.setIntakeSecondaryPosition();
+      case EXTENDED:
+      case MANUAL_POSITION:
+        io.seekPosition(goalRad);
         break;
       case MANUAL_VOLTAGE:
         io.setVoltage(manualVolts);
         break;
       case DISABLED:
+      default:
         io.setVoltage(0.0);
         break;
     }
+  }
+
+  @AutoLogOutput
+  public boolean isAtGoal() {
+    return Math.abs(goalRad - inputs.positionRad) < IntakePivotConstants.kPosToleranceRad;
   }
 }

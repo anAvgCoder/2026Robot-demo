@@ -5,6 +5,7 @@ import edu.wpi.first.math.util.Units;
 public class IntakePivotConstants {
   // Hardware
   public static final int kCanId = 11;
+  public static final int kSwitchDIOChannel = 0;
   public static final boolean kInverted = false;
   public static final int kCurrentLimitAmps = 60;
 
@@ -13,14 +14,17 @@ public class IntakePivotConstants {
 
   // Positions
   public static final double kStoragePosition = -1.2; // -1.316477;
-  public static final double kIntakePrimaryPosition = -0.1;
-  public static final double kIntakeSecondaryPosition = 0.0;
+  public static final double kExtendedPosition = 0.0;
 
   public static final double kMagSensorPositionRad = -1.2; // -1.316477;
 
   // Trapezoid constraints
   public static final double kMaxVelDegPerSec = 180.0;
   public static final double kMaxAccelDegPerSec2 = 360.0;
+
+  // Sensor thresholds
+  public static final double kVelocityEpsilon = 1e-3;
+  public static final double kCurrentEpsilon = 1;
 
   // PID gains (TODO tune)
   public static final double kP = 0.8;

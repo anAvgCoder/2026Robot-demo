@@ -19,7 +19,7 @@ public class IPIntakeCommand extends Command {
 
   @Override
   public void execute() {
-    intakePivot.setIntakeSecondaryPosition();
+    intakePivot.setIntakeExtended();
   }
 
   @Override

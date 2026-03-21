@@ -45,8 +45,8 @@ import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
 import frc.robot.subsystems.intakePivot.IntakePivot;
 import frc.robot.subsystems.intakePivot.IntakePivotConstants;
-import frc.robot.subsystems.intakePivot.IntakePivotIO;
 import frc.robot.subsystems.intakePivot.IntakePivotIOReal;
+import frc.robot.subsystems.intakePivot.IntakePivotIOReplay;
 import frc.robot.subsystems.intakePivot.IntakePivotIOSim;
 import frc.robot.subsystems.intakeRoller.IntakeRoller;
 import frc.robot.subsystems.intakeRoller.IntakeRollerIO;
@@ -173,7 +173,10 @@ public class RobotContainer {
         diverter = new Diverter(new DiverterIOReal());
         leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft), "BeltLeft");
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight), "BeltRight");
-        intakePivot = new IntakePivot(new IntakePivotIOReal(IntakePivotConstants.kCanId));
+        intakePivot =
+            new IntakePivot(
+                new IntakePivotIOReal(
+                    IntakePivotConstants.kCanId, IntakePivotConstants.kSwitchDIOChannel));
         intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
 
         leftShooter = new Shooter(new ShooterIOReal(45));
@@ -230,7 +233,7 @@ public class RobotContainer {
         diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim() {}, "BeltLeft");
         rightBelt = new Belt(new BeltIOSim() {}, "BeltRIght");
-        intakePivot = new IntakePivot(new IntakePivotIO() {});
+        intakePivot = new IntakePivot(new IntakePivotIOReplay());
         intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
 
         leftShooter = new Shooter(new ShooterIOSim());
@@ -722,7 +725,7 @@ public class RobotContainer {
         "StartPick",
         Commands.runOnce(
             () -> {
-              intakePivot.setIntakeSecondaryPosition();
+              intakePivot.setIntakeExtended();
               intakeRoller.getIO().intake();
               leftBelt.getIO().intake();
               rightBelt.getIO().intake();
