@@ -63,8 +63,6 @@ public class Drive extends SubsystemBase {
 
   private Rotation2d rawGyroRotation = Rotation2d.kZero;
 
-  private double lastQuestVisionTimestamp = Double.NEGATIVE_INFINITY;
-
   private final SwerveModulePosition[] lastModulePositions =
       new SwerveModulePosition[] {
         new SwerveModulePosition(),
@@ -177,7 +175,7 @@ public class Drive extends SubsystemBase {
 
         if (quest.isWorking()) {
           poseEstimator.resetPosition(
-              quest.getLastRobotPose().getRotation(), modulePositions, quest.getLastRobotPose());
+              quest.getRobotPose().getRotation(), modulePositions, quest.getRobotPose());
         } else {
           poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
         }
@@ -187,7 +185,6 @@ public class Drive extends SubsystemBase {
     }
 
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
-    Logger.recordOutput("QuestBotPosition", quest.getLastRobotPose());
   }
 
   public void runVelocity(ChassisSpeeds speeds) {
@@ -349,26 +346,6 @@ public class Drive extends SubsystemBase {
   public void resetQuestPose(Pose3d pose) {
     quest.zeroQuestPose(pose);
   }
-
-  // public void getQuestSwerveUpdates() {
-  //   PoseFrame[] poseFrames = quest.getLatestPoseFrames();
-  //   if (!quest.isWorking() || poseFrames == null || poseFrames.length == 0) {
-  //     return;
-  //   }
-
-  //   for (PoseFrame frame : poseFrames) {
-  //     double ts = frame.dataTimestamp();
-  //     if (ts <= lastQuestVisionTimestamp) {
-  //       continue;
-  //     }
-  //     lastQuestVisionTimestamp = ts;
-
-  //     poseEstimator.addVisionMeasurement(
-  //         frame.questPose3d().transformBy(QuestNavConstants.ROBOT_TO_QUEST.inverse()).toPose2d(),
-  //         ts,
-  //         QuestNavConstants.questNavStdDevs);
-  //   }
-  // }
 
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,

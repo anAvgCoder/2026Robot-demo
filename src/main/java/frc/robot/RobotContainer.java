@@ -65,6 +65,10 @@ import frc.robot.subsystems.turret.rotater.RotaterIOSim;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.subsystems.turret.shooter.ShooterIOReal;
 import frc.robot.subsystems.turret.shooter.ShooterIOSim;
+import frc.robot.subsystems.vision.PhotonVisionIO;
+import frc.robot.subsystems.vision.PhotonVisionSimIO;
+import frc.robot.subsystems.vision.Vision;
+
 import java.util.Map;
 import java.util.Set;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -73,6 +77,7 @@ public class RobotContainer {
   // Subsystems
   private final Drive drive;
   private final QuestNavSensor questSensor;
+  private final Vision vision;
   private final Belt leftBelt;
   private final Belt rightBelt;
   private final IntakePivot intakePivot;
@@ -158,6 +163,8 @@ public class RobotContainer {
                 new ModuleIOSpark(1),
                 new ModuleIOSpark(2),
                 new ModuleIOSpark(3));
+        vision = new Vision(new PhotonVisionIO(drive));
+
         diverter = new Diverter(new DiverterIOReal());
         leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft), "BeltLeft");
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight), "BeltRight");
@@ -188,6 +195,7 @@ public class RobotContainer {
                 new ModuleIOSim(),
                 new ModuleIOSim(),
                 new ModuleIOSim());
+        vision = new Vision(new PhotonVisionSimIO());
         diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim(), "BeltLeft");
         rightBelt = new Belt(new BeltIOSim(), "BeltRight");
@@ -212,6 +220,8 @@ public class RobotContainer {
                 new ModuleIO() {},
                 new ModuleIO() {},
                 new ModuleIO() {});
+        vision = new Vision(new PhotonVisionSimIO());
+
         diverter = new Diverter(new DiverterIOSim());
         leftBelt = new Belt(new BeltIOSim() {}, "BeltLeft");
         rightBelt = new Belt(new BeltIOSim() {}, "BeltRIght");
@@ -266,6 +276,23 @@ public class RobotContainer {
     //    hoods should go down automatically when approaching trench - also disable belts
     // temporarily
 
+    rightJoy2Button.whileTrue(
+        DriveCommands.joystickDriveAtAngle(
+            drive,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
+            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0));
+
+    rightJoy4Button.whileTrue(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedIntake();
+            }));
+    rightJoy4Button.whileFalse(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedNormal();
+            }));
+
     // key button board maps
     //  top right button 1        -   60 angle
     //  top middle buttone 2      -   zero angle for shooters
@@ -283,7 +310,25 @@ public class RobotContainer {
     // joystick trigger right trigger will do intake and speed robot to intake pace  (intake out if
     // not out) run belts
 
-    // joystick right button 1 (trigger) is intake
+    // joystick right button 2 (middle top below hat) is drive to angle
+
+    // joystick button button 3 is turbo speed (100% power)
+    // joystick button button 4 is turbo speed (100% power)
+
+    //  joystick left trigger is outtake
+
+    //  joystick left button 2 is intake in while held goes back out after
+
+    //  joystick 3 and 4 will be sweep left and right
+
+    //  reset blue (if no photonvision)
+
+    //  reset red (if not photonvision)
+
+    //  reset blue hub (no photonvision)
+
+    // reset red hub (no photonvision)
+
     rightJoy1Button.whileTrue(
         Commands.parallel(
             new IPIntakeCommand(intakePivot),
