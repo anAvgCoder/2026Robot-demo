@@ -1,5 +1,7 @@
 package frc.robot;
 
+import static frc.robot.subsystems.questNav.QuestNavConstants.ROBOT_TO_QUEST;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.path.PathConstraints;
@@ -68,7 +70,6 @@ import frc.robot.subsystems.turret.shooter.ShooterIOSim;
 import frc.robot.subsystems.vision.PhotonVisionIO;
 import frc.robot.subsystems.vision.PhotonVisionSimIO;
 import frc.robot.subsystems.vision.Vision;
-
 import java.util.Map;
 import java.util.Set;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -550,11 +551,18 @@ public class RobotContainer {
     */
 
     resetQuestPoseRedButton.onTrue(
-        Commands.runOnce(() -> drive.setPose(QuestNavConstants.ROBOT_TO_QUEST_RED))
+        Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        QuestNavConstants.ROBOT_TO_QUEST_RED.transformBy(ROBOT_TO_QUEST.inverse())))
             .ignoringDisable(true));
 
     resetQuestPoseBlueButton.onTrue(
-        Commands.runOnce(() -> drive.setPose(QuestNavConstants.ROBOT_TO_QUEST_BLUE))
+        Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        QuestNavConstants.ROBOT_TO_QUEST_BLUE.transformBy(
+                            ROBOT_TO_QUEST.inverse())))
             .ignoringDisable(true));
 
     // panelButton15.onTrue(

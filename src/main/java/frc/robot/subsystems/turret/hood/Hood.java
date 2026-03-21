@@ -94,7 +94,7 @@ public class Hood extends SubsystemBase {
 
   @Override
   public void periodic() {
-    
+
     switch (controlMode) {
       case POSITION:
         if (io.getPaused()) {
