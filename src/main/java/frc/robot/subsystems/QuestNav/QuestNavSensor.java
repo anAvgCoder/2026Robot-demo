@@ -71,7 +71,9 @@ public class QuestNavSensor extends SubsystemBase {
   public boolean isWorking() {
     questWorking = quest.isConnected() && quest.isTracking() && (!flagConfirmed || ignoreFlags);
 
-    Logger.recordOutput("QuestNav/isWorking", questWorking);
+    Logger.recordOutput("QuestSensor/isConnected", quest.isConnected());
+    Logger.recordOutput("QuestSensor/isTracking", quest.isTracking());
+    Logger.recordOutput("QuestSensor/isWorking", questWorking);
     return questWorking;
   }
 

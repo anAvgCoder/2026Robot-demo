@@ -18,6 +18,8 @@ import frc.robot.subsystems.turret.rotater.RotaterConstants;
 import frc.robot.util.FieldConstants;
 import org.littletonrobotics.junction.Logger;
 
+// TODO: adaptiveHubAiming include shooter motions in this too
+
 public class AdaptiveHubAiming extends Command {
   private final Rotater rotaterRight;
   private final Hood hoodRight;

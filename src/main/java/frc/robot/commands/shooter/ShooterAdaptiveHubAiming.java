@@ -10,6 +10,7 @@ import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.ShotTable.ShotSetpoint;
 import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.util.FieldConstants;
+import org.littletonrobotics.junction.Logger;
 
 public class ShooterAdaptiveHubAiming extends Command {
   private final Shooter shooterRight;
@@ -43,10 +44,16 @@ public class ShooterAdaptiveHubAiming extends Command {
     ShotSetpoint shotRight = shotTable.get(distRight);
     shooterRight.setVelocityRPM(shotRight.shooterSpeed());
 
+    Logger.recordOutput("AimDebug/" + "Right" + "/ShooterDist", distRight);
+    Logger.recordOutput("AimDebug/" + "Right" + "/ShooterTargetRPM", shotRight.shooterSpeed());
+
     Pose3d turretPoseLeft = getTurretPose(false);
     double distLeft = calculateHubDistance(turretPoseLeft);
     ShotSetpoint shotLeft = shotTable.get(distLeft);
     shooterLeft.setVelocityRPM(shotLeft.shooterSpeed());
+
+    Logger.recordOutput("AimDebug/" + "Left" + "/ShooterDist", distLeft);
+    Logger.recordOutput("AimDebug/" + "Left" + "/ShooterTargetRPM", shotLeft.shooterSpeed());
   }
 
   @Override

@@ -69,6 +69,7 @@ public class IntakePivotIOReal implements IntakePivotIO {
       hasBeenZeroed = true;
     }
     //  TODO --- otherwise set to zero - this needs to be looked at
+    //  assuming intake is all the way out
     else {
       enc.setPosition(0.0);
       goalRad = 0.0;
@@ -177,6 +178,15 @@ public class IntakePivotIOReal implements IntakePivotIO {
       hasBeenZeroed = true;
     }
 
+    if (!mag
+        && goalRad == IntakePivotConstants.kStoragePosition
+        && motor.getOutputCurrent() < 0.5) {
+
+      // so if we are asking for storage, and the limit is not
+      // hit and the motor is not running pull it in until the other logic resets zero
+      motor.setVoltage(IntakePivotConstants.kStorageCreepVolts);
+    }
+
     //  this gets overwritten in each loop does the logic above do what we need
     prevMagState = mag;
 
@@ -186,5 +196,7 @@ public class IntakePivotIOReal implements IntakePivotIO {
     inputs.magSensorTriggered = mag;
     inputs.hasBeenZeroed = hasBeenZeroed;
     inputs.isAtGoal = isAtGoal();
+    inputs.goalPositionRad = goalRad;
+    inputs.positionRad = getMeasuredPositionRad();
   }
 }

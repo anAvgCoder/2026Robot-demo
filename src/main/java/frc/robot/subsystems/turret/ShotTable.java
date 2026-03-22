@@ -7,7 +7,7 @@ import edu.wpi.first.math.interpolation.InverseInterpolator;
 import frc.robot.subsystems.turret.hood.HoodConstants;
 
 public class ShotTable {
-  private static double shooterMultiFactor = 1.3;
+  private static double shooterMultiFactor = 1.15;
 
   public record ShotSetpoint(double hoodPos, double shooterSpeed) {
 
@@ -27,23 +27,23 @@ public class ShotTable {
 
   static {
     // key = distanceMeters
-    table.put(0.00, new ShotSetpoint(0.0, 2235));
-    table.put(1.55, new ShotSetpoint(0.0, 2235));
-    table.put(1.86, new ShotSetpoint(calculateHoodAngle(18), 2260));
-    table.put(2.14, new ShotSetpoint(calculateHoodAngle(18), 2310));
-    table.put(2.45, new ShotSetpoint(calculateHoodAngle(19.5), 2360));
-    table.put(2.73, new ShotSetpoint(calculateHoodAngle(20.5), 2410));
+    table.put(0.00, new ShotSetpoint(0.0, 2000));
+    table.put(1.55, new ShotSetpoint(0.0, 2150));
+    table.put(1.86, new ShotSetpoint(calculateHoodAngle(22), 2150));
+    table.put(2.14, new ShotSetpoint(calculateHoodAngle(22), 2250));
+    table.put(2.45, new ShotSetpoint(calculateHoodAngle(22), 2300));
+    table.put(2.73, new ShotSetpoint(calculateHoodAngle(22), 2410));
     table.put(3.06, new ShotSetpoint(calculateHoodAngle(22), 2510));
     table.put(3.42, new ShotSetpoint(calculateHoodAngle(23), 2600));
     table.put(3.74, new ShotSetpoint(calculateHoodAngle(24), 2660));
-    table.put(4.05, new ShotSetpoint(calculateHoodAngle(25), 2725));
-    table.put(4.44, new ShotSetpoint(calculateHoodAngle(25.5), 2725));
-    table.put(4.90, new ShotSetpoint(calculateHoodAngle(26), 2740));
-    table.put(5.34, new ShotSetpoint(calculateHoodAngle(27), 2770));
-    table.put(7.50, new ShotSetpoint(calculateHoodAngle(27), 4000));
-    table.put(10.0, new ShotSetpoint(calculateHoodAngle(27), 4000));
-    table.put(12.5, new ShotSetpoint(calculateHoodAngle(27), 4000));
-    table.put(15.0, new ShotSetpoint(calculateHoodAngle(27), 4000));
+    table.put(4.05, new ShotSetpoint(calculateHoodAngle(35), 2700));
+    table.put(4.44, new ShotSetpoint(calculateHoodAngle(35), 2700));
+    table.put(4.90, new ShotSetpoint(calculateHoodAngle(35), 2700));
+    table.put(5.34, new ShotSetpoint(calculateHoodAngle(37), 3100));
+    table.put(7.50, new ShotSetpoint(calculateHoodAngle(39), 4000));
+    table.put(10.0, new ShotSetpoint(calculateHoodAngle(43), 4000));
+    table.put(12.5, new ShotSetpoint(calculateHoodAngle(43), 4000));
+    table.put(15.0, new ShotSetpoint(calculateHoodAngle(43), 4000));
     // table.put(0.00, new ShotSetpoint(0.00, 2700));
     // table.put(1.00, new ShotSetpoint(0.00, 2700));
     // table.put(1.13, new ShotSetpoint(0.00, 2700));

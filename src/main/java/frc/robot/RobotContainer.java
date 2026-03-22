@@ -23,6 +23,7 @@ import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakepivot.IPStorageCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
+import frc.robot.commands.shooter.ShooterAdaptiveAiming;
 import frc.robot.commands.shooter.ShooterAdaptiveHubAiming;
 import frc.robot.commands.shooter.ShooterAdaptiveStorageAiming;
 import frc.robot.commands.turret.AdaptiveHubAiming;
@@ -117,6 +118,9 @@ public class RobotContainer {
   private static final JoystickButton leftJoy2Button = new JoystickButton(leftJoy, 2);
   private static final JoystickButton leftJoy3Button = new JoystickButton(leftJoy, 3);
   private static final JoystickButton leftJoy4Button = new JoystickButton(leftJoy, 4);
+
+  private static final JoystickButton leftJoy14Button = new JoystickButton(leftJoy, 14);
+  private static final JoystickButton leftJoy13Button = new JoystickButton(leftJoy, 13);
 
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
 
@@ -277,23 +281,6 @@ public class RobotContainer {
     //    hoods should go down automatically when approaching trench - also disable belts
     // temporarily
 
-    rightJoy2Button.whileTrue(
-        DriveCommands.joystickDriveAtAngle(
-            drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() * 0.8 : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() * 0.8 : 0.0));
-
-    rightJoy4Button.whileTrue(
-        Commands.runOnce(
-            () -> {
-              drive.setSpeedIntake();
-            }));
-    rightJoy4Button.whileFalse(
-        Commands.runOnce(
-            () -> {
-              drive.setSpeedNormal();
-            }));
-
     // key button board maps
     //  top right button 1        -   60 angle
     //  top middle buttone 2      -   zero angle for shooters
@@ -332,11 +319,21 @@ public class RobotContainer {
 
     rightJoy1Button.whileTrue(
         Commands.parallel(
+            Commands.runOnce(
+                () -> {
+                  drive.setSpeedIntake();
+                }),
             new IPIntakeCommand(intakePivot),
             new IRIntakeCommand(intakeRoller),
             new BeltIntakeCommand(rightBelt),
             new BeltIntakeCommand(leftBelt),
             new DiverterCommand(diverter)));
+
+    rightJoy1Button.onFalse(
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedNormal();
+            }));
 
     // joystick right button 2 (middle top below hat) is drive to angle
     rightJoy2Button.whileTrue(
@@ -450,6 +447,10 @@ public class RobotContainer {
 
     // panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
     // panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
+
+    //  rs test    leftJoy14Button.toggleOnTrue(shooterAdaptiveAimingCommand());
+    leftJoy14Button.toggleOnTrue(adaptiveHubAimingCommand());
+    leftJoy13Button.toggleOnTrue(shooterAdaptiveHubAimingCommand());
 
     // panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
     // panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
@@ -634,6 +635,22 @@ public class RobotContainer {
         rightHood,
         leftRotater,
         leftHood);
+  }
+
+  private Command shooterAdaptiveAimingCommand() {
+    return deferredCommand(
+        () ->
+            new ShooterAdaptiveAiming(
+                rightRotater,
+                rightShooter,
+                rightHood,
+                leftRotater,
+                leftShooter,
+                leftHood,
+                drive,
+                isBlueAlliance()), // , shotTable),
+        rightShooter,
+        leftShooter);
   }
 
   private Command shooterAdaptiveHubAimingCommand() {
