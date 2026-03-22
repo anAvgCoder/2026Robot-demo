@@ -39,8 +39,8 @@ public class ShotTable {
     table.put(4.05, new ShotSetpoint(calculateHoodAngle(35), 2700));
     table.put(4.44, new ShotSetpoint(calculateHoodAngle(35), 2700));
     table.put(4.90, new ShotSetpoint(calculateHoodAngle(35), 2700));
-    table.put(5.34, new ShotSetpoint(calculateHoodAngle(37), 3100));
-    table.put(7.50, new ShotSetpoint(calculateHoodAngle(39), 4000));
+    table.put(5.34, new ShotSetpoint(calculateHoodAngle(36), 2800));
+    table.put(7.50, new ShotSetpoint(calculateHoodAngle(39), 3000));
     table.put(10.0, new ShotSetpoint(calculateHoodAngle(43), 4000));
     table.put(12.5, new ShotSetpoint(calculateHoodAngle(43), 4000));
     table.put(15.0, new ShotSetpoint(calculateHoodAngle(43), 4000));

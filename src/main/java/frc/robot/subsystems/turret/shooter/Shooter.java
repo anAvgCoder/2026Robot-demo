@@ -23,6 +23,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public Shooter(ShooterIO io, String logKey) {
+    super(logKey);
     this.io = io;
     this.logKey = logKey;
   }

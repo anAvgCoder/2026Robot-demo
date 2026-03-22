@@ -71,50 +71,50 @@ public class DriveCommands {
       DoubleSupplier omegaSupplier) {
 
     return Commands.run(
-        () -> {
-          boolean robotCentric = false;
+            () -> {
+              boolean robotCentric = false;
 
-          // Get linear velocity
-          Translation2d linearVelocity =
-              getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
+              // Get linear velocity
+              Translation2d linearVelocity =
+                  getLinearVelocityFromJoysticks(xSupplier.getAsDouble(), ySupplier.getAsDouble());
 
-          // Apply rotation deadband
-          double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
+              // Apply rotation deadband
+              double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
 
-          // Square rotation value for more precise control
-          omega = Math.copySign(omega * omega, omega);
+              // Square rotation value for more precise control
+              omega = Math.copySign(omega * omega, omega);
 
-          // Convert to field relative speeds & send command
+              // Convert to field relative speeds & send command
 
-          double x = xLimiter.calculate(linearVelocity.getX());
-          double y = yLimiter.calculate(linearVelocity.getY());
+              double x = xLimiter.calculate(linearVelocity.getX());
+              double y = yLimiter.calculate(linearVelocity.getY());
 
-          ChassisSpeeds speeds =
-              new ChassisSpeeds(
-                  x * drive.getMaxLinearSpeedMetersPerSec(),
-                  y * drive.getMaxLinearSpeedMetersPerSec(),
-                  omega * drive.getMaxAngularSpeedRadPerSec());
-          boolean isFlipped =
-              DriverStation.getAlliance().isPresent()
-                  && DriverStation.getAlliance().get() == Alliance.Red;
+              ChassisSpeeds speeds =
+                  new ChassisSpeeds(
+                      x * drive.getMaxLinearSpeedMetersPerSec(),
+                      y * drive.getMaxLinearSpeedMetersPerSec(),
+                      omega * drive.getMaxAngularSpeedRadPerSec());
+              boolean isFlipped =
+                  DriverStation.getAlliance().isPresent()
+                      && DriverStation.getAlliance().get() == Alliance.Red;
 
-          if (!robotCentric) {
-            drive.runVelocity(
-                ChassisSpeeds.fromFieldRelativeSpeeds(
-                    speeds,
-                    isFlipped
-                        ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                        : drive.getRotation()));
-          } else {
-            drive.runVelocity(
-                ChassisSpeeds.fromRobotRelativeSpeeds(
-                    speeds,
-                    isFlipped
-                        ? drive.getRotation().plus(new Rotation2d(Math.PI))
-                        : drive.getRotation()));
-          }
-        },
-        drive)
+              if (!robotCentric) {
+                drive.runVelocity(
+                    ChassisSpeeds.fromFieldRelativeSpeeds(
+                        speeds,
+                        isFlipped
+                            ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                            : drive.getRotation()));
+              } else {
+                drive.runVelocity(
+                    ChassisSpeeds.fromRobotRelativeSpeeds(
+                        speeds,
+                        isFlipped
+                            ? drive.getRotation().plus(new Rotation2d(Math.PI))
+                            : drive.getRotation()));
+              }
+            },
+            drive)
         .withName("joystickDrive");
   }
 

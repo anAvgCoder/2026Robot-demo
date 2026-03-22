@@ -12,6 +12,7 @@ public interface IntakePivotIO {
     public double tempC = 0.0;
     public boolean magSensorTriggered = false;
     public double setpoint = 0.0;
+    public boolean endstop;
   }
 
   void updateInputs(IntakePivotIOInputs inputs);

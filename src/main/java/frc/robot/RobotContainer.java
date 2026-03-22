@@ -179,14 +179,14 @@ public class RobotContainer {
                     IntakePivotConstants.kCanId, IntakePivotConstants.kSwitchDIOChannel));
         intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
 
-        leftShooter = new Shooter(new ShooterIOReal(45));
+        leftShooter = new Shooter(new ShooterIOReal(45), "ShooterLeft");
         leftRotater =
             new Rotater(
                 new RotaterIOReal(RotaterConstants.kCanIdLeft, RotaterConstants.kCanIdLeftCoder),
                 "RotaterLeft");
         leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId), "HoodLeft");
 
-        rightShooter = new Shooter(new ShooterIOReal(44));
+        rightShooter = new Shooter(new ShooterIOReal(44), "ShooterRight");
         rightRotater =
             new Rotater(
                 new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder),
@@ -322,21 +322,25 @@ public class RobotContainer {
 
     rightJoy1Button.whileTrue(
         Commands.parallel(
-            Commands.runOnce(
-                () -> {
-                  drive.setSpeedIntake();
-                }),
-            new IPIntakeCommand(intakePivot),
-            new IRIntakeCommand(intakeRoller),
-            new BeltIntakeCommand(rightBelt),
-            new BeltIntakeCommand(leftBelt),
-            new DiverterCommand(diverter))
-        .withName("Run Intake"));
+                Commands.runOnce(
+                    () -> {
+                      drive.setSpeedIntake();
+                      leftHood.resume();
+                      rightHood.resume();
+                    }),
+                new IPIntakeCommand(intakePivot),
+                new IRIntakeCommand(intakeRoller),
+                new BeltIntakeCommand(rightBelt),
+                new BeltIntakeCommand(leftBelt),
+                new DiverterCommand(diverter))
+            .withName("Run Intake"));
 
     rightJoy1Button.onFalse(
         Commands.runOnce(
             () -> {
               drive.setSpeedNormal();
+              leftHood.pause();
+              rightHood.pause();
             }));
 
     // joystick right button 2 (middle top below hat) is drive to angle
@@ -357,11 +361,11 @@ public class RobotContainer {
     //  joystick left trigger is outtake
     outakeButton.whileTrue(
         Commands.parallel(
-            new BeltOutakeCommand(rightBelt),
-            new BeltOutakeCommand(leftBelt),
-            new DiverterCommand(diverter),
-            new IROutakeCommand(intakeRoller))
-        .withName("Run Outtake"));
+                new BeltOutakeCommand(rightBelt),
+                new BeltOutakeCommand(leftBelt),
+                new DiverterCommand(diverter),
+                new IROutakeCommand(intakeRoller))
+            .withName("Run Outtake"));
 
     //  joystick left button 2 is intake in while held goes back out after
     leftJoy2Button.onTrue(new IPStorageCommand(intakePivot));
@@ -381,72 +385,73 @@ public class RobotContainer {
 
     panelButton2.onTrue(
         Commands.runOnce(
-            () -> {
-              leftRotater.setTurnPosition(0);
-              rightRotater.setTurnPosition(0);
-            })
-        .withName("RotateTo:0"));
+                () -> {
+                  leftRotater.setTurnPosition(0);
+                  rightRotater.setTurnPosition(0);
+                })
+            .withName("RotateTo:0"));
     panelButton3.onTrue(
         Commands.runOnce(
-            () -> {
-              leftRotater.setTurnPosition(-60);
-              rightRotater.setTurnPosition(-60);
-            })
-        .withName("RotateTo:-60"));
+                () -> {
+                  leftRotater.setTurnPosition(-60);
+                  rightRotater.setTurnPosition(-60);
+                })
+            .withName("RotateTo:-60"));
     panelButton6.onTrue(
         Commands.runOnce(
-            () -> {
-              leftRotater.setTurnPosition(-90);
-              rightRotater.setTurnPosition(-90);
-            })
-        .withName("RotateTo:-90"));
+                () -> {
+                  leftRotater.setTurnPosition(-90);
+                  rightRotater.setTurnPosition(-90);
+                })
+            .withName("RotateTo:-90"));
     panelButton1.onTrue(
         Commands.runOnce(
-            () -> {
-              leftRotater.setTurnPosition(60);
-              rightRotater.setTurnPosition(60);
-            })
-        .withName("RotateTo:60"));
+                () -> {
+                  leftRotater.setTurnPosition(60);
+                  rightRotater.setTurnPosition(60);
+                })
+            .withName("RotateTo:60"));
     panelButton4.onTrue(
         Commands.runOnce(
-            () -> {
-              leftRotater.setTurnPosition(90);
-              rightRotater.setTurnPosition(90);
-            })
-        .withName("RotateTo:90"));
+                () -> {
+                  leftRotater.setTurnPosition(90);
+                  rightRotater.setTurnPosition(90);
+                })
+            .withName("RotateTo:90"));
 
     // hood down belt intake stop
     panelButton5.onTrue(
         Commands.runOnce(
-            () -> {
-              leftHood.pause();
-              rightHood.pause();
-              rightBelt.pause();
-              leftBelt.pause();
-              diverter.pause();
-              intakeRoller.pause();
-            })
-        .withName("Pause all"));
+                () -> {
+                  leftHood.pause();
+                  rightHood.pause();
+                  rightBelt.pause();
+                  leftBelt.pause();
+                  diverter.pause();
+                  intakeRoller.pause();
+                })
+            .withName("Pause all"));
 
     // hood down belt intake stop resume where at
     panelButton5.onFalse(
         Commands.runOnce(
-            () -> {
-              leftHood.resume();
-              rightHood.resume();
-              rightBelt.resume();
-              leftBelt.resume();
-              diverter.resume();
-              intakeRoller.resume();
-            })
-        .withName("Resume all"));
+                () -> {
+                  leftHood.resume();
+                  rightHood.resume();
+                  rightBelt.resume();
+                  leftBelt.resume();
+                  diverter.resume();
+                  intakeRoller.resume();
+                })
+            .withName("Resume all"));
 
     // panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
     // panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
 
     //  rs test    leftJoy14Button.toggleOnTrue(shooterAdaptiveAimingCommand());
     leftJoy14Button.toggleOnTrue(adaptiveHubAimingCommand());
-    leftJoy13Button.toggleOnTrue(shooterAdaptiveHubAimingCommand());
+
+    // leftJoy13Button.toggleOnTrue(shooterAdaptiveHubAimingCommand());
 
     // panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
     // panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
@@ -495,25 +500,25 @@ public class RobotContainer {
 
     panelButton15.onTrue(
         Commands.runOnce(
-            () -> {
-              leftShooter.stop();
-              rightShooter.stop();
-              leftHood.setHoodPosition(0.0);
-              rightHood.setHoodPosition(0.0);
-              // turn automated aiming off
-            })
-        .withName("set hoods down"));
+                () -> {
+                  leftShooter.stop();
+                  rightShooter.stop();
+                  leftHood.setHoodPosition(0.0);
+                  rightHood.setHoodPosition(0.0);
+                  // turn automated aiming off
+                })
+            .withName("set hoods down"));
 
     panelButton14.onTrue(
         Commands.runOnce(
-            () -> {
-              // this will enable auto aim and speed until manual position is set
-              leftShooter.setSpeed(2700);
-              rightShooter.setSpeed(2700);
-              leftHood.setHoodPosition(0.3);
-              rightHood.setHoodPosition(0.3);
-            })
-        .withName("ready shooters"));
+                () -> {
+                  // this will enable auto aim and speed until manual position is set
+                  leftShooter.setSpeed(2700);
+                  rightShooter.setSpeed(2700);
+                  leftHood.setHoodPosition(0.3);
+                  rightHood.setHoodPosition(0.3);
+                })
+            .withName("ready shooters"));
 
     /*
         panelButton15.whileTrue(
@@ -608,7 +613,15 @@ public class RobotContainer {
     return deferredCommand(
         () ->
             new AdaptiveHubAiming(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
+                rightShooter,
+                rightRotater,
+                rightHood,
+                leftShooter,
+                leftRotater,
+                leftHood,
+                drive,
+                isBlueAlliance(),
+                shotTable),
         rightRotater,
         rightHood,
         leftRotater,
@@ -617,25 +630,37 @@ public class RobotContainer {
 
   private Command adaptiveStorageNoMoveCommand() {
     return deferredCommand(
-        () ->
-            new AdaptiveNoMove(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
-        rightRotater,
-        rightHood,
-        leftRotater,
-        leftHood)
+            () ->
+                new AdaptiveNoMove(
+                    rightRotater,
+                    rightHood,
+                    leftRotater,
+                    leftHood,
+                    drive,
+                    isBlueAlliance(),
+                    shotTable),
+            rightRotater,
+            rightHood,
+            leftRotater,
+            leftHood)
         .withName("deferred AdaptiveNoMove");
   }
 
   private Command adaptiveStorageAimingCommand() {
     return deferredCommand(
-        () ->
-            new AdaptiveStorageAiming(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
-        rightRotater,
-        rightHood,
-        leftRotater,
-        leftHood)
+            () ->
+                new AdaptiveStorageAiming(
+                    rightRotater,
+                    rightHood,
+                    leftRotater,
+                    leftHood,
+                    drive,
+                    isBlueAlliance(),
+                    shotTable),
+            rightRotater,
+            rightHood,
+            leftRotater,
+            leftHood)
         .withName("deferred AdaptiveStorageAiming");
   }
 
@@ -666,11 +691,11 @@ public class RobotContainer {
 
   private Command shooterAdaptiveStorageAimingCommand() {
     return deferredCommand(
-        () ->
-            new ShooterAdaptiveStorageAiming(
-                rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
-        rightShooter,
-        leftShooter)
+            () ->
+                new ShooterAdaptiveStorageAiming(
+                    rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
+            rightShooter,
+            leftShooter)
         .withName("deferred ShooterAdaptiveStorageAiming");
   }
 
@@ -724,14 +749,14 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "StartPick",
         Commands.runOnce(
-            () -> {
-              intakePivot.setIntakeExtended();
-              intakeRoller.getIO().intake();
-              leftBelt.getIO().intake();
-              rightBelt.getIO().intake();
-              diverter.getIO().intake();
-            })
-        .withName("StartPick"));
+                () -> {
+                  intakePivot.setIntakeExtended();
+                  intakeRoller.getIO().intake();
+                  leftBelt.getIO().intake();
+                  rightBelt.getIO().intake();
+                  diverter.getIO().intake();
+                })
+            .withName("StartPick"));
 
     NamedCommands.registerCommand(
         "AdaptiveStorageAimingShooter", shooterAdaptiveStorageAimingCommand());

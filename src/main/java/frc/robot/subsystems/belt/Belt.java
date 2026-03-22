@@ -10,6 +10,7 @@ public class Belt extends SubsystemBase implements BeltIO {
   private final BeltIOInputsAutoLogged inputs = new BeltIOInputsAutoLogged();
 
   public Belt(BeltIO io, String logkey) {
+    super(logkey);
     this.io = io;
     this.logkey = logkey;
   }

@@ -117,14 +117,16 @@ public class IntakePivotIOReal implements IntakePivotIO {
     inputs.magSensorTriggered = isSwitchOn();
     inputs.setpoint = closedLoop.getSetpoint();
 
+    inputs.endstop =
+        Math.abs(inputs.velocityRadPerSec) < IntakePivotConstants.kVelocityEpsilon
+            && inputs.supplyCurrentAmps > IntakePivotConstants.kCurrentEpsilon;
+
     // Check for conditions in known positions
-    if (inputs.magSensorTriggered) {
-      enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
+    if (inputs.magSensorTriggered && inputs.endstop) {
+      // enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
     }
-    if (Math.abs(inputs.velocityRadPerSec) < IntakePivotConstants.kVelocityEpsilon
-        && inputs.supplyCurrentAmps > IntakePivotConstants.kCurrentEpsilon
-        && !inputs.magSensorTriggered) {
-      enc.setPosition(IntakePivotConstants.kExtendedPosition);
+    if (!inputs.magSensorTriggered && inputs.endstop) {
+      // enc.setPosition(IntakePivotConstants.kExtendedPosition);
     }
 
     inputs.positionRad = enc.getPosition();

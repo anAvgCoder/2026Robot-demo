@@ -4,6 +4,8 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -15,6 +17,7 @@ import frc.robot.subsystems.turret.ShotTimeTable;
 import frc.robot.subsystems.turret.hood.Hood;
 import frc.robot.subsystems.turret.rotater.Rotater;
 import frc.robot.subsystems.turret.rotater.RotaterConstants;
+import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.util.FieldConstants;
 import org.littletonrobotics.junction.Logger;
 
@@ -29,6 +32,9 @@ public class AdaptiveHubAiming extends Command {
   private final boolean isBlue;
   private final ShotTable shotTable;
 
+  private final Shooter shooterRight;
+  private final Shooter shooterLeft;
+
   private static final double TURRET_X_INCHES = 6.5;
   private static final double TURRET_Y_INCHES = 6.75;
 
@@ -39,9 +45,18 @@ public class AdaptiveHubAiming extends Command {
   private static final double TOF_TABLE_MIN_M = 0.0;
   private static final double TOF_TABLE_MAX_M = 5.13;
 
+  private static enum Target {
+    HUB,
+    OUTPOST,
+    DEPOT,
+    NONE
+  }
+
   public AdaptiveHubAiming(
+      Shooter shooterRight,
       Rotater rotaterRight,
       Hood hoodRight,
+      Shooter shooterLeft,
       Rotater rotaterLeft,
       Hood hoodLeft,
       Drive drive,
@@ -55,31 +70,141 @@ public class AdaptiveHubAiming extends Command {
     this.shotTable = shotTable;
     this.isBlue = isBlueCheck;
 
+    this.shooterRight = shooterRight;
+    this.shooterLeft = shooterLeft;
+
     addRequirements(rotaterRight, hoodRight, rotaterLeft, hoodLeft);
+    addRequirements(shooterRight, shooterLeft);
   }
+
+  Target targetChoice = Target.HUB;
 
   @Override
   public void execute() {
     Pose2d robotPose = drive.getPose();
+
+    //  we need to pick the target here
+    //
+    // determine where we are on field and set target accordingly
+    // driver side HUB
+    // mid and far field target outpost or depot
+
+    if (robotPose.getX() < 3.8) {
+      Logger.recordOutput("AimDebug/FieldZone", "driver side");
+
+      targetChoice = Target.HUB;
+    } else if (robotPose.getX() >= 3.8 && robotPose.getX() < 6) {
+      Logger.recordOutput("AimDebug/FieldZone", "close trench zone");
+
+      targetChoice = Target.NONE;
+    } else if (robotPose.getX() >= 6) {
+
+      // do left right of field for depot or outpost shooting
+
+      Logger.recordOutput("AimDebug/FieldZone", "mid field");
+      // mid field and farther
+
+      // this may be oposite for red need to test or
+      // does it really matter as it is just a zone
+      if (robotPose.getY() < 4.5) {
+
+        targetChoice = Target.OUTPOST;
+        Logger.recordOutput("AimDebug/FieldZone2", "outpost");
+      } else {
+
+        targetChoice = Target.DEPOT;
+        Logger.recordOutput("AimDebug/FieldZone2", "depot");
+      }
+    }
+
+    // need to add far trench zone here to protect the hoods
+
+    //  add far driver zone
+
+    Pose3d targetPose = getTargetPose(targetChoice);
+
+    Pose3d turretPoseRight = getTurretPose(true);
+
+    // need to have a target pose select for the distance calc
+    double distRight = calculateHubDistance(turretPoseRight, targetPose);
+
+    ShotSetpoint shotRight = shotTable.get(distRight);
+    shooterRight.setVelocityRPM(shotRight.shooterSpeed());
+
+    Logger.recordOutput("AimDebug/" + "Right" + "/ShooterDist", distRight);
+    Logger.recordOutput("AimDebug/" + "Right" + "/ShooterTargetRPM", shotRight.shooterSpeed());
+
+    Pose3d turretPoseLeft = getTurretPose(false);
+
+    // TODO change to target selected
+    double distLeft = calculateHubDistance(turretPoseLeft, targetPose);
+
+    ShotSetpoint shotLeft = shotTable.get(distLeft);
+    shooterLeft.setVelocityRPM(shotLeft.shooterSpeed());
+
+    Logger.recordOutput("AimDebug/" + "Left" + "/ShooterDist", distLeft);
+    Logger.recordOutput("AimDebug/" + "Left" + "/ShooterTargetRPM", shotLeft.shooterSpeed());
+
     ChassisSpeeds robotRelativeSpeeds = drive.getRobotRelativeSpeeds();
 
     AimSolution rightSolution =
-        solveAim(robotPose, robotRelativeSpeeds, true, RotaterConstants.turretRightAngleLocation);
+        solveAim(
+            robotPose,
+            robotRelativeSpeeds,
+            true,
+            RotaterConstants.turretRightAngleLocation,
+            targetPose);
+
     rotaterRight.setTurnPosition(rightSolution.turretAngleDeg);
     hoodRight.setHoodPosition(rightSolution.shotSetpoint.hoodPos());
     logAimSolution("Right", rightSolution);
 
     AimSolution leftSolution =
-        solveAim(robotPose, robotRelativeSpeeds, false, RotaterConstants.turretLeftAngleLocation);
+        solveAim(
+            robotPose,
+            robotRelativeSpeeds,
+            false,
+            RotaterConstants.turretLeftAngleLocation,
+            targetPose);
+
     rotaterLeft.setTurnPosition(leftSolution.turretAngleDeg);
     hoodLeft.setHoodPosition(leftSolution.shotSetpoint.hoodPos());
     logAimSolution("Left", leftSolution);
+  }
+
+  private Pose3d getTargetPose(Target targetChoice2) {
+
+    Pose3d targetPose;
+
+    if (targetChoice2 == Target.HUB) {
+
+      targetPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
+    } else if (targetChoice2 == Target.DEPOT) {
+
+      targetPose = isBlue ? FieldConstants.BLUE_DEPOT_POSE3D : FieldConstants.RED_DEPOT_POSE3D;
+    } else if (targetChoice2 == Target.OUTPOST) {
+
+      targetPose = isBlue ? FieldConstants.BLUE_OUTPOST_POSE3D : FieldConstants.RED_OUTPOST_POSE3D;
+    } else {
+      // none target will be a center of field
+      targetPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
+      ;
+    }
+
+    return targetPose;
   }
 
   @Override
   public void end(boolean interrupted) {
     rotaterRight.setVoltage(0.0);
     rotaterLeft.setVoltage(0.0);
+
+    // set hoods down
+    hoodLeft.setHoodPosition(0);
+    hoodRight.setHoodPosition(0);
+
+    shooterRight.stop();
+    shooterLeft.stop();
   }
 
   @Override
@@ -91,9 +216,12 @@ public class AdaptiveHubAiming extends Command {
       Pose2d robotPose,
       ChassisSpeeds robotRelativeSpeeds,
       boolean isRightTurret,
-      double turretMountAngleDeg) {
+      double turretMountAngleDeg,
+      Pose3d target) {
 
-    Translation2d hubField = getHubTranslation();
+    // Translation2d hubField = getHubTranslation();
+    Translation2d hubField = getTargetTranslation(target);
+
     Translation2d turretOffsetRobot = getTurretOffsetRobot(isRightTurret);
     Translation2d turretOffsetField = turretOffsetRobot.rotateBy(robotPose.getRotation());
     Translation2d pivotFieldPosition = robotPose.getTranslation().plus(turretOffsetField);
@@ -182,6 +310,17 @@ public class AdaptiveHubAiming extends Command {
     return new Translation2d(hubPose.getX(), hubPose.getY());
   }
 
+  private Translation2d getTargetTranslation(Pose3d target) {
+
+    return new Translation2d(target.getX(), target.getY());
+  }
+
+  private Translation2d getTargetTranslation() {
+
+    Pose3d targetPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
+    return new Translation2d(targetPose.getX(), targetPose.getY());
+  }
+
   private Translation2d addScaled(
       Translation2d position, Translation2d velocity, double dtSeconds) {
     return new Translation2d(
@@ -193,6 +332,24 @@ public class AdaptiveHubAiming extends Command {
     double clampedDistance = MathUtil.clamp(distanceMeters, TOF_TABLE_MIN_M, TOF_TABLE_MAX_M);
     double tofSeconds = ShotTimeTable.getFlightTimeSeconds(clampedDistance);
     return MathUtil.clamp(tofSeconds, 0.0, MAX_LEAD_TIME_SEC);
+  }
+
+  private Transform3d robotToTurret(boolean isRightTurret) {
+    double xMeters = Units.inchesToMeters(TURRET_X_INCHES);
+    double yMeters = Units.inchesToMeters(isRightTurret ? -TURRET_Y_INCHES : TURRET_Y_INCHES);
+    return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
+  }
+
+  private Pose3d getTurretPose(boolean isRightTurret) {
+    Pose3d robotPose = new Pose3d(drive.getPose());
+    return robotPose.transformBy(robotToTurret(isRightTurret));
+  }
+
+  public double calculateHubDistance(Pose3d turretPose, Pose3d target) {
+
+    double dx = turretPose.getX() - target.getX();
+    double dy = turretPose.getY() - target.getY();
+    return Math.hypot(dx, dy);
   }
 
   private void logAimSolution(String key, AimSolution solution) {

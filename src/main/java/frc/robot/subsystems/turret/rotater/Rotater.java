@@ -21,6 +21,7 @@ public class Rotater extends SubsystemBase {
   private double manualVolts = 0.0;
 
   public Rotater(RotaterIO io, String logKey) {
+    super(logKey);
     this.io = io;
     this.logKey = logKey;
   }

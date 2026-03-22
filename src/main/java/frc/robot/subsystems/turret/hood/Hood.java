@@ -21,6 +21,7 @@ public class Hood extends SubsystemBase {
   private double manualVolts = 0.0;
 
   public Hood(HoodIO io, String logKey) {
+    super(logKey);
     this.io = io;
     this.logKey = logKey;
   }

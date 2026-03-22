@@ -126,9 +126,11 @@ public class Robot extends LoggedRobot {
     // Log per-subsystem commands
     for (var entry : subsystemCommands.entrySet()) {
       List<String> cmds = entry.getValue();
-      Logger.recordOutput("Command/" + entry.getKey(), String.join(", ", cmds));
-      if (cmds.size() > 1) {
-        Logger.recordOutput("Command/" + entry.getKey() + "/Conflict", true);
+      if (!cmds.isEmpty()) {
+        Logger.recordOutput("Command/" + entry.getKey(), String.join(", ", cmds));
+        if (cmds.size() > 1) {
+          Logger.recordOutput("Command/" + entry.getKey() + "/Conflict", true);
+        }
       }
     }
 

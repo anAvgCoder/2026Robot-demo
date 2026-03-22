@@ -13,10 +13,10 @@ public class IntakePivotConstants {
   public static final double kGearRatio = 30.0;
 
   // Positions
-  public static final double kStoragePosition = -1.2; // -1.316477;
+  public static final double kStoragePosition = -1.316477;
   public static final double kExtendedPosition = 0.0;
 
-  public static final double kMagSensorPositionRad = -1.2; // -1.316477;
+  public static final double kMagSensorPositionRad = -1.316477;
 
   // Trapezoid constraints
   public static final double kMaxVelDegPerSec = 180.0;
