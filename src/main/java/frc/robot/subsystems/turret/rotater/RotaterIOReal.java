@@ -96,8 +96,8 @@ public class RotaterIOReal implements RotaterIO {
     motor.set(-capped);
 
     var sp = controller.getSetpoint();
-    Logger.recordOutput("TurnRioTest/GoalRad", goal);
-    Logger.recordOutput("TurnRioTest/MeasRad", meas);
+    Logger.recordOutput(logPrefix + "GoalRad", goal);
+    Logger.recordOutput(logPrefix + "MeasRad", meas);
     Logger.recordOutput(logPrefix + "ProfilePosRad", sp.position);
     Logger.recordOutput(logPrefix + "ProfileVelRadPerSec", sp.velocity);
     Logger.recordOutput(logPrefix + "OutputCmd", capped);

@@ -36,7 +36,8 @@ public class AdaptiveHubAiming extends Command {
   private final Shooter shooterLeft;
 
   private static final double TURRET_X_INCHES = 6.5;
-  private static final double TURRET_Y_INCHES = 6.75;
+  private static final double TURRET_Y_INCHES =
+      6.75; // setting to zero to have them track together in separate solver below
 
   private static final int LOOKAHEAD_ITERS = 4;
   private static final double TOF_EPSILON_SEC = 0.005;
@@ -106,7 +107,7 @@ public class AdaptiveHubAiming extends Command {
 
       // this may be oposite for red need to test or
       // does it really matter as it is just a zone
-      if (robotPose.getY() < 4.5) {
+      if (robotPose.getY() < Units.inchesToMeters(FieldConstants.FIELD_WIDTH_INCHES / 2)) {
 
         targetChoice = Target.OUTPOST;
         Logger.recordOutput("AimDebug/FieldZone2", "outpost");
@@ -123,6 +124,9 @@ public class AdaptiveHubAiming extends Command {
 
     Pose3d targetPose = getTargetPose(targetChoice);
 
+    Logger.recordOutput("AimDebug/TargetPose", targetPose);
+
+    //  solver right
     Pose3d turretPoseRight = getTurretPose(true);
 
     // need to have a target pose select for the distance calc
@@ -134,9 +138,9 @@ public class AdaptiveHubAiming extends Command {
     Logger.recordOutput("AimDebug/" + "Right" + "/ShooterDist", distRight);
     Logger.recordOutput("AimDebug/" + "Right" + "/ShooterTargetRPM", shotRight.shooterSpeed());
 
+    // solver left
     Pose3d turretPoseLeft = getTurretPose(false);
 
-    // TODO change to target selected
     double distLeft = calculateHubDistance(turretPoseLeft, targetPose);
 
     ShotSetpoint shotLeft = shotTable.get(distLeft);
@@ -147,29 +151,73 @@ public class AdaptiveHubAiming extends Command {
 
     ChassisSpeeds robotRelativeSpeeds = drive.getRobotRelativeSpeeds();
 
+    // central turret solver for rotation to keep turrets locked together
+    Pose3d turretPoseCenter = getCenterTurretPose();
+
+    Translation2d turretOffsetRobot = getTurretOffsetRobotCenter();
+
+    AimSolution centerSolution =
+        solveAim(
+            robotPose,
+            robotRelativeSpeeds,
+            turretOffsetRobot,
+            RotaterConstants.turretRightAngleLocation,
+            targetPose);
+
+    turretOffsetRobot = getTurretOffsetRobot(true);
+
     AimSolution rightSolution =
         solveAim(
             robotPose,
             robotRelativeSpeeds,
-            true,
+            turretOffsetRobot,
             RotaterConstants.turretRightAngleLocation,
             targetPose);
 
-    rotaterRight.setTurnPosition(rightSolution.turretAngleDeg);
     hoodRight.setHoodPosition(rightSolution.shotSetpoint.hoodPos());
     logAimSolution("Right", rightSolution);
+
+    turretOffsetRobot = getTurretOffsetRobot(false);
 
     AimSolution leftSolution =
         solveAim(
             robotPose,
             robotRelativeSpeeds,
-            false,
+            turretOffsetRobot,
             RotaterConstants.turretLeftAngleLocation,
             targetPose);
 
-    rotaterLeft.setTurnPosition(leftSolution.turretAngleDeg);
     hoodLeft.setHoodPosition(leftSolution.shotSetpoint.hoodPos());
     logAimSolution("Left", leftSolution);
+
+    // to keep turn tracking together we dont want one to spin without
+    // the other so we will use the central calc then check the delta against the
+    // left and right to see if we need to limit the turn
+    Logger.recordOutput("AimDebug/Master/rotatorLeft", leftSolution.turretAngleDeg);
+    Logger.recordOutput("AimDebug/Master/rotatorRight", rightSolution.turretAngleDeg);
+    Logger.recordOutput("AimDebug/Master/rotatorCenter", centerSolution.turretAngleDeg);
+
+    double deltaRight = centerSolution.turretAngleDeg - rightSolution.turretAngleDeg;
+
+    double deltaLeft = centerSolution.turretAngleDeg - leftSolution.turretAngleDeg;
+
+    double deltaLeftToRight = rightSolution.turretAngleDeg - leftSolution.turretAngleDeg;
+
+    Logger.recordOutput("AimDebug/Master/rotatorLeftDeltaCenter", deltaLeft);
+    Logger.recordOutput("AimDebug/Master/rotatorRightDeltaCenter", deltaRight);
+    Logger.recordOutput("AimDebug/Master/rotatorRightDeltaLeft", deltaLeftToRight);
+
+    if (Math.abs(deltaLeftToRight) > 300) {
+      Logger.recordOutput("AimDebug/Master/UsingIndividual", false);
+
+      rotaterLeft.setTurnPosition(centerSolution.turretAngleDeg);
+      rotaterRight.setTurnPosition(centerSolution.turretAngleDeg);
+    } else {
+      Logger.recordOutput("AimDebug/Master/UsingIndividual", true);
+
+      rotaterLeft.setTurnPosition(leftSolution.turretAngleDeg);
+      rotaterRight.setTurnPosition(rightSolution.turretAngleDeg);
+    }
   }
 
   private Pose3d getTargetPose(Target targetChoice2) {
@@ -186,9 +234,9 @@ public class AdaptiveHubAiming extends Command {
 
       targetPose = isBlue ? FieldConstants.BLUE_OUTPOST_POSE3D : FieldConstants.RED_OUTPOST_POSE3D;
     } else {
-      // none target will be a center of field
+
+      // none target will be pause - a center of field
       targetPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
-      ;
     }
 
     return targetPose;
@@ -215,14 +263,13 @@ public class AdaptiveHubAiming extends Command {
   private AimSolution solveAim(
       Pose2d robotPose,
       ChassisSpeeds robotRelativeSpeeds,
-      boolean isRightTurret,
+      Translation2d turretOffsetRobot,
       double turretMountAngleDeg,
       Pose3d target) {
 
     // Translation2d hubField = getHubTranslation();
     Translation2d hubField = getTargetTranslation(target);
 
-    Translation2d turretOffsetRobot = getTurretOffsetRobot(isRightTurret);
     Translation2d turretOffsetField = turretOffsetRobot.rotateBy(robotPose.getRotation());
     Translation2d pivotFieldPosition = robotPose.getTranslation().plus(turretOffsetField);
 
@@ -305,6 +352,10 @@ public class AdaptiveHubAiming extends Command {
         Units.inchesToMeters(isRightTurret ? -TURRET_Y_INCHES : TURRET_Y_INCHES));
   }
 
+  private Translation2d getTurretOffsetRobotCenter() {
+    return new Translation2d(Units.inchesToMeters(TURRET_X_INCHES), Units.inchesToMeters(0));
+  }
+
   private Translation2d getHubTranslation() {
     Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
     return new Translation2d(hubPose.getX(), hubPose.getY());
@@ -340,9 +391,20 @@ public class AdaptiveHubAiming extends Command {
     return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
   }
 
+  private Transform3d robotToCenterTurret() {
+    double xMeters = Units.inchesToMeters(TURRET_X_INCHES);
+    double yMeters = Units.inchesToMeters(0);
+    return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
+  }
+
   private Pose3d getTurretPose(boolean isRightTurret) {
     Pose3d robotPose = new Pose3d(drive.getPose());
     return robotPose.transformBy(robotToTurret(isRightTurret));
+  }
+
+  private Pose3d getCenterTurretPose() {
+    Pose3d robotPose = new Pose3d(drive.getPose());
+    return robotPose.transformBy(robotToCenterTurret());
   }
 
   public double calculateHubDistance(Pose3d turretPose, Pose3d target) {
@@ -358,6 +420,9 @@ public class AdaptiveHubAiming extends Command {
     Logger.recordOutput(
         "AimDebug/" + key + "/AimPathDistanceMeters", solution.aimPathDistanceMeters);
     Logger.recordOutput("AimDebug/" + key + "/TurretAngleDeg", solution.turretAngleDeg);
+
+    Logger.recordOutput("AimDebug/" + key + "/HoodPosition", solution.shotSetpoint.hoodPos());
+
     Logger.recordOutput(
         "AimDebug/" + key + "/PivotVelocityXMps", solution.pivotFieldVelocity.getX());
     Logger.recordOutput(
