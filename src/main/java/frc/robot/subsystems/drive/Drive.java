@@ -75,6 +75,7 @@ public class Drive extends SubsystemBase {
       new SwerveDrivePoseEstimator(kinematics, rawGyroRotation, lastModulePositions, Pose2d.kZero);
 
   private double speedScale = DriveConstants.normalSpeedFactor;
+  private double currentSpeedScale = speedScale;
 
   public Drive(
       GyroIO gyroIO,
@@ -124,10 +125,41 @@ public class Drive extends SubsystemBase {
                 (voltage) -> runCharacterization(voltage.in(Volts)), null, this));
   }
 
+  private int loopCounterSpeed = 0;
+  private double deltaPerInterval = 0;
+
+  private boolean firstTime = true;
+
   @Override
   public void periodic() {
 
     Logger.recordOutput("Swerve/Speed", speedScale);
+
+    if (currentSpeedScale != speedScale) {
+      if (currentSpeedScale > speedScale) {
+        currentSpeedScale = speedScale;
+        loopCounterSpeed = 0;
+        firstTime = true;
+      } else {
+
+        // we need to ramp up here slower to the new set speed
+        double delta = Math.abs(currentSpeedScale - speedScale);
+
+        if (loopCounterSpeed < 25) {
+
+          if (firstTime) {
+            deltaPerInterval = delta / 25;
+          }
+
+          currentSpeedScale = currentSpeedScale + deltaPerInterval;
+        } else {
+
+          currentSpeedScale = speedScale;
+          loopCounterSpeed = 0;
+          firstTime = true;
+        }
+      }
+    }
 
     // First update the quest pose frames. They get used later
     quest.runPeriodicUpdates();
@@ -361,7 +393,7 @@ public class Drive extends SubsystemBase {
   }
 
   public double getMaxLinearSpeedMetersPerSec() {
-    return maxSpeedMetersPerSec * speedScale;
+    return maxSpeedMetersPerSec * currentSpeedScale;
   }
 
   public double getMaxAngularSpeedRadPerSec() {

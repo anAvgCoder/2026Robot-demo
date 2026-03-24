@@ -19,9 +19,9 @@ public class PhotonVisionIO implements VisionIO {
   private final Drive drive;
 
   private final PhotonPoseEstimator photonEstimatorLeft;
-  // private final PhotonPoseEstimator photonEstimatorRight;
+  private final PhotonPoseEstimator photonEstimatorRight;
   private final PhotonCamera leftCamera;
-  // private final PhotonCamera rightCamera;
+  private final PhotonCamera rightCamera;
 
   private Matrix<N3, N1> curStdDevs;
   private PhotonPipelineResult result;
@@ -31,9 +31,9 @@ public class PhotonVisionIO implements VisionIO {
     this.drive = drive;
 
     photonEstimatorLeft = new PhotonPoseEstimator(FIELD_TAG_LAYOUT, LEFT_ROBOT_TO_CAMERA);
-    // photonEstimatorRight = new PhotonPoseEstimator(FIELD_TAG_LAYOUT, RIGHT_ROBOT_TO_CAMERA);
+    photonEstimatorRight = new PhotonPoseEstimator(FIELD_TAG_LAYOUT, RIGHT_ROBOT_TO_CAMERA);
     leftCamera = new PhotonCamera(LEFT_CAMERA_NAME);
-    // rightCamera = new PhotonCamera(RIGHT_CAMERA_NAME);
+    rightCamera = new PhotonCamera(RIGHT_CAMERA_NAME);
   }
 
   @Override
@@ -47,6 +47,25 @@ public class PhotonVisionIO implements VisionIO {
       // fallback if multi-tag estimation fails
       if (visionEst.isEmpty()) {
         visionEst = photonEstimatorLeft.estimateLowestAmbiguityPose(result);
+      }
+
+      curStdDevs = updateEstimationStdDevs(visionEst, result.getTargets());
+
+      // Lambda to handle Optional
+      visionEst.ifPresent(
+          est -> {
+            drive.addVisionMeasurement(
+                est.estimatedPose.toPose2d(), est.timestampSeconds, curStdDevs);
+          });
+    }
+
+    for (PhotonPipelineResult cameraResult : rightCamera.getAllUnreadResults()) {
+      result = cameraResult;
+      visionEst = photonEstimatorRight.estimateCoprocMultiTagPose(result);
+
+      // fallback if multi-tag estimation fails
+      if (visionEst.isEmpty()) {
+        visionEst = photonEstimatorRight.estimateLowestAmbiguityPose(result);
       }
 
       curStdDevs = updateEstimationStdDevs(visionEst, result.getTargets());
