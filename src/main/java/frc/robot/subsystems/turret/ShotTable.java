@@ -10,7 +10,6 @@ public class ShotTable {
   private static double shooterMultiFactor = 1.15;
 
   public record ShotSetpoint(double hoodPos, double shooterSpeed) {
-
     public ShotSetpoint trimSetpoint() {
       return new ShotSetpoint(hoodPos, shooterSpeed * shooterMultiFactor);
     }
@@ -26,7 +25,6 @@ public class ShotTable {
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), shotInterpolator);
 
   static {
-    // key = distanceMeters
     table.put(0.00, new ShotSetpoint(0.0, 2000));
     table.put(1.55, new ShotSetpoint(0.0, 2150));
     table.put(1.86, new ShotSetpoint(calculateHoodAngle(22), 2150));
@@ -44,22 +42,6 @@ public class ShotTable {
     table.put(10.0, new ShotSetpoint(calculateHoodAngle(41), 3300));
     table.put(12.5, new ShotSetpoint(calculateHoodAngle(41), 3300));
     table.put(15.0, new ShotSetpoint(calculateHoodAngle(41), 3300));
-    // table.put(0.00, new ShotSetpoint(0.00, 2700));
-    // table.put(1.00, new ShotSetpoint(0.00, 2700));
-    // table.put(1.13, new ShotSetpoint(0.00, 2700));
-    // table.put(1.44, new ShotSetpoint(0.00, 2850));
-    // table.put(2.03, new ShotSetpoint(0.07, 2950));
-    // table.put(2.33, new ShotSetpoint(0.08, 2950));
-    // table.put(2.65, new ShotSetpoint(0.10, 3200));
-    // table.put(2.98, new ShotSetpoint(0.12, 3250));
-    // table.put(3.33, new ShotSetpoint(0.13, 3330));
-    // table.put(3.71, new ShotSetpoint(0.14, 3370));
-    // table.put(3.96, new ShotSetpoint(0.15, 3540));
-    // table.put(4.48, new ShotSetpoint(0.10, 3520));
-    // table.put(5.13, new ShotSetpoint(0.26, 3590));
-    // table.put(10.00, new ShotSetpoint(0.26, 3590));
-    // table.put(15.00, new ShotSetpoint(0.26, 3590));
-    // table.put(20.00, new ShotSetpoint(0.26, 3590));
   }
 
   public static ShotSetpoint get(double distanceMeters) {

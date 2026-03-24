@@ -4,8 +4,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -21,8 +19,6 @@ import frc.robot.subsystems.turret.shooter.Shooter;
 import frc.robot.util.FieldConstants;
 import org.littletonrobotics.junction.Logger;
 
-// TODO: adaptiveHubAiming include shooter motions in this too
-
 public class AdaptiveHubAiming extends Command {
   private final Rotater rotaterRight;
   private final Hood hoodRight;
@@ -36,17 +32,16 @@ public class AdaptiveHubAiming extends Command {
   private final Shooter shooterLeft;
 
   private static final double TURRET_X_INCHES = 6.5;
-  private static final double TURRET_Y_INCHES =
-      6.75; // setting to zero to have them track together in separate solver below
+  private static final double TURRET_Y_INCHES = 6.75;
 
   private static final int LOOKAHEAD_ITERS = 4;
   private static final double TOF_EPSILON_SEC = 0.005;
   private static final double MAX_LEAD_TIME_SEC = 2.0;
-  private static final double SHOT_RELEASE_DELAY_SEC = 0.0;
+  private static final double SHOT_RELEASE_DELAY_SEC = 0.05; // ~50ms mechanical delay
   private static final double TOF_TABLE_MIN_M = 0.0;
-  private static final double TOF_TABLE_MAX_M = 5.13;
+  private static final double TOF_TABLE_MAX_M = 15.0; // was 5.13, table goes to 15
 
-  private static enum Target {
+  private enum Target {
     HUB,
     OUTPOST,
     DEPOT,
@@ -70,7 +65,6 @@ public class AdaptiveHubAiming extends Command {
     this.drive = drive;
     this.shotTable = shotTable;
     this.isBlue = isBlueCheck;
-
     this.shooterRight = shooterRight;
     this.shooterLeft = shooterLeft;
 
@@ -78,179 +72,107 @@ public class AdaptiveHubAiming extends Command {
     addRequirements(shooterRight, shooterLeft);
   }
 
-  Target targetChoice = Target.HUB;
+  private Target targetChoice = Target.HUB;
 
   @Override
   public void execute() {
     Pose2d robotPose = drive.getPose();
+    ChassisSpeeds robotRelativeSpeeds = drive.getRobotRelativeSpeeds();
 
-    //  we need to pick the target here
-    //
-    // determine where we are on field and set target accordingly
-    // driver side HUB
-    // mid and far field target outpost or depot
-
+    // Pick target based on field zone
     if (robotPose.getX() < 3.8) {
-      Logger.recordOutput("AimDebug/FieldZone", "driver side");
-
       targetChoice = Target.HUB;
-    } else if (robotPose.getX() >= 3.8 && robotPose.getX() < 6) {
-      Logger.recordOutput("AimDebug/FieldZone", "close trench zone");
-
+      Logger.recordOutput("AimDebug/FieldZone", "driver side");
+    } else if (robotPose.getX() < 6) {
       targetChoice = Target.NONE;
-    } else if (robotPose.getX() >= 6) {
-
-      // do left right of field for depot or outpost shooting
-
-      Logger.recordOutput("AimDebug/FieldZone", "mid field");
-      // mid field and farther
-
-      // this may be oposite for red need to test or
-      // does it really matter as it is just a zone
+      Logger.recordOutput("AimDebug/FieldZone", "close trench zone");
+    } else {
       if (robotPose.getY() < Units.inchesToMeters(FieldConstants.FIELD_WIDTH_INCHES / 2)) {
-
         targetChoice = Target.OUTPOST;
-        Logger.recordOutput("AimDebug/FieldZone2", "outpost");
+        Logger.recordOutput("AimDebug/FieldZone", "outpost");
       } else {
-
         targetChoice = Target.DEPOT;
-        Logger.recordOutput("AimDebug/FieldZone2", "depot");
+        Logger.recordOutput("AimDebug/FieldZone", "depot");
       }
     }
 
-    // need to add far trench zone here to protect the hoods
-
-    //  add far driver zone
-
     Pose3d targetPose = getTargetPose(targetChoice);
-
+    Translation2d targetField = new Translation2d(targetPose.getX(), targetPose.getY());
     Logger.recordOutput("AimDebug/TargetPose", targetPose);
 
-    //  solver right
-    Pose3d turretPoseRight = getTurretPose(true);
-
-    // need to have a target pose select for the distance calc
-    double distRight = calculateHubDistance(turretPoseRight, targetPose);
-
-    ShotSetpoint shotRight = shotTable.get(distRight);
-    shooterRight.setVelocityRPM(shotRight.shooterSpeed());
-
-    Logger.recordOutput("AimDebug/" + "Right" + "/ShooterDist", distRight);
-    Logger.recordOutput("AimDebug/" + "Right" + "/ShooterTargetRPM", shotRight.shooterSpeed());
-
-    // solver left
-    Pose3d turretPoseLeft = getTurretPose(false);
-
-    double distLeft = calculateHubDistance(turretPoseLeft, targetPose);
-
-    ShotSetpoint shotLeft = shotTable.get(distLeft);
-    shooterLeft.setVelocityRPM(shotLeft.shooterSpeed());
-
-    Logger.recordOutput("AimDebug/" + "Left" + "/ShooterDist", distLeft);
-    Logger.recordOutput("AimDebug/" + "Left" + "/ShooterTargetRPM", shotLeft.shooterSpeed());
-
-    ChassisSpeeds robotRelativeSpeeds = drive.getRobotRelativeSpeeds();
-
-    // central turret solver for rotation to keep turrets locked together
-    Pose3d turretPoseCenter = getCenterTurretPose();
-
-    Translation2d turretOffsetRobot = getTurretOffsetRobotCenter();
-
-    AimSolution centerSolution =
-        solveAim(
-            robotPose,
-            robotRelativeSpeeds,
-            turretOffsetRobot,
-            RotaterConstants.turretRightAngleLocation,
-            targetPose);
-
-    turretOffsetRobot = getTurretOffsetRobot(true);
-
+    // Solve right turret — hood, shooter, and angle all from one solution
     AimSolution rightSolution =
         solveAim(
             robotPose,
             robotRelativeSpeeds,
-            turretOffsetRobot,
+            getTurretOffsetRobot(true),
             RotaterConstants.turretRightAngleLocation,
-            targetPose);
+            targetField);
 
     hoodRight.setHoodPosition(rightSolution.shotSetpoint.hoodPos());
+    shooterRight.setVelocityRPM(rightSolution.shotSetpoint.shooterSpeed());
     logAimSolution("Right", rightSolution);
 
-    turretOffsetRobot = getTurretOffsetRobot(false);
-
+    // Solve left turret
     AimSolution leftSolution =
         solveAim(
             robotPose,
             robotRelativeSpeeds,
-            turretOffsetRobot,
+            getTurretOffsetRobot(false),
             RotaterConstants.turretLeftAngleLocation,
-            targetPose);
+            targetField);
 
     hoodLeft.setHoodPosition(leftSolution.shotSetpoint.hoodPos());
+    shooterLeft.setVelocityRPM(leftSolution.shotSetpoint.shooterSpeed());
     logAimSolution("Left", leftSolution);
 
-    // to keep turn tracking together we dont want one to spin without
-    // the other so we will use the central calc then check the delta against the
-    // left and right to see if we need to limit the turn
+    // Solve center (virtual turret at y=0) for rotation coordination
+    AimSolution centerSolution =
+        solveAim(
+            robotPose,
+            robotRelativeSpeeds,
+            getTurretOffsetRobotCenter(),
+            RotaterConstants.turretRightAngleLocation,
+            targetField);
+
+    // Turret rotation — use center when left/right have a wrap-around delta
+    double deltaLeftToRight = rightSolution.turretAngleDeg - leftSolution.turretAngleDeg;
+
     Logger.recordOutput("AimDebug/Master/rotatorLeft", leftSolution.turretAngleDeg);
     Logger.recordOutput("AimDebug/Master/rotatorRight", rightSolution.turretAngleDeg);
     Logger.recordOutput("AimDebug/Master/rotatorCenter", centerSolution.turretAngleDeg);
-
-    double deltaRight = centerSolution.turretAngleDeg - rightSolution.turretAngleDeg;
-
-    double deltaLeft = centerSolution.turretAngleDeg - leftSolution.turretAngleDeg;
-
-    double deltaLeftToRight = rightSolution.turretAngleDeg - leftSolution.turretAngleDeg;
-
-    Logger.recordOutput("AimDebug/Master/rotatorLeftDeltaCenter", deltaLeft);
-    Logger.recordOutput("AimDebug/Master/rotatorRightDeltaCenter", deltaRight);
-    Logger.recordOutput("AimDebug/Master/rotatorRightDeltaLeft", deltaLeftToRight);
+    Logger.recordOutput("AimDebug/Master/deltaLeftToRight", deltaLeftToRight);
 
     if (Math.abs(deltaLeftToRight) > 300) {
       Logger.recordOutput("AimDebug/Master/UsingIndividual", false);
-
       rotaterLeft.setTurnPosition(centerSolution.turretAngleDeg);
       rotaterRight.setTurnPosition(centerSolution.turretAngleDeg);
     } else {
       Logger.recordOutput("AimDebug/Master/UsingIndividual", true);
-
       rotaterLeft.setTurnPosition(leftSolution.turretAngleDeg);
       rotaterRight.setTurnPosition(rightSolution.turretAngleDeg);
     }
   }
 
-  private Pose3d getTargetPose(Target targetChoice2) {
-
-    Pose3d targetPose;
-
-    if (targetChoice2 == Target.HUB) {
-
-      targetPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
-    } else if (targetChoice2 == Target.DEPOT) {
-
-      targetPose = isBlue ? FieldConstants.BLUE_DEPOT_POSE3D : FieldConstants.RED_DEPOT_POSE3D;
-    } else if (targetChoice2 == Target.OUTPOST) {
-
-      targetPose = isBlue ? FieldConstants.BLUE_OUTPOST_POSE3D : FieldConstants.RED_OUTPOST_POSE3D;
-    } else {
-
-      // none target will be pause - a center of field
-      targetPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
+  private Pose3d getTargetPose(Target target) {
+    switch (target) {
+      case DEPOT:
+        return isBlue ? FieldConstants.BLUE_DEPOT_POSE3D : FieldConstants.RED_DEPOT_POSE3D;
+      case OUTPOST:
+        return isBlue ? FieldConstants.BLUE_OUTPOST_POSE3D : FieldConstants.RED_OUTPOST_POSE3D;
+      case HUB:
+      case NONE:
+      default:
+        return isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
     }
-
-    return targetPose;
   }
 
   @Override
   public void end(boolean interrupted) {
     rotaterRight.setVoltage(0.0);
     rotaterLeft.setVoltage(0.0);
-
-    // set hoods down
     hoodLeft.setHoodPosition(0);
     hoodRight.setHoodPosition(0);
-
     shooterRight.stop();
     shooterLeft.stop();
   }
@@ -265,10 +187,7 @@ public class AdaptiveHubAiming extends Command {
       ChassisSpeeds robotRelativeSpeeds,
       Translation2d turretOffsetRobot,
       double turretMountAngleDeg,
-      Pose3d target) {
-
-    // Translation2d hubField = getHubTranslation();
-    Translation2d hubField = getTargetTranslation(target);
+      Translation2d targetField) {
 
     Translation2d turretOffsetField = turretOffsetRobot.rotateBy(robotPose.getRotation());
     Translation2d pivotFieldPosition = robotPose.getTranslation().plus(turretOffsetField);
@@ -280,20 +199,21 @@ public class AdaptiveHubAiming extends Command {
         computePivotFieldVelocity(
             fieldRelativeSpeeds, turretOffsetField, robotRelativeSpeeds.omegaRadiansPerSecond);
 
+    // Where the turret will be when the ball actually exits (accounts for mechanical delay)
     Translation2d releasePivotFieldPosition =
         addScaled(pivotFieldPosition, pivotFieldVelocity, SHOT_RELEASE_DELAY_SEC);
-    double shotDistanceMeters = releasePivotFieldPosition.getDistance(hubField);
-    ShotSetpoint shotSetpoint = this.shotTable.get(shotDistanceMeters);
+    double shotDistanceMeters = releasePivotFieldPosition.getDistance(targetField);
 
     double tofSeconds = flightTimeSecondsSafe(shotDistanceMeters);
-    Translation2d aimPointField = hubField;
+    Translation2d aimPointField = targetField;
     double aimPathDistanceMeters = shotDistanceMeters;
 
+    // Iterative lead solver — converge aim point with time-of-flight
     for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
       double leadTimeSeconds =
           MathUtil.clamp(SHOT_RELEASE_DELAY_SEC + tofSeconds, 0.0, MAX_LEAD_TIME_SEC);
 
-      Translation2d newAimPointField = addScaled(hubField, pivotFieldVelocity, -leadTimeSeconds);
+      Translation2d newAimPointField = addScaled(targetField, pivotFieldVelocity, -leadTimeSeconds);
       double newAimPathDistanceMeters = pivotFieldPosition.getDistance(newAimPointField);
       double newTofSeconds = flightTimeSecondsSafe(newAimPathDistanceMeters);
 
@@ -307,6 +227,9 @@ public class AdaptiveHubAiming extends Command {
 
       tofSeconds = newTofSeconds;
     }
+
+    // Use the lead-compensated distance for BOTH hood and shooter RPM
+    ShotSetpoint shotSetpoint = shotTable.get(aimPathDistanceMeters);
 
     double fieldAimAngleRad =
         Math.atan2(
@@ -337,12 +260,10 @@ public class AdaptiveHubAiming extends Command {
     Translation2d centerFieldVelocity =
         new Translation2d(
             fieldRelativeSpeeds.vxMetersPerSecond, fieldRelativeSpeeds.vyMetersPerSecond);
-
     Translation2d rotationalFieldVelocity =
         new Translation2d(
-            -omegaRadiansPerSecond * turretOffsetField.getY(),
-            omegaRadiansPerSecond * turretOffsetField.getX());
-
+            -omegaRadiansPerSecond * turretOffsetField.getY() * 0.5,
+            omegaRadiansPerSecond * turretOffsetField.getX() * 0.5);
     return centerFieldVelocity.plus(rotationalFieldVelocity);
   }
 
@@ -353,23 +274,7 @@ public class AdaptiveHubAiming extends Command {
   }
 
   private Translation2d getTurretOffsetRobotCenter() {
-    return new Translation2d(Units.inchesToMeters(TURRET_X_INCHES), Units.inchesToMeters(0));
-  }
-
-  private Translation2d getHubTranslation() {
-    Pose3d hubPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
-    return new Translation2d(hubPose.getX(), hubPose.getY());
-  }
-
-  private Translation2d getTargetTranslation(Pose3d target) {
-
-    return new Translation2d(target.getX(), target.getY());
-  }
-
-  private Translation2d getTargetTranslation() {
-
-    Pose3d targetPose = isBlue ? FieldConstants.BLUE_HUB_POSE3D : FieldConstants.RED_HUB_POSE3D;
-    return new Translation2d(targetPose.getX(), targetPose.getY());
+    return new Translation2d(Units.inchesToMeters(TURRET_X_INCHES), 0.0);
   }
 
   private Translation2d addScaled(
@@ -385,60 +290,24 @@ public class AdaptiveHubAiming extends Command {
     return MathUtil.clamp(tofSeconds, 0.0, MAX_LEAD_TIME_SEC);
   }
 
-  private Transform3d robotToTurret(boolean isRightTurret) {
-    double xMeters = Units.inchesToMeters(TURRET_X_INCHES);
-    double yMeters = Units.inchesToMeters(isRightTurret ? -TURRET_Y_INCHES : TURRET_Y_INCHES);
-    return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
-  }
-
-  private Transform3d robotToCenterTurret() {
-    double xMeters = Units.inchesToMeters(TURRET_X_INCHES);
-    double yMeters = Units.inchesToMeters(0);
-    return new Transform3d(xMeters, yMeters, 0.0, new Rotation3d());
-  }
-
-  private Pose3d getTurretPose(boolean isRightTurret) {
-    Pose3d robotPose = new Pose3d(drive.getPose());
-    return robotPose.transformBy(robotToTurret(isRightTurret));
-  }
-
-  private Pose3d getCenterTurretPose() {
-    Pose3d robotPose = new Pose3d(drive.getPose());
-    return robotPose.transformBy(robotToCenterTurret());
-  }
-
-  public double calculateHubDistance(Pose3d turretPose, Pose3d target) {
-
-    double dx = turretPose.getX() - target.getX();
-    double dy = turretPose.getY() - target.getY();
-    return Math.hypot(dx, dy);
-  }
-
   private void logAimSolution(String key, AimSolution solution) {
     Logger.recordOutput("AimDebug/" + key + "/TOFSeconds", solution.tofSeconds);
-    Logger.recordOutput("AimDebug/" + key + "/ShotDistanceMeters", solution.shotDistanceMeters);
-    Logger.recordOutput(
-        "AimDebug/" + key + "/AimPathDistanceMeters", solution.aimPathDistanceMeters);
+    Logger.recordOutput("AimDebug/" + key + "/ShotDistMeters", solution.shotDistanceMeters);
+    Logger.recordOutput("AimDebug/" + key + "/AimPathDistMeters", solution.aimPathDistanceMeters);
     Logger.recordOutput("AimDebug/" + key + "/TurretAngleDeg", solution.turretAngleDeg);
-
-    Logger.recordOutput("AimDebug/" + key + "/HoodPosition", solution.shotSetpoint.hoodPos());
-
-    Logger.recordOutput(
-        "AimDebug/" + key + "/PivotVelocityXMps", solution.pivotFieldVelocity.getX());
-    Logger.recordOutput(
-        "AimDebug/" + key + "/PivotVelocityYMps", solution.pivotFieldVelocity.getY());
+    Logger.recordOutput("AimDebug/" + key + "/HoodPos", solution.shotSetpoint.hoodPos());
+    Logger.recordOutput("AimDebug/" + key + "/ShooterRPM", solution.shotSetpoint.shooterSpeed());
+    Logger.recordOutput("AimDebug/" + key + "/PivotVelX", solution.pivotFieldVelocity.getX());
+    Logger.recordOutput("AimDebug/" + key + "/PivotVelY", solution.pivotFieldVelocity.getY());
 
     Logger.recordOutput(
         "AimDebug/" + key + "/PivotPose",
         new Pose2d(solution.pivotFieldPosition, new Rotation2d()));
-
     Logger.recordOutput(
         "AimDebug/" + key + "/AimPose",
         new Pose2d(solution.pivotFieldPosition, Rotation2d.fromRadians(solution.fieldAimAngleRad)));
-
     Logger.recordOutput(
-        "AimDebug/" + key + "/VirtualTargetPose",
-        new Pose2d(solution.aimPointField, new Rotation2d()));
+        "AimDebug/" + key + "/VirtualTarget", new Pose2d(solution.aimPointField, new Rotation2d()));
   }
 
   private static final class AimSolution {
