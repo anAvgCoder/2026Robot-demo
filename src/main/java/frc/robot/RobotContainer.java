@@ -23,13 +23,7 @@ import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakepivot.IPStorageCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
-import frc.robot.commands.shooter.ShooterAdaptiveAiming;
-import frc.robot.commands.shooter.ShooterAdaptiveHubAiming;
-import frc.robot.commands.shooter.ShooterAdaptiveStorageAiming;
 import frc.robot.commands.turret.AdaptiveHubAiming;
-import frc.robot.commands.turret.AdaptiveHubNoMove;
-import frc.robot.commands.turret.AdaptiveNoMove;
-import frc.robot.commands.turret.AdaptiveStorageAiming;
 import frc.robot.subsystems.belt.Belt;
 import frc.robot.subsystems.belt.BeltConstants;
 import frc.robot.subsystems.belt.BeltIOReal;
@@ -326,7 +320,7 @@ public class RobotContainer {
 
     //  reset blue hub (no photonvision)
 
-      // reset red hub (no photonvision)
+    // reset red hub (no photonvision)
     rightJoy1Button.whileTrue(intakePickupHeldCommand());
     rightJoy1Button.onFalse(intakePickupReleaseCommand());
 
@@ -586,77 +580,76 @@ public class RobotContainer {
   }
 
   private Command intakePickupHeldCommand() {
-  return Commands.parallel(
-          Commands.runOnce(
-              () -> {
-                drive.setSpeedIntake();
-                leftHood.resume();
-                rightHood.resume();
-              }),
-          new IPIntakeCommand(intakePivot),
-          new IRIntakeCommand(intakeRoller),
-          new BeltIntakeCommand(rightBelt),
-          new BeltIntakeCommand(leftBelt),
-          new DiverterCommand(diverter))
-      .withName("Run Intake");
-}
+    return Commands.parallel(
+            Commands.runOnce(
+                () -> {
+                  drive.setSpeedIntake();
+                  leftHood.resume();
+                  rightHood.resume();
+                }),
+            new IPIntakeCommand(intakePivot),
+            new IRIntakeCommand(intakeRoller),
+            new BeltIntakeCommand(rightBelt),
+            new BeltIntakeCommand(leftBelt),
+            new DiverterCommand(diverter))
+        .withName("Run Intake");
+  }
 
-private Command intakePickupReleaseCommand() {
-  return Commands.runOnce(
-          () -> {
-            drive.setSpeedNormal();
-            leftHood.pause();
-            rightHood.pause();
-          })
-      .withName("Stop Intake");
-}
+  private Command intakePickupReleaseCommand() {
+    return Commands.runOnce(
+            () -> {
+              drive.setSpeedNormal();
+              leftHood.pause();
+              rightHood.pause();
+            })
+        .withName("Stop Intake");
+  }
 
-private Command autoIntakeOnNamedCommand() {
-  return Commands.runOnce(
-          () -> {
-            if (activeAutoIntakeCommand != null
-                && CommandScheduler.getInstance().isScheduled(activeAutoIntakeCommand)) {
-              return;
-            }
+  private Command autoIntakeOnNamedCommand() {
+    return Commands.runOnce(
+            () -> {
+              if (activeAutoIntakeCommand != null
+                  && CommandScheduler.getInstance().isScheduled(activeAutoIntakeCommand)) {
+                return;
+              }
 
-            activeAutoIntakeCommand = intakePickupHeldCommand().withName("Auto Run Intake");
-            CommandScheduler.getInstance().schedule(activeAutoIntakeCommand);
-          })
-      .withName("AutoIntakeOn");
-}
+              activeAutoIntakeCommand = intakePickupHeldCommand().withName("Auto Run Intake");
+              CommandScheduler.getInstance().schedule(activeAutoIntakeCommand);
+            })
+        .withName("AutoIntakeOn");
+  }
 
-private Command autoIntakeOffNamedCommand() {
-  return Commands.runOnce(
-          () -> {
-            if (activeAutoIntakeCommand != null) {
-              CommandScheduler.getInstance().cancel(activeAutoIntakeCommand);
-              activeAutoIntakeCommand = null;
-            }
+  private Command autoIntakeOffNamedCommand() {
+    return Commands.runOnce(
+            () -> {
+              if (activeAutoIntakeCommand != null) {
+                CommandScheduler.getInstance().cancel(activeAutoIntakeCommand);
+                activeAutoIntakeCommand = null;
+              }
 
-            drive.setSpeedNormal();
-            leftHood.pause();
-            rightHood.pause();
-          })
-      .withName("AutoIntakeOff");
-}
+              drive.setSpeedNormal();
+              leftHood.pause();
+              rightHood.pause();
+            })
+        .withName("AutoIntakeOff");
+  }
 
-private Command toggleAdaptiveHubAimingNamedCommand() {
-  return Commands.runOnce(
-          () -> {
-            if (activeAdaptiveHubAimingCommand != null
-                && CommandScheduler.getInstance().isScheduled(activeAdaptiveHubAimingCommand)) {
-              CommandScheduler.getInstance().cancel(activeAdaptiveHubAimingCommand);
-              activeAdaptiveHubAimingCommand = null;
-              return;
-            }
+  private Command toggleAdaptiveHubAimingNamedCommand() {
+    return Commands.runOnce(
+            () -> {
+              if (activeAdaptiveHubAimingCommand != null
+                  && CommandScheduler.getInstance().isScheduled(activeAdaptiveHubAimingCommand)) {
+                CommandScheduler.getInstance().cancel(activeAdaptiveHubAimingCommand);
+                activeAdaptiveHubAimingCommand = null;
+                return;
+              }
 
-            activeAdaptiveHubAimingCommand =
-                adaptiveHubAimingCommand().withName("AutoAdaptiveHubAiming");
-            CommandScheduler.getInstance().schedule(activeAdaptiveHubAimingCommand);
-          })
-      .withName("ToggleAdaptiveHubAiming");
-}
-
+              activeAdaptiveHubAimingCommand =
+                  adaptiveHubAimingCommand().withName("AutoAdaptiveHubAiming");
+              CommandScheduler.getInstance().schedule(activeAdaptiveHubAimingCommand);
+            })
+        .withName("ToggleAdaptiveHubAiming");
+  }
 
   private Command adaptiveHubAimingCommand() {
     return deferredCommand(
@@ -676,7 +669,6 @@ private Command toggleAdaptiveHubAimingNamedCommand() {
         leftRotater,
         leftHood);
   }
-
 
   private Command runTeleopPath(String name) {
     String pathFile = TELEOP_PATH_FILES.get(name);
@@ -724,12 +716,11 @@ private Command toggleAdaptiveHubAimingNamedCommand() {
     }
   }
 
-private void registerNamedCommands() {
-  NamedCommands.registerCommand("AutoIntakeOn", autoIntakeOnNamedCommand());
-  NamedCommands.registerCommand("AutoIntakeOff", autoIntakeOffNamedCommand());
-  NamedCommands.registerCommand(
-      "ToggleAdaptiveHubAiming", toggleAdaptiveHubAimingNamedCommand());
-}
+  private void registerNamedCommands() {
+    NamedCommands.registerCommand("AutoIntakeOn", autoIntakeOnNamedCommand());
+    NamedCommands.registerCommand("AutoIntakeOff", autoIntakeOffNamedCommand());
+    NamedCommands.registerCommand("ToggleAdaptiveHubAiming", toggleAdaptiveHubAimingNamedCommand());
+  }
 
   private Command deferredCommand(
       java.util.function.Supplier<Command> supplier, Subsystem... requirements) {
