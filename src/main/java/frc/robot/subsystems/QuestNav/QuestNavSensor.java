@@ -47,6 +47,9 @@ public class QuestNavSensor extends SubsystemBase {
     preZeroFrameCount = 0;
 
     defaultInitialPose = Pose3d.kZero;
+
+    robotPose = defaultInitialPose;
+
     lastV = 0;
     lastVx = 0;
     lastVy = 0;
@@ -93,7 +96,7 @@ public class QuestNavSensor extends SubsystemBase {
     Pose3d questPose;
 
     for (PoseFrame frame : latestPoseFrames) {
-      if (frame.isTracking()) {
+      if (!frame.isTracking()) {
         continue;
       }
 
@@ -111,7 +114,6 @@ public class QuestNavSensor extends SubsystemBase {
   private void samplePoseFrame(PoseFrame frame) {
     last6PoseFrames.add(frame);
 
-    // Remove old poseFrames
     while (last6PoseFrames.size() > 6) {
       last6PoseFrames.remove(0);
     }
@@ -152,10 +154,8 @@ public class QuestNavSensor extends SubsystemBase {
       Pose3d lastPose = last6PoseFrames.get(last6PoseFrames.size() - 1).questPose3d();
       Pose3d firstPose = last6PoseFrames.get(0).questPose3d();
 
-      // check only rotation updates
       dofFlag = lastPose.getX() == firstPose.getX() && lastPose.getY() == firstPose.getY();
 
-      // check pose jumps
       poseJumpFlag = lastV > DriveConstants.maxSpeedMetersPerSec;
       poseJumpFlag |= lastWz > DriveConstants.maxSpeedMetersPerSec / DriveConstants.driveBaseRadius;
 
