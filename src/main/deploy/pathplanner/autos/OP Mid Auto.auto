@@ -11,34 +11,21 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Bottom 1-4 Up"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "StartPick"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "AdaptiveStorageAimingNoMove"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "AdaptiveStorageAimingShooter"
-                }
-              }
-            ]
+            "name": "AutoIntakeOn"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ToggleAdaptiveHubAiming"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Bottom 1-4 Up"
           }
         }
       ]

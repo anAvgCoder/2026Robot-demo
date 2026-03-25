@@ -5,22 +5,28 @@
     "data": {
       "commands": [
         {
-          "type": "sequential",
+          "type": "path",
+          "data": {
+            "pathName": "Under Trench To Top 5-8"
+          }
+        },
+        {
+          "type": "parallel",
           "data": {
             "commands": [
               {
                 "type": "path",
                 "data": {
-                  "pathName": "To Top 5-8"
-                }
-              },
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Top 5-8 Down"
+                  "pathName": "Trench To Top 5-8"
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Top 5-8 Down"
           }
         }
       ]

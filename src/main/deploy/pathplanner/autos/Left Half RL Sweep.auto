@@ -5,54 +5,27 @@
     "data": {
       "commands": [
         {
-          "type": "sequential",
+          "type": "path",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "To Top 5-8"
-                }
-              },
-              {
-                "type": "parallel",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "AdaptiveStorageAimingShooter"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "AdaptiveStorageAimingNoMove"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "StartPick"
-                      }
-                    },
-                    {
-                      "type": "sequential",
-                      "data": {
-                        "commands": [
-                          {
-                            "type": "path",
-                            "data": {
-                              "pathName": "Top 5-8 to Half"
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
+            "pathName": "To Top 5-8"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoIntakeOn"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ToggleAdaptiveHubAiming"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Top 5-8 to Half"
           }
         }
       ]

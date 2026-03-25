@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 5.910382812500001,
+        "y": 7.370744444444444
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 8.281350622106482,
+        "y": 7.456261212384259
+      },
+      "isLocked": false,
+      "linkedName": "Trench Exit"
+    },
+    {
+      "anchor": {
+        "x": 8.244122681883024,
+        "y": 6.978544935805992
+      },
+      "prevControl": {
+        "x": 8.073365234375,
+        "y": 7.508946469907407
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "Top 5-8"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 1.5,
+    "maxAcceleration": 1.5,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 1.5,
+    "rotation": 90.0
+  },
+  "reversed": false,
+  "folder": "5-8",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "useDefaultConstraints": false
+}

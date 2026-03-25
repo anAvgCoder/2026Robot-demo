@@ -141,17 +141,21 @@ public class AdaptiveHubAiming extends Command {
   }
 
   private void updateTargetChoice(Pose2d robotPose) {
-    if (robotPose.getX() < Units.inchesToMeters(165)) {
-      targetChoice = Target.HUB;
-      Logger.recordOutput("AimDebug/FieldZone", "driver side");
-    } else if (robotPose.getX() < Units.inchesToMeters(200)) {
-      targetChoice = Target.NONE;
+    double xM = robotPose.getX();
+    
+    double normalizedX = isBlue ? xM : (Units.inchesToMeters(FieldConstants.FIELD_LENGTH_INCHES) - xM);
+
+    if (normalizedX < Units.inchesToMeters(165)) {
+        targetChoice = Target.HUB;
+      Logger.recordOutput("AimDebug/FieldZone", "hub");
+    } else if (normalizedX < Units.inchesToMeters(200)) {
+        targetChoice = Target.NONE;
       Logger.recordOutput("AimDebug/FieldZone", "close trench zone");
     } else if (robotPose.getY() < Units.inchesToMeters(FieldConstants.FIELD_WIDTH_INCHES / 2)) {
-      targetChoice = Target.OUTPOST;
+        targetChoice = Target.OUTPOST;
       Logger.recordOutput("AimDebug/FieldZone", "outpost");
     } else {
-      targetChoice = Target.DEPOT;
+        targetChoice = Target.DEPOT;
       Logger.recordOutput("AimDebug/FieldZone", "depot");
     }
   }
@@ -185,70 +189,70 @@ public class AdaptiveHubAiming extends Command {
   }
 
   private AimSolution solveAim(
-      Pose2d robotPose,
-      ChassisSpeeds robotRelativeSpeeds,
-      Translation2d turretOffsetRobot,
-      double turretMountAngleDeg,
-      Translation2d targetField) {
+    Pose2d robotPose,
+    ChassisSpeeds robotRelativeSpeeds,
+    Translation2d turretOffsetRobot,
+    double turretMountAngleDeg,
+    Translation2d targetField) {
 
-    Translation2d turretOffsetField = turretOffsetRobot.rotateBy(robotPose.getRotation());
-    Translation2d pivotFieldPosition = robotPose.getTranslation().plus(turretOffsetField);
+  Translation2d turretOffsetField = turretOffsetRobot.rotateBy(robotPose.getRotation());
+  Translation2d pivotFieldPosition = robotPose.getTranslation().plus(turretOffsetField);
 
-    ChassisSpeeds fieldSpeeds =
-        ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
+  ChassisSpeeds fieldSpeeds =
+      ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
 
-    Translation2d pivotFieldVelocity =
-        computePivotFieldVelocity(
-            fieldSpeeds, turretOffsetField, robotRelativeSpeeds.omegaRadiansPerSecond);
+  Translation2d pivotFieldVelocity =
+      computePivotFieldVelocity(
+          fieldSpeeds, turretOffsetField, robotRelativeSpeeds.omegaRadiansPerSecond);
 
-    Translation2d releasePivotFieldPosition =
-        addScaled(pivotFieldPosition, pivotFieldVelocity, SHOT_RELEASE_DELAY_SEC);
+  Translation2d releasePivotFieldPosition =
+      addScaled(pivotFieldPosition, pivotFieldVelocity, SHOT_RELEASE_DELAY_SEC);
 
-    double tofSeconds = flightTimeSecondsSafe(releasePivotFieldPosition.getDistance(targetField));
-    Translation2d aimPointField = targetField;
-    double aimPathDistMeters = releasePivotFieldPosition.getDistance(targetField);
+  double shotDistanceMeters = releasePivotFieldPosition.getDistance(targetField);
 
-    for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
-      Translation2d newAimPoint = addScaled(targetField, pivotFieldVelocity, -tofSeconds);
-      double newAimPathDist = releasePivotFieldPosition.getDistance(newAimPoint);
-      double newTof = flightTimeSecondsSafe(newAimPathDist);
+  double aimPathDistanceMeters = shotDistanceMeters;
+  double tofSeconds = flightTimeSecondsSafe(aimPathDistanceMeters);
+  Translation2d aimPointField = targetField;
 
-      aimPointField = newAimPoint;
-      aimPathDistMeters = newAimPathDist;
+  for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
+    Translation2d newAimPoint = addScaled(targetField, pivotFieldVelocity, -tofSeconds);
+    double newAimPathDistanceMeters = releasePivotFieldPosition.getDistance(newAimPoint);
+    double newTof = flightTimeSecondsSafe(newAimPathDistanceMeters);
 
-      if (Math.abs(newTof - tofSeconds) < TOF_EPSILON_SEC) {
-        tofSeconds = newTof;
-        break;
-      }
+    aimPointField = newAimPoint;
+    aimPathDistanceMeters = newAimPathDistanceMeters;
+
+    if (Math.abs(newTof - tofSeconds) < TOF_EPSILON_SEC) {
       tofSeconds = newTof;
+      break;
     }
-
-    ShotSetpoint shotSetpoint = shotTable.get(aimPathDistMeters);
-
-    double shotDistanceMeters = releasePivotFieldPosition.getDistance(targetField);
-
-    double fieldAimAngleRad =
-        Math.atan2(
-            aimPointField.getY() - releasePivotFieldPosition.getY(),
-            aimPointField.getX() - releasePivotFieldPosition.getX());
-
-    double turretRelativeRad =
-        MathUtil.angleModulus(fieldAimAngleRad - robotPose.getRotation().getRadians());
-    turretRelativeRad =
-        MathUtil.angleModulus(turretRelativeRad - Math.toRadians(turretMountAngleDeg));
-
-    return new AimSolution(
-        Math.toDegrees(turretRelativeRad),
-        fieldAimAngleRad,
-        shotDistanceMeters,
-        aimPathDistMeters,
-        tofSeconds,
-        shotSetpoint,
-        pivotFieldPosition,
-        releasePivotFieldPosition,
-        aimPointField,
-        pivotFieldVelocity);
+    tofSeconds = newTof;
   }
+
+  ShotSetpoint shotSetpoint = shotTable.get(aimPathDistanceMeters);
+
+  double fieldAimAngleRad =
+      Math.atan2(
+          aimPointField.getY() - releasePivotFieldPosition.getY(),
+          aimPointField.getX() - releasePivotFieldPosition.getX());
+
+  double turretRelativeRad =
+      MathUtil.angleModulus(fieldAimAngleRad - robotPose.getRotation().getRadians());
+  turretRelativeRad =
+      MathUtil.angleModulus(turretRelativeRad - Math.toRadians(turretMountAngleDeg));
+
+  return new AimSolution(
+      Math.toDegrees(turretRelativeRad),
+      fieldAimAngleRad,
+      shotDistanceMeters,
+      aimPathDistanceMeters,
+      tofSeconds,
+      shotSetpoint,
+      pivotFieldPosition,
+      releasePivotFieldPosition,
+      aimPointField,
+      pivotFieldVelocity);
+}
 
   private Translation2d computePivotFieldVelocity(
       ChassisSpeeds fieldRelativeSpeeds,

@@ -79,7 +79,7 @@ public class FieldConstants {
   public static final Pose3d RED_DEPOT_POSE3D =
       new Pose3d(
           Units.inchesToMeters(FIELD_LENGTH_INCHES - 36),
-          Units.inchesToMeters(FIELD_WIDTH_INCHES - 60),
+          Units.inchesToMeters(60),
           Units.inchesToMeters(0.0),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 }

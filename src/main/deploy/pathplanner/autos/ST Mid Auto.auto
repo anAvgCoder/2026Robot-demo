@@ -15,24 +15,6 @@
           "data": {
             "commands": [
               {
-                "type": "named",
-                "data": {
-                  "name": "AdaptiveStorageAimingNoMove"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "AdaptiveStorageAimingShooter"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "StartPick"
-                }
-              },
-              {
                 "type": "path",
                 "data": {
                   "pathName": "Top 1-4 Down"

@@ -144,6 +144,9 @@ public class RobotContainer {
   private int activePathToken = 0;
   private Command activePathCommand = null;
 
+  private Command activeAutoIntakeCommand = null;
+  private Command activeAdaptiveHubAimingCommand = null;
+
   private static final Map<String, String> TELEOP_PATH_FILES =
       Map.of(
           "ST Push Balls", "ST Push Balls",
@@ -323,30 +326,9 @@ public class RobotContainer {
 
     //  reset blue hub (no photonvision)
 
-    // reset red hub (no photonvision)
-
-    rightJoy1Button.whileTrue(
-        Commands.parallel(
-                Commands.runOnce(
-                    () -> {
-                      drive.setSpeedIntake();
-                      leftHood.resume();
-                      rightHood.resume();
-                    }),
-                new IPIntakeCommand(intakePivot),
-                new IRIntakeCommand(intakeRoller),
-                new BeltIntakeCommand(rightBelt),
-                new BeltIntakeCommand(leftBelt),
-                new DiverterCommand(diverter))
-            .withName("Run Intake"));
-
-    rightJoy1Button.onFalse(
-        Commands.runOnce(
-            () -> {
-              drive.setSpeedNormal();
-              leftHood.pause();
-              rightHood.pause();
-            }));
+      // reset red hub (no photonvision)
+    rightJoy1Button.whileTrue(intakePickupHeldCommand());
+    rightJoy1Button.onFalse(intakePickupReleaseCommand());
 
     // joystick right button 2 (middle top below hat) is drive to angle
     rightJoy2Button.whileTrue(
@@ -603,16 +585,78 @@ public class RobotContainer {
     return DriverStation.getAlliance().orElse(Alliance.Blue) != Alliance.Red;
   }
 
-  private Command adaptiveHubNoMoveCommand() {
-    return deferredCommand(
-        () ->
-            new AdaptiveHubNoMove(
-                rightRotater, rightHood, leftRotater, leftHood, drive, isBlueAlliance(), shotTable),
-        rightRotater,
-        rightHood,
-        leftRotater,
-        leftHood);
-  }
+  private Command intakePickupHeldCommand() {
+  return Commands.parallel(
+          Commands.runOnce(
+              () -> {
+                drive.setSpeedIntake();
+                leftHood.resume();
+                rightHood.resume();
+              }),
+          new IPIntakeCommand(intakePivot),
+          new IRIntakeCommand(intakeRoller),
+          new BeltIntakeCommand(rightBelt),
+          new BeltIntakeCommand(leftBelt),
+          new DiverterCommand(diverter))
+      .withName("Run Intake");
+}
+
+private Command intakePickupReleaseCommand() {
+  return Commands.runOnce(
+          () -> {
+            drive.setSpeedNormal();
+            leftHood.pause();
+            rightHood.pause();
+          })
+      .withName("Stop Intake");
+}
+
+private Command autoIntakeOnNamedCommand() {
+  return Commands.runOnce(
+          () -> {
+            if (activeAutoIntakeCommand != null
+                && CommandScheduler.getInstance().isScheduled(activeAutoIntakeCommand)) {
+              return;
+            }
+
+            activeAutoIntakeCommand = intakePickupHeldCommand().withName("Auto Run Intake");
+            CommandScheduler.getInstance().schedule(activeAutoIntakeCommand);
+          })
+      .withName("AutoIntakeOn");
+}
+
+private Command autoIntakeOffNamedCommand() {
+  return Commands.runOnce(
+          () -> {
+            if (activeAutoIntakeCommand != null) {
+              CommandScheduler.getInstance().cancel(activeAutoIntakeCommand);
+              activeAutoIntakeCommand = null;
+            }
+
+            drive.setSpeedNormal();
+            leftHood.pause();
+            rightHood.pause();
+          })
+      .withName("AutoIntakeOff");
+}
+
+private Command toggleAdaptiveHubAimingNamedCommand() {
+  return Commands.runOnce(
+          () -> {
+            if (activeAdaptiveHubAimingCommand != null
+                && CommandScheduler.getInstance().isScheduled(activeAdaptiveHubAimingCommand)) {
+              CommandScheduler.getInstance().cancel(activeAdaptiveHubAimingCommand);
+              activeAdaptiveHubAimingCommand = null;
+              return;
+            }
+
+            activeAdaptiveHubAimingCommand =
+                adaptiveHubAimingCommand().withName("AutoAdaptiveHubAiming");
+            CommandScheduler.getInstance().schedule(activeAdaptiveHubAimingCommand);
+          })
+      .withName("ToggleAdaptiveHubAiming");
+}
+
 
   private Command adaptiveHubAimingCommand() {
     return deferredCommand(
@@ -633,76 +677,6 @@ public class RobotContainer {
         leftHood);
   }
 
-  private Command adaptiveStorageNoMoveCommand() {
-    return deferredCommand(
-            () ->
-                new AdaptiveNoMove(
-                    rightRotater,
-                    rightHood,
-                    leftRotater,
-                    leftHood,
-                    drive,
-                    isBlueAlliance(),
-                    shotTable),
-            rightRotater,
-            rightHood,
-            leftRotater,
-            leftHood)
-        .withName("deferred AdaptiveNoMove");
-  }
-
-  private Command adaptiveStorageAimingCommand() {
-    return deferredCommand(
-            () ->
-                new AdaptiveStorageAiming(
-                    rightRotater,
-                    rightHood,
-                    leftRotater,
-                    leftHood,
-                    drive,
-                    isBlueAlliance(),
-                    shotTable),
-            rightRotater,
-            rightHood,
-            leftRotater,
-            leftHood)
-        .withName("deferred AdaptiveStorageAiming");
-  }
-
-  private Command shooterAdaptiveAimingCommand() {
-    return deferredCommand(
-        () ->
-            new ShooterAdaptiveAiming(
-                rightRotater,
-                rightShooter,
-                rightHood,
-                leftRotater,
-                leftShooter,
-                leftHood,
-                drive,
-                isBlueAlliance()), // , shotTable),
-        rightShooter,
-        leftShooter);
-  }
-
-  private Command shooterAdaptiveHubAimingCommand() {
-    return deferredCommand(
-        () ->
-            new ShooterAdaptiveHubAiming(
-                rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
-        rightShooter,
-        leftShooter);
-  }
-
-  private Command shooterAdaptiveStorageAimingCommand() {
-    return deferredCommand(
-            () ->
-                new ShooterAdaptiveStorageAiming(
-                    rightShooter, leftShooter, drive, isBlueAlliance(), shotTable),
-            rightShooter,
-            leftShooter)
-        .withName("deferred ShooterAdaptiveStorageAiming");
-  }
 
   private Command runTeleopPath(String name) {
     String pathFile = TELEOP_PATH_FILES.get(name);
@@ -750,24 +724,12 @@ public class RobotContainer {
     }
   }
 
-  private void registerNamedCommands() {
-    NamedCommands.registerCommand(
-        "StartPick",
-        Commands.runOnce(
-                () -> {
-                  intakePivot.setIntakeExtended();
-                  intakeRoller.getIO().intake();
-                  leftBelt.getIO().intake();
-                  rightBelt.getIO().intake();
-                  diverter.getIO().intake();
-                })
-            .withName("StartPick"));
-
-    NamedCommands.registerCommand(
-        "AdaptiveStorageAimingShooter", shooterAdaptiveStorageAimingCommand());
-
-    NamedCommands.registerCommand("AdaptiveStorageAimingNoMove", adaptiveStorageNoMoveCommand());
-  }
+private void registerNamedCommands() {
+  NamedCommands.registerCommand("AutoIntakeOn", autoIntakeOnNamedCommand());
+  NamedCommands.registerCommand("AutoIntakeOff", autoIntakeOffNamedCommand());
+  NamedCommands.registerCommand(
+      "ToggleAdaptiveHubAiming", toggleAdaptiveHubAimingNamedCommand());
+}
 
   private Command deferredCommand(
       java.util.function.Supplier<Command> supplier, Subsystem... requirements) {
