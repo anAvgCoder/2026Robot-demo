@@ -154,6 +154,9 @@ public class RobotContainer {
   private final PathConstraints pathfindConstraints =
       new PathConstraints(1.5, 1.5, Units.degreesToRadians(540), Units.degreesToRadians(720));
 
+  //  testing   SingleMotorVelocityPIDFSparkMaxTest test = new
+  // SingleMotorVelocityPIDFSparkMaxTest();
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     questSensor = new QuestNavSensor();
@@ -171,7 +174,10 @@ public class RobotContainer {
         vision = new Vision(new PhotonVisionIO(drive));
 
         diverter = new Diverter(new DiverterIOReal());
+
         leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft), "BeltLeft");
+        //  testing leftBelt = new Belt(new BeltIOSim(), "BeltLeft");
+
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight), "BeltRight");
         intakePivot =
             new IntakePivot(

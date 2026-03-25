@@ -9,6 +9,7 @@ public interface BeltIO {
     public double supplyCurrent;
     public double velocityRPM;
     public double tempCelcius;
+    public double setpointRPM;
     public boolean paused;
   }
 

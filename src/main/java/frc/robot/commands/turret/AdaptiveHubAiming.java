@@ -80,10 +80,10 @@ public class AdaptiveHubAiming extends Command {
     ChassisSpeeds robotRelativeSpeeds = drive.getRobotRelativeSpeeds();
 
     // Pick target based on field zone
-    if (robotPose.getX() < 3.8) {
+    if (robotPose.getX() < Units.inchesToMeters(165)) {
       targetChoice = Target.HUB;
       Logger.recordOutput("AimDebug/FieldZone", "driver side");
-    } else if (robotPose.getX() < 6) {
+    } else if (robotPose.getX() < Units.inchesToMeters(200)) {
       targetChoice = Target.NONE;
       Logger.recordOutput("AimDebug/FieldZone", "close trench zone");
     } else {
@@ -108,12 +108,27 @@ public class AdaptiveHubAiming extends Command {
             getTurretOffsetRobot(true),
             RotaterConstants.turretRightAngleLocation,
             targetField);
+    AimSolution rightSolutionTest =
+        solveAimTest(
+            robotPose,
+            robotRelativeSpeeds,
+            getTurretOffsetRobot(true),
+            RotaterConstants.turretRightAngleLocation,
+            targetField);
 
-    hoodRight.setHoodPosition(rightSolution.shotSetpoint.hoodPos());
-    shooterRight.setVelocityRPM(rightSolution.shotSetpoint.shooterSpeed());
+    hoodRight.setHoodPosition(rightSolutionTest.shotSetpoint.hoodPos());
+    shooterRight.setVelocityRPM(rightSolutionTest.shotSetpoint.shooterSpeed());
     logAimSolution("Right", rightSolution);
+    logAimSolution("RightTest", rightSolutionTest);
 
     // Solve left turret
+    AimSolution leftSolutionTest =
+        solveAimTest(
+            robotPose,
+            robotRelativeSpeeds,
+            getTurretOffsetRobot(false),
+            RotaterConstants.turretLeftAngleLocation,
+            targetField);
     AimSolution leftSolution =
         solveAim(
             robotPose,
@@ -122,9 +137,10 @@ public class AdaptiveHubAiming extends Command {
             RotaterConstants.turretLeftAngleLocation,
             targetField);
 
-    hoodLeft.setHoodPosition(leftSolution.shotSetpoint.hoodPos());
-    shooterLeft.setVelocityRPM(leftSolution.shotSetpoint.shooterSpeed());
+    hoodLeft.setHoodPosition(leftSolutionTest.shotSetpoint.hoodPos());
+    shooterLeft.setVelocityRPM(leftSolutionTest.shotSetpoint.shooterSpeed());
     logAimSolution("Left", leftSolution);
+    logAimSolution("LeftTest", leftSolutionTest);
 
     // Solve center (virtual turret at y=0) for rotation coordination
     AimSolution centerSolution =
@@ -253,6 +269,78 @@ public class AdaptiveHubAiming extends Command {
         pivotFieldVelocity);
   }
 
+  private AimSolution solveAimTest(
+      Pose2d robotPose,
+      ChassisSpeeds robotRelativeSpeeds,
+      Translation2d turretOffsetRobot,
+      double turretMountAngleDeg,
+      Translation2d targetField) {
+
+    Translation2d turretOffsetField = turretOffsetRobot.rotateBy(robotPose.getRotation());
+    Translation2d pivotFieldPosition = robotPose.getTranslation().plus(turretOffsetField);
+
+    ChassisSpeeds fieldRelativeSpeeds =
+        ChassisSpeeds.fromRobotRelativeSpeeds(robotRelativeSpeeds, robotPose.getRotation());
+
+    Translation2d pivotFieldVelocity =
+        computePivotFieldVelocity(
+            fieldRelativeSpeeds, turretOffsetField, robotRelativeSpeeds.omegaRadiansPerSecond);
+
+    // Where the turret will be when the ball actually exits (accounts for mechanical delay)
+    Translation2d releasePivotFieldPosition =
+        addScaledTest(pivotFieldPosition, pivotFieldVelocity, SHOT_RELEASE_DELAY_SEC);
+    double shotDistanceMeters = releasePivotFieldPosition.getDistance(targetField);
+
+    double tofSeconds = flightTimeSecondsSafe(shotDistanceMeters);
+    Translation2d aimPointField = targetField;
+    double aimPathDistanceMeters = shotDistanceMeters;
+
+    // Iterative lead solver — converge aim point with time-of-flight
+    for (int i = 0; i < LOOKAHEAD_ITERS; i++) {
+      double leadTimeSeconds =
+          MathUtil.clamp(SHOT_RELEASE_DELAY_SEC + tofSeconds, 0.0, MAX_LEAD_TIME_SEC);
+
+      Translation2d newAimPointField =
+          addScaledTest(targetField, pivotFieldVelocity, -leadTimeSeconds);
+      double newAimPathDistanceMeters = pivotFieldPosition.getDistance(newAimPointField);
+      double newTofSeconds = flightTimeSecondsSafe(newAimPathDistanceMeters);
+
+      aimPointField = newAimPointField;
+      aimPathDistanceMeters = newAimPathDistanceMeters;
+
+      if (Math.abs(newTofSeconds - tofSeconds) < TOF_EPSILON_SEC) {
+        tofSeconds = newTofSeconds;
+        break;
+      }
+
+      tofSeconds = newTofSeconds;
+    }
+
+    // Use the lead-compensated distance for BOTH hood and shooter RPM
+    ShotSetpoint shotSetpoint = shotTable.get(aimPathDistanceMeters);
+
+    double fieldAimAngleRad =
+        Math.atan2(
+            aimPointField.getY() - pivotFieldPosition.getY(),
+            aimPointField.getX() - pivotFieldPosition.getX());
+
+    double turretRelativeRad =
+        MathUtil.angleModulus(fieldAimAngleRad - robotPose.getRotation().getRadians());
+    turretRelativeRad =
+        MathUtil.angleModulus(turretRelativeRad - Math.toRadians(turretMountAngleDeg));
+
+    return new AimSolution(
+        Math.toDegrees(turretRelativeRad),
+        fieldAimAngleRad,
+        shotDistanceMeters,
+        aimPathDistanceMeters,
+        tofSeconds,
+        shotSetpoint,
+        pivotFieldPosition,
+        aimPointField,
+        pivotFieldVelocity);
+  }
+
   private Translation2d computePivotFieldVelocity(
       ChassisSpeeds fieldRelativeSpeeds,
       Translation2d turretOffsetField,
@@ -282,6 +370,12 @@ public class AdaptiveHubAiming extends Command {
     return new Translation2d(
         position.getX() + velocity.getX() * dtSeconds,
         position.getY() + velocity.getY() * dtSeconds);
+  }
+
+  private Translation2d addScaledTest(
+      Translation2d position, Translation2d velocity, double dtSeconds) {
+    return new Translation2d(
+        position.getX() + velocity.getX() * 0, position.getY() + velocity.getY() * 0);
   }
 
   private double flightTimeSecondsSafe(double distanceMeters) {
