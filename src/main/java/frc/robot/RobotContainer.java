@@ -595,6 +595,10 @@ public class RobotContainer {
         .withName("Run Intake");
   }
 
+  private Command intakePickupOutCommand() {
+    return Commands.parallel(new IPIntakeCommand(intakePivot).withName("Run IntakePivot Out"));
+  }
+
   private Command intakePickupReleaseCommand() {
     return Commands.runOnce(
             () -> {
@@ -719,6 +723,7 @@ public class RobotContainer {
   private void registerNamedCommands() {
     NamedCommands.registerCommand("AutoIntakeOn", autoIntakeOnNamedCommand());
     NamedCommands.registerCommand("AutoIntakeOff", autoIntakeOffNamedCommand());
+    NamedCommands.registerCommand("IntakeOut", intakePickupOutCommand());
     NamedCommands.registerCommand("ToggleAdaptiveHubAiming", toggleAdaptiveHubAimingNamedCommand());
   }
 
