@@ -206,9 +206,13 @@ public class Drive extends SubsystemBase {
         }
 
         if (quest.isWorking()) {
+          // Quest is the primary source of truth: hard-reset the estimator to
+          // the quest pose every sample so wheel odometry drift cannot accumulate.
           poseEstimator.resetPosition(
               quest.getRobotPose().getRotation(), modulePositions, quest.getRobotPose());
         } else {
+          // Quest unavailable: fall back to wheel odometry + gyro only.
+          // Vision measurements are fused separately via addVisionMeasurement().
           poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
         }
       }
@@ -216,6 +220,7 @@ public class Drive extends SubsystemBase {
       odometryLock.unlock();
     }
 
+    Logger.recordOutput("QuestNav/isWorking", quest.isWorking());
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
   }
 
@@ -379,10 +384,23 @@ public class Drive extends SubsystemBase {
     quest.zeroQuestPose(pose);
   }
 
+  /**
+   * Adds a vision measurement to the pose estimator.
+   *
+   * <p>Vision is only fused when the QuestNav is NOT working. When the quest is
+   * active it is the sole source of truth and camera measurements are ignored to
+   * prevent conflicting corrections.
+   */
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
       Matrix<N3, N1> visionMeasurementStdDevs) {
+
+    // Skip camera updates entirely while the quest is providing poses.
+    if (quest.isWorking()) {
+      return;
+    }
+
     odometryLock.lock();
     try {
       poseEstimator.addVisionMeasurement(
@@ -405,17 +423,14 @@ public class Drive extends SubsystemBase {
   }
 
   public void setSpeedIntake() {
-
     speedScale = DriveConstants.intakeSpeedFactor;
   }
 
   public void setSpeedFull() {
-
     speedScale = DriveConstants.fullSpeedFactor;
   }
 
   public void setSpeedNormal() {
-
     speedScale = DriveConstants.normalSpeedFactor;
   }
 }

@@ -46,8 +46,10 @@ public class QuestNavSensor extends SubsystemBase {
     latestPoseFrames = new PoseFrame[] {};
     preZeroFrameCount = 0;
 
-    defaultInitialPose = Pose3d.kZero;
+    defaultInitialPose = new Pose3d();
 
+    // FIX: Initialize robotPose so getRobotPose() never throws NPE before
+    // the first valid frame arrives.
     robotPose = defaultInitialPose;
 
     lastV = 0;
@@ -93,17 +95,22 @@ public class QuestNavSensor extends SubsystemBase {
       latestPoseFrames = quest.getAllUnreadPoseFrames();
     }
 
-    Pose3d questPose;
-
     for (PoseFrame frame : latestPoseFrames) {
+      // FIX: Skip frames where tracking is lost (original condition was inverted,
+      // causing all valid frames to be skipped).
       if (!frame.isTracking()) {
+        continue;
+      }
+
+      // FIX: Guard against null pose data from the headset.
+      Pose3d questPose = frame.questPose3d();
+      if (questPose == null) {
         continue;
       }
 
       Logger.recordOutput("QuestNav/PoseFrames", frame);
       samplePoseFrame(frame);
 
-      questPose = frame.questPose3d();
       robotPose = questPose.transformBy(ROBOT_TO_QUEST.inverse());
 
       Logger.recordOutput("QuestNav/QuestPose", questPose);
@@ -128,11 +135,16 @@ public class QuestNavSensor extends SubsystemBase {
       preZeroFrameCount = 0;
     }
 
+    // FIX: orElse(0.0) safely handles an empty OptionalDouble. The original
+    // getAsDouble() throws NoSuchElementException when the headset hasn't
+    // reported a timestamp yet, which crashes the entire setPose / reset-button flow.
+    double appTimestamp = quest.getAppTimestamp().orElse(0.0);
+
     PoseFrame zeroFrame =
         new PoseFrame(
             pose,
             RobotController.getFPGATime() / 1e6,
-            quest.getAppTimestamp().getAsDouble(),
+            appTimestamp,
             preZeroFrameCount + 1,
             quest.isTracking());
 
