@@ -58,28 +58,28 @@ public class FieldConstants {
   public static final Pose3d BLUE_OUTPOST_POSE3D =
       new Pose3d(
           Units.inchesToMeters(24), // x field length
-          Units.inchesToMeters(42), // y field width
+          Units.inchesToMeters(60), // y field width
           Units.inchesToMeters(0.0),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 
   public static final Pose3d RED_OUTPOST_POSE3D =
       new Pose3d(
           Units.inchesToMeters(FIELD_LENGTH_INCHES - 24),
-          Units.inchesToMeters(FIELD_WIDTH_INCHES - 42),
+          Units.inchesToMeters(FIELD_WIDTH_INCHES - 60),
           Units.inchesToMeters(0.0),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 
   public static final Pose3d BLUE_DEPOT_POSE3D =
       new Pose3d(
           Units.inchesToMeters(36), // x field length
-          Units.inchesToMeters(FIELD_WIDTH_INCHES - 42), // y field width
+          Units.inchesToMeters(FIELD_WIDTH_INCHES - 60), // y field width
           Units.inchesToMeters(0.0),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 
   public static final Pose3d RED_DEPOT_POSE3D =
       new Pose3d(
           Units.inchesToMeters(FIELD_LENGTH_INCHES - 36),
-          Units.inchesToMeters(FIELD_WIDTH_INCHES - 42),
+          Units.inchesToMeters(FIELD_WIDTH_INCHES - 60),
           Units.inchesToMeters(0.0),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 }
