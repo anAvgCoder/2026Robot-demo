@@ -1,6 +1,6 @@
 package frc.robot;
 
-import static frc.robot.subsystems.questNav.QuestNavConstants.ROBOT_TO_QUEST;
+import static frc.robot.subsystems.questnav.QuestNavConstants.ROBOT_TO_QUEST;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
@@ -37,17 +38,17 @@ import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.ModuleIOSim;
 import frc.robot.subsystems.drive.ModuleIOSpark;
-import frc.robot.subsystems.intakePivot.IntakePivot;
-import frc.robot.subsystems.intakePivot.IntakePivotConstants;
-import frc.robot.subsystems.intakePivot.IntakePivotIOReal;
-import frc.robot.subsystems.intakePivot.IntakePivotIOReplay;
-import frc.robot.subsystems.intakePivot.IntakePivotIOSim;
-import frc.robot.subsystems.intakeRoller.IntakeRoller;
-import frc.robot.subsystems.intakeRoller.IntakeRollerIO;
-import frc.robot.subsystems.intakeRoller.IntakeRollerIOReal;
-import frc.robot.subsystems.intakeRoller.IntakeRollerIOSim;
-import frc.robot.subsystems.questNav.QuestNavConstants;
-import frc.robot.subsystems.questNav.QuestNavSensor;
+import frc.robot.subsystems.intakepivot.IntakePivot;
+import frc.robot.subsystems.intakepivot.IntakePivotConstants;
+import frc.robot.subsystems.intakepivot.IntakePivotIOReal;
+import frc.robot.subsystems.intakepivot.IntakePivotIOReplay;
+import frc.robot.subsystems.intakepivot.IntakePivotIOSim;
+import frc.robot.subsystems.intakeroller.IntakeRoller;
+import frc.robot.subsystems.intakeroller.IntakeRollerIO;
+import frc.robot.subsystems.intakeroller.IntakeRollerIOReal;
+import frc.robot.subsystems.intakeroller.IntakeRollerIOSim;
+import frc.robot.subsystems.questnav.QuestNavConstants;
+import frc.robot.subsystems.questnav.QuestNavSensor;
 import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.hood.Hood;
 import frc.robot.subsystems.turret.hood.HoodConstants;
@@ -151,8 +152,6 @@ public class RobotContainer {
   private final PathConstraints pathfindConstraints =
       new PathConstraints(1.5, 1.5, Units.degreesToRadians(540), Units.degreesToRadians(720));
 
-  // SingleMotorVelocityPIDFSparkMaxTest test = new SingleMotorVelocityPIDFSparkMaxTest();
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     questSensor = new QuestNavSensor();
@@ -172,7 +171,6 @@ public class RobotContainer {
         diverter = new Diverter(new DiverterIOReal());
 
         leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft), "BeltLeft");
-        // leftBelt = new Belt(new BeltIOSim(), "BeltLeft");
 
         rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight), "BeltRight");
         intakePivot =
@@ -258,11 +256,6 @@ public class RobotContainer {
     configureButtonBindings();
   }
 
-  /**
-   * Use this method to define button->command mappings.
-   *
-   * <p>Hold-style controls use whileTrue so the command is canceled automatically on release.
-   */
   private void configureButtonBindings() {
 
     drive.setDefaultCommand(
@@ -272,74 +265,21 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
-    //  all this is driven off pose unless manual position is selected, then will stay manual until
-    //    re-enable of auto button is selected  (start shooter in blue button bottom row will redo
-    // auto run)
-    //       (shooter stop will be removed in comp)
-    //
-    //   shooter default command
-    //     shooter always runs
-    //     hoods are automatic
-
-    //   shooter should aways track robot pose for close side
-    //     shooter should track to outpost and other when in mid field
-    //    hoods should go down automatically when approaching trench - also disable belts
-    // temporarily
-
-    // key button board maps
-    //  top right button 1        -   60 angle
-    //  top middle buttone 2      -   zero angle for shooters
-    //  top left button 3         -   60 angle
-    //  top 2 row right button 4  -   90 angle
-    //  top 2 row middle button 5 -   force hood down - maybe add belt and intake stop
-    //  top 2 row left button 6   -   90 angle
-
-    // lower panel from top
-    //  row 1     turn turets set degree from current position
-    //  row 2     hood up down
-    //  row 3     speed up down
-    //  row 4     shooter and hood enable and disable for testing only (to override default command)
-
-    // joystick trigger right trigger will do intake and speed robot to intake pace  (intake out if
-    // not out) run belts
-
-    // joystick right button 2 (middle top below hat) is drive to angle
-
-    // joystick button button 3 is turbo speed (100% power)
-    // joystick button button 4 is turbo speed (100% power)
-
-    //  joystick left trigger is outtake
-
-    //  joystick left button 2 is intake in while held goes back out after
-
-    //  joystick 3 and 4 will be sweep left and right
-
-    //  reset blue (if no photonvision)
-
-    //  reset red (if not photonvision)
-
-    //  reset blue hub (no photonvision)
-
-    // reset red hub (no photonvision)
     rightJoy1Button.whileTrue(intakePickupHeldCommand());
     rightJoy1Button.onFalse(intakePickupReleaseCommand());
 
-    // joystick right button 2 (middle top below hat) is drive to angle
     rightJoy2Button.whileTrue(
         DriveCommands.joystickDriveAtAngle(
             drive,
             () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0));
 
-    // joystick button button 3 is full speed
     rightJoy3Button.whileTrue(Commands.runOnce(drive::setSpeedFull).withName("set speed full"));
     rightJoy3Button.onFalse(Commands.runOnce(drive::setSpeedNormal).withName("set speed normal"));
 
-    // joystick button button 4 is intake speed
     rightJoy4Button.whileTrue(Commands.runOnce(drive::setSpeedIntake).withName("setSpeedIntake"));
     rightJoy4Button.onFalse(Commands.runOnce(drive::setSpeedNormal).withName("setSpeedNormal"));
 
-    //  joystick left trigger is outtake
     outakeButton.whileTrue(
         Commands.parallel(
                 new BeltOutakeCommand(rightBelt),
@@ -348,21 +288,8 @@ public class RobotContainer {
                 new IROutakeCommand(intakeRoller))
             .withName("Run Outtake"));
 
-    //  joystick left button 2 is intake in while held goes back out after
     leftJoy2Button.onTrue(new IPStorageCommand(intakePivot));
     leftJoy2Button.onFalse(new IPIntakeCommand(intakePivot));
-
-    //  joystick 3 and 4 will be sweep left and right
-
-    //  reset blue (if no photonvision)
-
-    //  reset red (if not photonvision)
-
-    //  reset blue hub (no photonvision)
-
-    // reset red hub (no photonvision)
-
-    // deployOutakeButton.onTrue(new IPIntakeCommand(intakePivot));
 
     panelButton2.onTrue(
         Commands.runOnce(
@@ -400,7 +327,6 @@ public class RobotContainer {
                 })
             .withName("RotateTo:90"));
 
-    // hood down belt intake stop
     panelButton5.onTrue(
         Commands.runOnce(
                 () -> {
@@ -413,7 +339,6 @@ public class RobotContainer {
                 })
             .withName("Pause all"));
 
-    // hood down belt intake stop resume where at
     panelButton5.onFalse(
         Commands.runOnce(
                 () -> {
@@ -426,58 +351,7 @@ public class RobotContainer {
                 })
             .withName("Resume all"));
 
-    // panelButton3.and(panelButton8.negate()).whileTrue(adaptiveHubNoMoveCommand());
-    // panelButton6.and(panelButton8.negate()).whileTrue(adaptiveStorageNoMoveCommand());
-
-    //  rs test    leftJoy14Button.toggleOnTrue(shooterAdaptiveAimingCommand());
     leftJoy14Button.toggleOnTrue(adaptiveHubAimingCommand());
-
-    // leftJoy13Button.toggleOnTrue(shooterAdaptiveHubAimingCommand());
-
-    // panelButton1.toggleOnTrue(shooterAdaptiveHubAimingCommand());
-    // panelButton4.toggleOnTrue(shooterAdaptiveStorageAimingCommand());
-
-    // panelButton5.and(panelButton8.negate()).whileTrue(adaptiveStorageAimingCommand());
-    // panelButton2.and(panelButton8.negate()).whileTrue(adaptiveHubAimingCommand());
-
-    // panelButton7.onTrue(cancelActivePath());
-
-    // panelButton1.toggleOnTrue(
-    //     Commands.runOnce(
-    //         () -> {
-    //           leftShooter.setSpeed(3600);
-    //           rightShooter.setSpeed(3600);
-    //           leftHood.setHoodPosition(0.3);
-    //           rightHood.setHoodPosition(0.3);
-    //         }));
-    // panelButton2.toggleOnTrue(
-    //     Commands.runOnce(
-    //         () -> {
-    //           leftShooter.setSpeed(3300);
-    //           rightShooter.setSpeed(3300);
-    //           leftHood.setHoodPosition(0.3);
-    //           rightHood.setHoodPosition(0.3);
-    //         }));
-    // panelButton3.toggleOnTrue(
-    //     Commands.runOnce(
-    //         () -> {
-    //           leftShooter.setSpeed(3000);
-    //           rightShooter.setSpeed(3000);
-    //           leftHood.setHoodPosition(0.3);
-    //           rightHood.setHoodPosition(0.3);
-    //         }));
-    // panelButton1.onTrue(Commands.runOnce(() -> questSensor.toggleIgnoreFlags()));
-    // panelButton2.onTrue(Commands.runOnce(() -> questSensor.clearFlags()));
-    // panelButton3.onTrue(Commands.runOnce(() -> questSensor.confirmFlag()));
-
-    // panelButton5.whileTrue(
-    //    Commands.runOnce(
-    //        () -> {
-    //          leftShooter.setSpeed(3000);
-    //          rightShooter.setSpeed(3000);
-    //          leftHood.setHoodPosition(0.42);
-    //          rightHood.setHoodPosition(0.42);
-    //        }));
 
     panelButton15.onTrue(
         Commands.runOnce(
@@ -486,54 +360,18 @@ public class RobotContainer {
                   rightShooter.stop();
                   leftHood.setHoodPosition(0.0);
                   rightHood.setHoodPosition(0.0);
-                  // turn automated aiming off
                 })
             .withName("set hoods down"));
 
     panelButton14.onTrue(
         Commands.runOnce(
                 () -> {
-                  // this will enable auto aim and speed until manual position is set
                   leftShooter.setSpeed(2700);
                   rightShooter.setSpeed(2700);
                   leftHood.setHoodPosition(0.3);
                   rightHood.setHoodPosition(0.3);
                 })
             .withName("ready shooters"));
-
-    /*
-        panelButton15.whileTrue(
-            Commands.runOnce(
-                () -> {
-                  shotTable.setMultiFactor(shotTable.getMultiFactor() + 0.05);
-                }));
-        panelButton7.whileTrue(
-            Commands.runOnce(
-                () -> {
-                  shotTable.setMultiFactor(shotTable.getMultiFactor() - 0.05);
-                }));
-
-        panelButton8.onTrue(
-            Commands.parallel(
-                new IPStorageCommand(intakePivot),
-                Commands.runOnce(() -> leftHood.setVoltage(-1.0))
-                    .andThen(Commands.waitSeconds(0.25))
-                    .andThen(
-                        Commands.runOnce(
-                            () -> {
-                              leftHood.zeroAtMin();
-                              leftHood.setVoltage(0.0);
-                            })),
-                Commands.runOnce(() -> rightHood.setVoltage(-1.0))
-                    .andThen(Commands.waitSeconds(0.25))
-                    .andThen(
-                        Commands.runOnce(
-                            () -> {
-                              rightHood.zeroAtMin();
-                              rightHood.setVoltage(0.0);
-                            }))));
-
-    */
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(
@@ -551,20 +389,6 @@ public class RobotContainer {
                             ROBOT_TO_QUEST.inverse())))
             .ignoringDisable(true)
             .withName("ResetPoseBlue"));
-
-    // panelButton15.onTrue(
-    //     Commands.runOnce(() ->
-    // drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
-    //         .ignoringDisable(true));
-    // leftJoy3Button.onTrue(
-    //     Commands.runOnce(() ->
-    // drive.setPose(QuestNavSystemConstants.ROBOT_TO_QUEST_BLUE_TESTING))
-    //         .ignoringDisable(true));
-
-    // leftJoy3Button.onTrue(runTeleopPath("ST Push Balls"));
-    // panelButton11.onTrue(runTeleopPath("ST Clear Depot"));
-    // rightJoy4Button.onTrue(runTeleopPath("OP Push Balls"));
-    // panelButton13.onTrue(runTeleopPath("OP Clear Depot"));
   }
 
   public boolean getClampedTurn(Joystick joy) {
@@ -609,50 +433,12 @@ public class RobotContainer {
         .withName("Stop Intake");
   }
 
-  private Command autoIntakeOnNamedCommand() {
+  private Command stopDrive() {
     return Commands.runOnce(
             () -> {
-              if (activeAutoIntakeCommand != null
-                  && CommandScheduler.getInstance().isScheduled(activeAutoIntakeCommand)) {
-                return;
-              }
-
-              activeAutoIntakeCommand = intakePickupHeldCommand().withName("Auto Run Intake");
-              CommandScheduler.getInstance().schedule(activeAutoIntakeCommand);
+              drive.stop();
             })
-        .withName("AutoIntakeOn");
-  }
-
-  private Command autoIntakeOffNamedCommand() {
-    return Commands.runOnce(
-            () -> {
-              if (activeAutoIntakeCommand != null) {
-                CommandScheduler.getInstance().cancel(activeAutoIntakeCommand);
-                activeAutoIntakeCommand = null;
-              }
-
-              drive.setSpeedNormal();
-              leftHood.pause();
-              rightHood.pause();
-            })
-        .withName("AutoIntakeOff");
-  }
-
-  private Command toggleAdaptiveHubAimingNamedCommand() {
-    return Commands.runOnce(
-            () -> {
-              if (activeAdaptiveHubAimingCommand != null
-                  && CommandScheduler.getInstance().isScheduled(activeAdaptiveHubAimingCommand)) {
-                CommandScheduler.getInstance().cancel(activeAdaptiveHubAimingCommand);
-                activeAdaptiveHubAimingCommand = null;
-                return;
-              }
-
-              activeAdaptiveHubAimingCommand =
-                  adaptiveHubAimingCommand().withName("AutoAdaptiveHubAiming");
-              CommandScheduler.getInstance().schedule(activeAdaptiveHubAimingCommand);
-            })
-        .withName("ToggleAdaptiveHubAiming");
+        .withName("Stop Drive");
   }
 
   private Command adaptiveHubAimingCommand() {
@@ -721,10 +507,22 @@ public class RobotContainer {
   }
 
   private void registerNamedCommands() {
-    NamedCommands.registerCommand("AutoIntakeOn", autoIntakeOnNamedCommand());
-    NamedCommands.registerCommand("AutoIntakeOff", autoIntakeOffNamedCommand());
-    NamedCommands.registerCommand("IntakeOut", intakePickupOutCommand());
-    NamedCommands.registerCommand("ToggleAdaptiveHubAiming", toggleAdaptiveHubAimingNamedCommand());
+    NamedCommands.registerCommand("AutoIntakeOn", new ProxyCommand(this::intakePickupHeldCommand));
+
+    NamedCommands.registerCommand(
+        "AutoIntakeOff",
+        Commands.runOnce(
+            () -> {
+              drive.setSpeedNormal();
+              leftHood.pause();
+              rightHood.pause();
+            }));
+
+    NamedCommands.registerCommand("IntakeOut", new ProxyCommand(this::intakePickupOutCommand));
+
+    NamedCommands.registerCommand(
+        "ToggleAdaptiveHubAiming", new ProxyCommand(this::adaptiveHubAimingCommand));
+    NamedCommands.registerCommand("StopDrive", new ProxyCommand(this::stopDrive));
   }
 
   private Command deferredCommand(
@@ -732,13 +530,7 @@ public class RobotContainer {
     return Commands.defer(supplier, Set.of(requirements));
   }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
   public Command getAutonomousCommand() {
     return autoChooser.get();
-    // return null;
   }
 }

@@ -19,6 +19,7 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -34,13 +35,14 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
-import frc.robot.subsystems.questNav.QuestNavConstants;
-import frc.robot.subsystems.questNav.QuestNavSensor;
+import frc.robot.subsystems.questnav.QuestNavConstants;
+import frc.robot.subsystems.questnav.QuestNavSensor;
 import frc.robot.util.LocalADStarAK;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -49,6 +51,11 @@ import org.littletonrobotics.junction.Logger;
 
 public class Drive extends SubsystemBase {
   static final Lock odometryLock = new ReentrantLock();
+
+  // How tightly to trust Quest pose measurements when fusing into the estimator.
+  // These are intentionally tight (2 cm XY, ~2 deg heading) because the Quest
+  // is our primary localisation source.
+  private static final Matrix<N3, N1> QUEST_STD_DEVS = VecBuilder.fill(0.02, 0.02, 0.035);
 
   private final QuestNavSensor quest;
   private final GyroIO gyroIO;
@@ -127,7 +134,6 @@ public class Drive extends SubsystemBase {
 
   private int loopCounterSpeed = 0;
   private double deltaPerInterval = 0;
-
   private boolean firstTime = true;
 
   @Override
@@ -141,19 +147,13 @@ public class Drive extends SubsystemBase {
         loopCounterSpeed = 0;
         firstTime = true;
       } else {
-
-        // we need to ramp up here slower to the new set speed
         double delta = Math.abs(currentSpeedScale - speedScale);
-
         if (loopCounterSpeed < 25) {
-
           if (firstTime) {
             deltaPerInterval = delta / 25;
           }
-
           currentSpeedScale = currentSpeedScale + deltaPerInterval;
         } else {
-
           currentSpeedScale = speedScale;
           loopCounterSpeed = 0;
           firstTime = true;
@@ -161,7 +161,6 @@ public class Drive extends SubsystemBase {
       }
     }
 
-    // First update the quest pose frames. They get used later
     quest.runPeriodicUpdates();
 
     if (DriverStation.isDisabled()) {
@@ -174,7 +173,6 @@ public class Drive extends SubsystemBase {
 
     odometryLock.lock();
     try {
-      // Update IO snapshots
       gyroIO.updateInputs(gyroInputs);
       Logger.processInputs("Drive/Gyro", gyroInputs);
       for (var module : modules) {
@@ -205,17 +203,14 @@ public class Drive extends SubsystemBase {
           rawGyroRotation = rawGyroRotation.plus(new Rotation2d(twist.dtheta));
         }
 
-        if (quest.isWorking()) {
-          // Quest is the primary source of truth: hard-reset the estimator to
-          // the quest pose every sample so wheel odometry drift cannot accumulate.
-          poseEstimator.resetPosition(
-              quest.getRobotPose().getRotation(), modulePositions, quest.getRobotPose());
-        } else {
-          // Quest unavailable: fall back to wheel odometry + gyro only.
-          // Vision measurements are fused separately via addVisionMeasurement().
-          poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
-        }
+        poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
       }
+
+      if (quest.isWorking()) {
+        poseEstimator.addVisionMeasurement(
+            quest.getRobotPose(), Timer.getFPGATimestamp(), QUEST_STD_DEVS);
+      }
+
     } finally {
       odometryLock.unlock();
     }
@@ -304,7 +299,6 @@ public class Drive extends SubsystemBase {
     }
   }
 
-  /** Use raw gyro yaw (NOT estimator rotation) for stable velocity-frame conversion. */
   public Rotation2d getRawGyroRotation() {
     odometryLock.lock();
     try {
@@ -384,22 +378,13 @@ public class Drive extends SubsystemBase {
     quest.zeroQuestPose(pose);
   }
 
-  /**
-   * Adds a vision measurement to the pose estimator.
-   *
-   * <p>Vision is only fused when the QuestNav is NOT working. When the quest is active it is the
-   * sole source of truth and camera measurements are ignored to prevent conflicting corrections.
-   */
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
       Matrix<N3, N1> visionMeasurementStdDevs) {
-
-    // Skip camera updates entirely while the quest is providing poses.
     if (quest.isWorking()) {
       return;
     }
-
     odometryLock.lock();
     try {
       poseEstimator.addVisionMeasurement(

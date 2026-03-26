@@ -1,6 +1,6 @@
-package frc.robot.subsystems.questNav;
+package frc.robot.subsystems.questnav;
 
-import static frc.robot.subsystems.questNav.QuestNavConstants.ROBOT_TO_QUEST;
+import static frc.robot.subsystems.questnav.QuestNavConstants.ROBOT_TO_QUEST;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;

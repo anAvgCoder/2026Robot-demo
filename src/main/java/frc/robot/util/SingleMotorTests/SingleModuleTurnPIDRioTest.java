@@ -1,4 +1,4 @@
-package frc.robot.util.SingleMotorTests;
+package frc.robot.util.singlemotortests;
 
 import static frc.robot.util.SparkUtil.tryUntilOk;
 

@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakePivot;
+package frc.robot.subsystems.intakepivot;
 
 import edu.wpi.first.math.MathUtil;
 import frc.robot.Constants;

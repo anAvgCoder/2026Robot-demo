@@ -1,4 +1,4 @@
-package frc.robot.util.SingleMotorTests;
+package frc.robot.util.singlemotortests;
 
 import static frc.robot.util.SparkUtil.tryUntilOk;
 
@@ -17,7 +17,7 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.subsystems.intakePivot.IntakePivotConstants;
+import frc.robot.subsystems.intakepivot.IntakePivotConstants;
 import frc.robot.util.LoggedTunableNumber;
 import org.littletonrobotics.junction.Logger;
 

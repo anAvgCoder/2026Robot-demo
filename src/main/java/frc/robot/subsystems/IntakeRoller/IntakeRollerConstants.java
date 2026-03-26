@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakeRoller;
+package frc.robot.subsystems.intakeroller;
 
 public class IntakeRollerConstants {
   // Spark Max + NEO 550

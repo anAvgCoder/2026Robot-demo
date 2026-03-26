@@ -13,7 +13,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 2.0
+            "waitTime": 0.5
           }
         },
         {
@@ -27,6 +27,12 @@
           "data": {
             "commands": [
               {
+                "type": "path",
+                "data": {
+                  "pathName": "Top 5-8 to Half"
+                }
+              },
+              {
                 "type": "named",
                 "data": {
                   "name": "ToggleAdaptiveHubAiming"
@@ -37,21 +43,14 @@
                 "data": {
                   "name": "AutoIntakeOn"
                 }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "Top 5-8 Down"
-                      }
-                    }
-                  ]
-                }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopDrive"
           }
         }
       ]

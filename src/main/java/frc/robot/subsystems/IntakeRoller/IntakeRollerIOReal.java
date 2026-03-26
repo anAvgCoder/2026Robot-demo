@@ -1,4 +1,4 @@
-package frc.robot.subsystems.intakeRoller;
+package frc.robot.subsystems.intakeroller;
 
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
