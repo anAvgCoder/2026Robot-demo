@@ -387,9 +387,8 @@ public class Drive extends SubsystemBase {
   /**
    * Adds a vision measurement to the pose estimator.
    *
-   * <p>Vision is only fused when the QuestNav is NOT working. When the quest is
-   * active it is the sole source of truth and camera measurements are ignored to
-   * prevent conflicting corrections.
+   * <p>Vision is only fused when the QuestNav is NOT working. When the quest is active it is the
+   * sole source of truth and camera measurements are ignored to prevent conflicting corrections.
    */
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,

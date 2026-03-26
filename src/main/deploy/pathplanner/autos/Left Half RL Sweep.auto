@@ -23,21 +23,35 @@
           }
         },
         {
-          "type": "named",
+          "type": "parallel",
           "data": {
-            "name": "AutoIntakeOn"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "ToggleAdaptiveHubAiming"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Top 5-8 to Half"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "ToggleAdaptiveHubAiming"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoIntakeOn"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "Top 5-8 Down"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
           }
         }
       ]
