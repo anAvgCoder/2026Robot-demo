@@ -2,7 +2,6 @@ package frc.robot.commands.intakeroller;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.intakeroller.IntakeRoller;
-import frc.robot.subsystems.intakeroller.IntakeRollerIO;
 
 public class IRIntakeCommand extends Command {
   private final IntakeRoller intakeRoller;
