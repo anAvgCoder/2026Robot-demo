@@ -3,37 +3,32 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.54,
-        "y": 0.6589444444444439
+        "x": 5.630513552068472,
+        "y": 0.5868473609129818
       },
       "prevControl": null,
       "nextControl": {
-        "x": 4.539999999999999,
-        "y": 0.6589444444444439
+        "x": 6.6305135520684715,
+        "y": 0.5868473609129818
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Right Trench Exit"
     },
     {
       "anchor": {
-        "x": 8.231184022824536,
-        "y": 1.1173323823109853
+        "x": 8.244122681883024,
+        "y": 2.320627674750357
       },
       "prevControl": {
-        "x": 8.100172911713425,
-        "y": 0.4824323823109853
+        "x": 8.438202567760342,
+        "y": 0.40570613409415257
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "Bottom 5-8"
+      "linkedName": null
     }
   ],
-  "rotationTargets": [
-    {
-      "waypointRelativePos": 0.30350877192982373,
-      "rotationDegrees": 180.0
-    }
-  ],
+  "rotationTargets": [],
   "constraintZones": [],
   "pointTowardsZones": [],
   "eventMarkers": [],
@@ -52,8 +47,8 @@
   "reversed": false,
   "folder": "5-8",
   "idealStartingState": {
-    "velocity": 0,
-    "rotation": 180.0
+    "velocity": 1.5,
+    "rotation": 0.0
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }

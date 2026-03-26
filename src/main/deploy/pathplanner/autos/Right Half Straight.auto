@@ -1,0 +1,74 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOut"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "ToggleAdaptiveHubAiming"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Through Right Trench"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "To Bottom 1-4"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoIntakeOn"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "ToggleAdaptiveHubAiming"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Bottom 1-4 to half"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopDrive"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": false,
+  "folder": null,
+  "choreoAuto": false
+}

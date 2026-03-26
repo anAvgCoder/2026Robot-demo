@@ -11,6 +11,12 @@
           }
         },
         {
+          "type": "named",
+          "data": {
+            "name": "EjectFuel"
+          }
+        },
+        {
           "type": "wait",
           "data": {
             "waitTime": 0.5
@@ -19,7 +25,13 @@
         {
           "type": "path",
           "data": {
-            "pathName": "To Top 5-8"
+            "pathName": "Through Left Trench"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "To Top 1-4"
           }
         },
         {
@@ -29,19 +41,19 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Top 5-8 to Half"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ToggleAdaptiveHubAiming"
+                  "pathName": "Top 1-4 Down"
                 }
               },
               {
                 "type": "named",
                 "data": {
                   "name": "AutoIntakeOn"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "ToggleAdaptiveHubAiming"
                 }
               }
             ]

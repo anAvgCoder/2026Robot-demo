@@ -13,8 +13,10 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
 import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
@@ -495,6 +497,17 @@ public class RobotContainer {
         Set.of(drive));
   }
 
+  private Command ejectFuelCommand() {
+    return new ParallelDeadlineGroup(
+        new WaitCommand(1),
+        Commands.parallel(
+                new BeltOutakeCommand(rightBelt),
+                new BeltOutakeCommand(leftBelt),
+                new DiverterCommand(diverter),
+                new IROutakeCommand(intakeRoller))
+            .withName("Run Outake Auto"));
+  }
+
   private Command cancelActivePath() {
     return Commands.runOnce(this::cancelActivePathNow).withName("CancelActivePath");
   }
@@ -523,6 +536,8 @@ public class RobotContainer {
     NamedCommands.registerCommand(
         "ToggleAdaptiveHubAiming", new ProxyCommand(this::adaptiveHubAimingCommand));
     NamedCommands.registerCommand("StopDrive", new ProxyCommand(this::stopDrive));
+
+    NamedCommands.registerCommand("EjectFuel", ejectFuelCommand());
   }
 
   private Command deferredCommand(

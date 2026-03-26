@@ -1,0 +1,86 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOut"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "EjectFuel"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Through Right Trench"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "To Bottom 5-8"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoIntakeOn"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "ToggleAdaptiveHubAiming"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Bottom 5-8 to Half"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Right Half 5-8 to 1-4"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Half 1-4 Down"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopDrive"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": false,
+  "folder": null,
+  "choreoAuto": false
+}
