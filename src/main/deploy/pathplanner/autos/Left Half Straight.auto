@@ -35,19 +35,13 @@
           }
         },
         {
-          "type": "parallel",
+          "type": "race",
           "data": {
             "commands": [
               {
-                "type": "path",
+                "type": "wait",
                 "data": {
-                  "pathName": "Top 1-4 to Half"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "AutoIntakeOn"
+                  "waitTime": 0.5
                 }
               },
               {
@@ -55,8 +49,20 @@
                 "data": {
                   "name": "ToggleAdaptiveHubAiming"
                 }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "AutoIntakeOn"
+                }
               }
             ]
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Top 1-4 to Half"
           }
         },
         {
