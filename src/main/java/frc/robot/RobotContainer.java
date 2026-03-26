@@ -14,7 +14,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ParallelDeadlineGroup;
-import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -520,7 +519,11 @@ public class RobotContainer {
   }
 
   private void registerNamedCommands() {
-    NamedCommands.registerCommand("AutoIntakeOn", new ProxyCommand(this::intakePickupHeldCommand));
+    NamedCommands.registerCommand(
+        "AutoIntakeOn",
+        Commands.defer(
+            this::intakePickupHeldCommand,
+            Set.of(intakePivot, intakeRoller, rightBelt, leftBelt, diverter)));
 
     NamedCommands.registerCommand(
         "AutoIntakeOff",
@@ -531,11 +534,16 @@ public class RobotContainer {
               rightHood.pause();
             }));
 
-    NamedCommands.registerCommand("IntakeOut", new ProxyCommand(this::intakePickupOutCommand));
+    NamedCommands.registerCommand(
+        "IntakeOut", Commands.defer(this::intakePickupOutCommand, Set.of(intakePivot)));
 
     NamedCommands.registerCommand(
-        "ToggleAdaptiveHubAiming", new ProxyCommand(this::adaptiveHubAimingCommand));
-    NamedCommands.registerCommand("StopDrive", new ProxyCommand(this::stopDrive));
+        "ToggleAdaptiveHubAiming",
+        Commands.defer(
+            this::adaptiveHubAimingCommand,
+            Set.of(rightRotater, rightHood, leftRotater, leftHood)));
+
+    NamedCommands.registerCommand("StopDrive", Commands.defer(this::stopDrive, Set.of(drive)));
 
     NamedCommands.registerCommand("EjectFuel", ejectFuelCommand());
   }

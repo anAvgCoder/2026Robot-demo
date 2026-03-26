@@ -69,6 +69,6 @@
     }
   },
   "resetOdom": false,
-  "folder": null,
+  "folder": "Left Midfield",
   "choreoAuto": false
 }

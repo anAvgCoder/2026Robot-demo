@@ -5,11 +5,11 @@ import frc.robot.subsystems.intakeroller.IntakeRoller;
 import frc.robot.subsystems.intakeroller.IntakeRollerIO;
 
 public class IRIntakeCommand extends Command {
-  private final IntakeRollerIO intakeRollerIO;
+  private final IntakeRoller intakeRoller;
   private int runCounter;
 
   public IRIntakeCommand(IntakeRoller intakeRoller) {
-    intakeRollerIO = intakeRoller.getIO();
+    this.intakeRoller = intakeRoller;
     addRequirements(intakeRoller);
   }
 
@@ -17,7 +17,7 @@ public class IRIntakeCommand extends Command {
   @Override
   public void initialize() {
     runCounter = 0;
-    intakeRollerIO.intake();
+    intakeRoller.intake();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -32,7 +32,7 @@ public class IRIntakeCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    intakeRollerIO.stop();
+    intakeRoller.stop();
   }
 
   // Returns true when the command should end.

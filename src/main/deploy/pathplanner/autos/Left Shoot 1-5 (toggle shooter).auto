@@ -11,64 +11,51 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "EjectFuel"
-          }
-        },
-        {
           "type": "wait",
           "data": {
             "waitTime": 0.5
           }
         },
         {
-          "type": "path",
+          "type": "named",
           "data": {
-            "pathName": "Through Left Trench"
+            "name": "AutoIntakeOn"
           }
         },
         {
-          "type": "parallel",
+          "type": "named",
           "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "Trench To Top 5-8"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "AutoIntakeOn"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ToggleAdaptiveHubAiming"
-                }
-              }
-            ]
+            "name": "ToggleAdaptiveHubAiming"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Top 5-8 to Half"
+            "pathName": "Left Trench go Driver"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Half 5-8 to 1-4"
+            "pathName": "Pick 1-2"
           }
         },
         {
           "type": "path",
           "data": {
-            "pathName": "Half 1-4 Up"
+            "pathName": "Pick 2-3"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pick 3-4"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pick 4-5"
           }
         },
         {
@@ -80,7 +67,7 @@
       ]
     }
   },
-  "resetOdom": false,
-  "folder": "Left Midfield",
+  "resetOdom": true,
+  "folder": "Alliance Zone",
   "choreoAuto": false
 }

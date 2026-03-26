@@ -2,14 +2,13 @@ package frc.robot.commands.intakeroller;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.intakeroller.IntakeRoller;
-import frc.robot.subsystems.intakeroller.IntakeRollerIO;
 
 public class IROutakeCommand extends Command {
-  private final IntakeRollerIO intakeRollerIO;
+  private final IntakeRoller intakeRoller;
   private int runCounter;
 
   public IROutakeCommand(IntakeRoller intakeRoller) {
-    intakeRollerIO = intakeRoller.getIO();
+    this.intakeRoller = intakeRoller;
     addRequirements(intakeRoller);
   }
 
@@ -17,7 +16,7 @@ public class IROutakeCommand extends Command {
   @Override
   public void initialize() {
     runCounter = 0;
-    intakeRollerIO.outake();
+    intakeRoller.outake();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -32,7 +31,7 @@ public class IROutakeCommand extends Command {
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    intakeRollerIO.stop();
+    intakeRoller.stop();
   }
 
   // Returns true when the command should end.

@@ -4,11 +4,19 @@
   "holonomicMode": true,
   "pathFolders": [
     "1-4",
-    "5-8"
+    "5-8",
+    "Button Autos",
+    "Left Alliance",
+    "Right Alliance",
+    "Trenches"
   ],
-  "autoFolders": [],
-  "defaultMaxVel": 1.5,
-  "defaultMaxAccel": 1.5,
+  "autoFolders": [
+    "Alliance Zone",
+    "Left Midfield",
+    "Right Midfield"
+  ],
+  "defaultMaxVel": 0.5,
+  "defaultMaxAccel": 0.5,
   "defaultMaxAngVel": 540.0,
   "defaultMaxAngAccel": 720.0,
   "defaultNominalVoltage": 12.0,

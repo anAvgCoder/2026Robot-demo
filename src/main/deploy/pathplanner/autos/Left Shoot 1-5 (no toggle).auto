@@ -1,0 +1,67 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "named",
+          "data": {
+            "name": "IntakeOut"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.5
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "AutoIntakeOn"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left Trench go Driver"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pick 1-2"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pick 2-3"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pick 3-4"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Pick 4-5"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "StopDrive"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": "Alliance Zone",
+  "choreoAuto": false
+}
