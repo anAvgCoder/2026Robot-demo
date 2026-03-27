@@ -38,7 +38,7 @@ public class IntakeRollerIOReal implements IntakeRollerIO {
 
   @Override
   public void intake() {
-    speed = -0.9;
+    speed = -0.95;
   }
 
   @Override

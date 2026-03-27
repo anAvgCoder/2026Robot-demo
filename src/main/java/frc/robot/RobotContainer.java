@@ -1,6 +1,7 @@
 package frc.robot;
 
 import static frc.robot.subsystems.questnav.QuestNavConstants.ROBOT_TO_QUEST;
+import static frc.robot.subsystems.questnav.QuestNavConstants.ROBOT_TO_QUEST_RED_HUB;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -106,7 +107,6 @@ public class RobotContainer {
   private static final JoystickButton rightJoy8Button = new JoystickButton(rightJoy, 8);
   private static final JoystickButton rightJoy9Button = new JoystickButton(rightJoy, 9);
   private static final JoystickButton rightJoy10Button = new JoystickButton(rightJoy, 10);
-  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
 
   private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
   private static final JoystickButton leftJoy2Button = new JoystickButton(leftJoy, 2);
@@ -117,6 +117,10 @@ public class RobotContainer {
   private static final JoystickButton leftJoy13Button = new JoystickButton(leftJoy, 13);
 
   private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
+  private static final JoystickButton resetQuestPoseRedHubButton = new JoystickButton(leftJoy, 5);
+
+  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
+  private static final JoystickButton resetQuestPoseBlueHubButton = new JoystickButton(rightJoy, 5);
 
   private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
   private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
@@ -354,35 +358,51 @@ public class RobotContainer {
 
     panelButton7.onTrue(
         Commands.runOnce(
-            () -> {
-              drive.switchToCamera();
-            }));
+                () -> {
+                  drive.switchToCamera();
+                })
+            .ignoringDisable(true));
 
     panelButton8.onTrue(
         Commands.runOnce(
-            () -> {
-              drive.switchToCamera();
-            }));
+                () -> {
+                  drive.switchToCamera();
+                })
+            .ignoringDisable(true));
 
-    panelButton15.onTrue(
+    panelButton9.onTrue(
         Commands.runOnce(
                 () -> {
-                  leftShooter.stop();
-                  rightShooter.stop();
-                  leftHood.setHoodPosition(0.0);
-                  rightHood.setHoodPosition(0.0);
+                  drive.switchBackToCamera();
                 })
-            .withName("set hoods down"));
+            .ignoringDisable(true));
 
-    panelButton14.onTrue(
+    panelButton11.onTrue(
         Commands.runOnce(
                 () -> {
-                  leftShooter.setSpeed(2700);
-                  rightShooter.setSpeed(2700);
-                  leftHood.setHoodPosition(0.3);
-                  rightHood.setHoodPosition(0.3);
+                  drive.switchBackToCamera();
                 })
-            .withName("ready shooters"));
+            .ignoringDisable(true));
+
+    // panelButton15.onTrue(
+    //     Commands.runOnce(
+    //             () -> {
+    //               leftShooter.stop();
+    //               rightShooter.stop();
+    //               leftHood.setHoodPosition(0.0);
+    //               rightHood.setHoodPosition(0.0);
+    //             })
+    //         .withName("set hoods down"));
+
+    // panelButton14.onTrue(
+    //     Commands.runOnce(
+    //             () -> {
+    //               leftShooter.setSpeed(2700);
+    //               rightShooter.setSpeed(2700);
+    //               leftHood.setHoodPosition(0.3);
+    //               rightHood.setHoodPosition(0.3);
+    //             })
+    //         .withName("ready shooters"));
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(
@@ -398,6 +418,21 @@ public class RobotContainer {
                     drive.setPose(
                         QuestNavConstants.ROBOT_TO_QUEST_BLUE.transformBy(
                             ROBOT_TO_QUEST.inverse())))
+            .ignoringDisable(true)
+            .withName("ResetPoseBlue"));
+
+    resetQuestPoseBlueHubButton.onTrue(
+        Commands.runOnce(
+                () ->
+                    drive.setPose(
+                        QuestNavConstants.ROBOT_TO_QUEST_BLUE_HUB.transformBy(
+                            ROBOT_TO_QUEST.inverse())))
+            .ignoringDisable(true)
+            .withName("ResetPoseBlue"));
+
+    resetQuestPoseRedHubButton.onTrue(
+        Commands.runOnce(
+                () -> drive.setPose(ROBOT_TO_QUEST_RED_HUB.transformBy(ROBOT_TO_QUEST.inverse())))
             .ignoringDisable(true)
             .withName("ResetPoseBlue"));
   }

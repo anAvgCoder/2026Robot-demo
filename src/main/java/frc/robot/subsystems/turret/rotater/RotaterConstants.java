@@ -28,8 +28,8 @@ public class RotaterConstants {
   public static final double kClosedLoopOutputSignLeft = -1.0;
 
   // Soft limits (degrees)
-  public static final double kMinAngleDeg = -135.0;
-  public static final double kMaxAngleDeg = 135.0;
+  public static final double kMinAngleDeg = -145.0;
+  public static final double kMaxAngleDeg = 145.0;
 
   // Motion constraints for the turret profile controller
   public static final double kMaxVelRadPerSec = 45.0;

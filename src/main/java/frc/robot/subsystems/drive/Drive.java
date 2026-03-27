@@ -229,6 +229,12 @@ public class Drive extends SubsystemBase {
     System.out.println("switching to cameras from quest");
   }
 
+  public void switchBackToCamera() {
+
+    overrideQuestForCamera = false;
+    System.out.println("switching to quest from cameras");
+  }
+
   public void runVelocity(ChassisSpeeds speeds) {
     ChassisSpeeds discreteSpeeds = ChassisSpeeds.discretize(speeds, 0.02);
     SwerveModuleState[] setpointStates = kinematics.toSwerveModuleStates(discreteSpeeds);
