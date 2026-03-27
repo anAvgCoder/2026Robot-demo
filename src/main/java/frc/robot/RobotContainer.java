@@ -14,7 +14,11 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
@@ -154,6 +158,8 @@ public class RobotContainer {
 
   private final PathConstraints pathfindConstraints =
       new PathConstraints(1.5, 1.5, Units.degreesToRadians(540), Units.degreesToRadians(720));
+
+  private boolean isPaused = false;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -332,29 +338,31 @@ public class RobotContainer {
                 })
             .withName("RotateTo:90"));
 
-    panelButton5.onTrue(
-        Commands.runOnce(
-                () -> {
-                  leftHood.pause();
-                  rightHood.pause();
-                  rightBelt.pause();
-                  leftBelt.pause();
-                  diverter.pause();
-                  intakeRoller.pause();
-                })
-            .withName("Pause all"));
+  panelButton5.onTrue(
+      Commands.runOnce(
+              () -> {
+                isPaused = true; 
+                leftHood.pause();
+                rightHood.pause();
+                rightBelt.pause();
+                leftBelt.pause();
+                diverter.pause();
+                intakeRoller.pause();
+              })
+          .withName("Pause all"));
 
-    panelButton5.onFalse(
-        Commands.runOnce(
-                () -> {
-                  leftHood.resume();
-                  rightHood.resume();
-                  rightBelt.resume();
-                  leftBelt.resume();
-                  diverter.resume();
-                  intakeRoller.resume();
-                })
-            .withName("Resume all"));
+  panelButton5.onFalse(
+      Commands.runOnce(
+              () -> {
+                isPaused = false;
+                leftHood.resume();
+                rightHood.resume();
+                rightBelt.resume();
+                leftBelt.resume();
+                diverter.resume();
+                intakeRoller.resume();
+              })
+          .withName("Resume all"));
 
     leftJoy14Button.toggleOnTrue(adaptiveHubAimingCommand());
 
@@ -452,20 +460,22 @@ public class RobotContainer {
   }
 
   private Command intakePickupHeldCommand() {
-    return Commands.parallel(
-            Commands.runOnce(
-                () -> {
-                  drive.setSpeedIntake();
+  return Commands.parallel(
+          Commands.runOnce(
+              () -> {
+                drive.setSpeedIntake();
+                if (!isPaused) {
                   leftHood.resume();
                   rightHood.resume();
-                }),
-            new IPIntakeCommand(intakePivot),
-            new IRIntakeCommand(intakeRoller),
-            new BeltIntakeCommand(rightBelt),
-            new BeltIntakeCommand(leftBelt),
-            new DiverterCommand(diverter))
-        .withName("Run Intake");
-  }
+                }
+              }),
+          new IPIntakeCommand(intakePivot),
+          new IRIntakeCommand(intakeRoller),
+          new BeltIntakeCommand(rightBelt),
+          new BeltIntakeCommand(leftBelt),
+          new DiverterCommand(diverter))
+      .withName("Run Intake");
+}
 
   private Command runRollers() {
     return Commands.parallel(new IRIntakeCommand(intakeRoller).withName("Run Intake"));
@@ -595,6 +605,38 @@ public class RobotContainer {
     NamedCommands.registerCommand("StopDrive", Commands.defer(this::stopDrive, Set.of(drive)));
 
     NamedCommands.registerCommand("EjectFuel", ejectFuelCommand());
+
+    
+    NamedCommands.registerCommand(
+        "Simply Shoot",
+        Commands.runOnce(
+                () -> {
+                  leftShooter.setSpeed(2650);
+                  rightShooter.setSpeed(2650);
+                })
+            .andThen(Commands.waitSeconds(1.0))
+            // .andThen(
+            //     Commands.parallel(
+            //         new BeltIntakeCommand(rightBelt), new BeltIntakeCommand(leftBelt))));
+            .andThen(beltSequence())
+            .finallyDo(
+                () -> {
+                  rightBelt.getIO().stop();
+                  leftBelt.getIO().stop();
+                }));
+  }
+
+  private Command beltSequence() {
+    return new SequentialCommandGroup(
+            new ParallelCommandGroup(
+                new InstantCommand(() -> rightBelt.getIO().intake()),
+                new InstantCommand(() -> leftBelt.getIO().intake())),
+            new WaitCommand(0.1),
+            new ParallelCommandGroup(
+                new InstantCommand(() -> rightBelt.getIO().stop()),
+                new InstantCommand(() -> leftBelt.getIO().stop())),
+            new WaitCommand(0.5))
+        .repeatedly();
   }
 
   private Command deferredCommand(
