@@ -135,6 +135,7 @@ public class Drive extends SubsystemBase {
   private int loopCounterSpeed = 0;
   private double deltaPerInterval = 0;
   private boolean firstTime = true;
+  private boolean overrideQuestForCamera = false;
 
   @Override
   public void periodic() {
@@ -207,8 +208,10 @@ public class Drive extends SubsystemBase {
       }
 
       if (quest.isWorking()) {
-        poseEstimator.addVisionMeasurement(
-            quest.getRobotPose(), Timer.getFPGATimestamp(), QUEST_STD_DEVS);
+        if (overrideQuestForCamera == false) {
+          poseEstimator.addVisionMeasurement(
+              quest.getRobotPose(), Timer.getFPGATimestamp(), QUEST_STD_DEVS);
+        }
       }
 
     } finally {
@@ -216,7 +219,14 @@ public class Drive extends SubsystemBase {
     }
 
     Logger.recordOutput("QuestNav/isWorking", quest.isWorking());
+    Logger.recordOutput("QuestNav/overrideToCamera", overrideQuestForCamera);
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
+  }
+
+  public void switchToCamera() {
+
+    overrideQuestForCamera = true;
+    System.out.println("switching to cameras from quest");
   }
 
   public void runVelocity(ChassisSpeeds speeds) {
@@ -382,9 +392,13 @@ public class Drive extends SubsystemBase {
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
       Matrix<N3, N1> visionMeasurementStdDevs) {
+
     if (quest.isWorking()) {
-      return;
+      if (overrideQuestForCamera == false) {
+        return;
+      }
     }
+
     odometryLock.lock();
     try {
       poseEstimator.addVisionMeasurement(

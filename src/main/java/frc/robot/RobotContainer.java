@@ -352,6 +352,18 @@ public class RobotContainer {
 
     leftJoy14Button.toggleOnTrue(adaptiveHubAimingCommand());
 
+    panelButton7.onTrue(
+        Commands.runOnce(
+            () -> {
+              drive.switchToCamera();
+            }));
+
+    panelButton8.onTrue(
+        Commands.runOnce(
+            () -> {
+              drive.switchToCamera();
+            }));
+
     panelButton15.onTrue(
         Commands.runOnce(
                 () -> {
