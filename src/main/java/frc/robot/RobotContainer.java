@@ -268,6 +268,8 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
 
+    panelButton12.whileTrue(runRollers());
+
     rightJoy1Button.whileTrue(intakePickupHeldCommand());
     rightJoy1Button.onFalse(intakePickupReleaseCommand());
 
@@ -463,6 +465,10 @@ public class RobotContainer {
             new BeltIntakeCommand(leftBelt),
             new DiverterCommand(diverter))
         .withName("Run Intake");
+  }
+
+  private Command runRollers() {
+    return Commands.parallel(new IRIntakeCommand(intakeRoller).withName("Run Intake"));
   }
 
   private Command intakePickupOutCommand() {

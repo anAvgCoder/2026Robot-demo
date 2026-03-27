@@ -11,21 +11,28 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "EjectFuel"
-          }
-        },
-        {
           "type": "wait",
           "data": {
-            "waitTime": 0.5
+            "waitTime": 0.4
           }
         },
         {
-          "type": "path",
+          "type": "race",
           "data": {
-            "pathName": "Through Right Trench"
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Through Right Trench"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "EjectFuel"
+                }
+              }
+            ]
           }
         },
         {
@@ -35,7 +42,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "To Bottom 5-8"
+                  "pathName": "Right Sweep"
                 }
               },
               {
@@ -51,24 +58,6 @@
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Bottom 5-8 to Half"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Right Half 5-8 to 1-4"
-          }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Half 1-4 Down"
           }
         },
         {
