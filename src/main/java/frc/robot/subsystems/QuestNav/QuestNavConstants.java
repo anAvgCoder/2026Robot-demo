@@ -27,7 +27,7 @@ public class QuestNavConstants {
           Units.inchesToMeters(ROBOT_TO_QUEST_INCHES_X_DOUBLE),
           0,
           Units.inchesToMeters(ROBOT_TO_QUEST_INCHES_Z_DOUBLE),
-          new Rotation3d(0, Units.degreesToRadians(30), 0));
+          new Rotation3d(0, Units.degreesToRadians(0), 0));
 
   public static final Pose3d ROBOT_TO_QUEST_RED =
       new Pose3d(
