@@ -12,7 +12,7 @@ import frc.robot.util.FieldConstants;
 
 public class QuestNavConstants {
 
-  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = -30;
+  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = -10;
 
   public static double ROBOT_TO_QUEST_INCHES_Z_DOUBLE = 13.5;
 
