@@ -338,31 +338,31 @@ public class RobotContainer {
                 })
             .withName("RotateTo:90"));
 
-  panelButton5.onTrue(
-      Commands.runOnce(
-              () -> {
-                isPaused = true; 
-                leftHood.pause();
-                rightHood.pause();
-                rightBelt.pause();
-                leftBelt.pause();
-                diverter.pause();
-                intakeRoller.pause();
-              })
-          .withName("Pause all"));
+    panelButton5.onTrue(
+        Commands.runOnce(
+                () -> {
+                  isPaused = true;
+                  leftHood.pause();
+                  rightHood.pause();
+                  rightBelt.pause();
+                  leftBelt.pause();
+                  diverter.pause();
+                  intakeRoller.pause();
+                })
+            .withName("Pause all"));
 
-  panelButton5.onFalse(
-      Commands.runOnce(
-              () -> {
-                isPaused = false;
-                leftHood.resume();
-                rightHood.resume();
-                rightBelt.resume();
-                leftBelt.resume();
-                diverter.resume();
-                intakeRoller.resume();
-              })
-          .withName("Resume all"));
+    panelButton5.onFalse(
+        Commands.runOnce(
+                () -> {
+                  isPaused = false;
+                  leftHood.resume();
+                  rightHood.resume();
+                  rightBelt.resume();
+                  leftBelt.resume();
+                  diverter.resume();
+                  intakeRoller.resume();
+                })
+            .withName("Resume all"));
 
     leftJoy14Button.toggleOnTrue(adaptiveHubAimingCommand());
 
@@ -460,22 +460,22 @@ public class RobotContainer {
   }
 
   private Command intakePickupHeldCommand() {
-  return Commands.parallel(
-          Commands.runOnce(
-              () -> {
-                drive.setSpeedIntake();
-                if (!isPaused) {
-                  leftHood.resume();
-                  rightHood.resume();
-                }
-              }),
-          new IPIntakeCommand(intakePivot),
-          new IRIntakeCommand(intakeRoller),
-          new BeltIntakeCommand(rightBelt),
-          new BeltIntakeCommand(leftBelt),
-          new DiverterCommand(diverter))
-      .withName("Run Intake");
-}
+    return Commands.parallel(
+            Commands.runOnce(
+                () -> {
+                  drive.setSpeedIntake();
+                  if (!isPaused) {
+                    leftHood.resume();
+                    rightHood.resume();
+                  }
+                }),
+            new IPIntakeCommand(intakePivot),
+            new IRIntakeCommand(intakeRoller),
+            new BeltIntakeCommand(rightBelt),
+            new BeltIntakeCommand(leftBelt),
+            new DiverterCommand(diverter))
+        .withName("Run Intake");
+  }
 
   private Command runRollers() {
     return Commands.parallel(new IRIntakeCommand(intakeRoller).withName("Run Intake"));
@@ -606,7 +606,6 @@ public class RobotContainer {
 
     NamedCommands.registerCommand("EjectFuel", ejectFuelCommand());
 
-    
     NamedCommands.registerCommand(
         "Simply Shoot",
         Commands.runOnce(

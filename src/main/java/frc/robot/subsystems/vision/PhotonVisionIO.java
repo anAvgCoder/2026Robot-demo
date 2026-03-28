@@ -9,6 +9,8 @@ import edu.wpi.first.math.numbers.N3;
 import frc.robot.subsystems.drive.Drive;
 import java.util.List;
 import java.util.Optional;
+
+import org.littletonrobotics.junction.Logger;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -73,7 +75,8 @@ public class PhotonVisionIO implements VisionIO {
       // Lambda to handle Optional
       visionEst.ifPresent(
           est -> {
-            drive.addVisionMeasurement(
+            Logger.recordOutput("PhotonVision/RobotPose", est.estimatedPose.toPose2d());
+            drive.addVisionMeasurement(           
                 est.estimatedPose.toPose2d(), est.timestampSeconds, curStdDevs);
           });
     }
