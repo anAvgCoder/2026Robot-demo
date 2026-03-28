@@ -42,7 +42,7 @@ public class ShotTable {
     table.put(10.0, new ShotSetpoint(calculateHoodAngle(41), 3600));
     table.put(11.5, new ShotSetpoint(calculateHoodAngle(41), 4250));
     table.put(13.5, new ShotSetpoint(calculateHoodAngle(41), 4550));
-    table.put(15.0, new ShotSetpoint(calculateHoodAngle(41), 4350));
+    table.put(15.0, new ShotSetpoint(calculateHoodAngle(41), 4550));
   }
 
   public static ShotSetpoint get(double distanceMeters) {
