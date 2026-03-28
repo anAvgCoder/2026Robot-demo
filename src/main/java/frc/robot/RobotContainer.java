@@ -364,7 +364,7 @@ public class RobotContainer {
                 })
             .withName("Resume all"));
 
-    leftJoy14Button.toggleOnTrue(adaptiveHubAimingCommand());
+    leftJoy13Button.toggleOnTrue(adaptiveHubAimingCommand());
 
     panelButton7.onTrue(
         Commands.runOnce(
