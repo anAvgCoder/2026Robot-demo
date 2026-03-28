@@ -8,11 +8,12 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.util.FieldConstants;
 
 public class QuestNavConstants {
 
-  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = -15;
+  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = SmartDashboard.getNumber("QuestFixing/Num", 0.0);;
   public static double ROBOT_TO_QUEST_INCHES_Z_DOUBLE = 13.5;
 
   public static double ROBOT_WIDTH_INCHES_BUMPER_HALF_DOUBLE =
