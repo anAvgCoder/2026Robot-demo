@@ -13,7 +13,9 @@ import frc.robot.util.FieldConstants;
 
 public class QuestNavConstants {
 
-  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = SmartDashboard.getNumber("QuestFixing/Num", 0.0);;
+  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE =
+      SmartDashboard.getNumber("QuestFixing/Num", 0.0);
+  ;
   public static double ROBOT_TO_QUEST_INCHES_Z_DOUBLE = 13.5;
 
   public static double ROBOT_WIDTH_INCHES_BUMPER_HALF_DOUBLE =
