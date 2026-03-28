@@ -14,14 +14,7 @@ import frc.robot.util.LoggedTunableNumber;
 
 public class QuestNavConstants {
 
-    
-  private static final LoggedTunableNumber num =
-      new LoggedTunableNumber(
-          "QuestFixing/Num",
-          0.0);
-
-  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE =
-        SmartDashboard.getNumber("QuestFixing/Num", num.get());
+  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = -30;
 
   public static double ROBOT_TO_QUEST_INCHES_Z_DOUBLE = 13.5;
 
