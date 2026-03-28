@@ -8,13 +8,11 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.util.FieldConstants;
-import frc.robot.util.LoggedTunableNumber;
 
 public class QuestNavConstants {
 
-  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = -30;
+  public static double ROBOT_TO_QUEST_INCHES_X_DOUBLE = -35;
 
   public static double ROBOT_TO_QUEST_INCHES_Z_DOUBLE = 13.5;
 
