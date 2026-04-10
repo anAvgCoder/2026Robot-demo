@@ -143,6 +143,7 @@ public class RobotContainer {
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
+  private final LoggedDashboardChooser<Command> turretControlChooser;
   private int activePathToken = 0;
   private Command activePathCommand = null;
 
@@ -262,6 +263,10 @@ public class RobotContainer {
 
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
+    turretControlChooser = new LoggedDashboardChooser<>("Turret Control Type");
+    turretControlChooser.addDefaultOption("Manual", adaptiveHubAimingCommand());
+    turretControlChooser.addDefaultOption("Automatic", Commands.runOnce(() -> adaptiveHubAimingCommand().cancel()));
+
     configureButtonBindings();
   }
 
@@ -363,8 +368,6 @@ public class RobotContainer {
                   intakeRoller.resume();
                 })
             .withName("Resume all"));
-
-    leftJoy13Button.toggleOnTrue(adaptiveHubAimingCommand());
 
     panelButton7.onTrue(
     Commands.runOnce(
