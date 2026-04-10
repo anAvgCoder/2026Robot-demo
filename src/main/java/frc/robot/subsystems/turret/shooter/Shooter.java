@@ -37,6 +37,10 @@ public class Shooter extends SubsystemBase {
     controlMode = ControlMode.CLOSED_LOOP_VELOCITY;
   }
 
+  public void addVelocityRPM(double velocityRPM) {
+    setVelocityRPM(velocityRPM + getVelocityRPM());
+  }
+
   public void setOpenLoopPercent(double percent) {
     desiredOpenLoopPercent = Math.max(-1.0, Math.min(1.0, percent));
     controlMode = ControlMode.OPEN_LOOP;

@@ -46,6 +46,10 @@ public class Hood extends SubsystemBase {
     setHoodPosition(Units.degreesToRadians(degrees));
   }
 
+  public void addAngleDeg(double degrees) {
+    setAngleDeg(degrees + getPositionDeg());
+  }
+
   public void setStoragePosition() {
     setHoodPosition(HoodConstants.kStorageAngleRad);
   }

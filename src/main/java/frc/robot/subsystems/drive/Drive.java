@@ -229,7 +229,7 @@ public class Drive extends SubsystemBase {
     System.out.println("switching to cameras from quest");
   }
 
-  public void switchBackToCamera() {
+  public void switchToQuest() {
 
     overrideQuestForCamera = false;
     System.out.println("switching to quest from cameras");

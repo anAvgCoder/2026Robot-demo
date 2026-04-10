@@ -367,52 +367,68 @@ public class RobotContainer {
     leftJoy13Button.toggleOnTrue(adaptiveHubAimingCommand());
 
     panelButton7.onTrue(
-        Commands.runOnce(
-                () -> {
-                  drive.switchToCamera();
-                })
-            .ignoringDisable(true));
+    Commands.runOnce(
+            () -> {
+              drive.switchToCamera();
+            })
+        .ignoringDisable(true));
 
     panelButton8.onTrue(
         Commands.runOnce(
-                () -> {
-                  drive.switchToCamera();
-                })
-            .ignoringDisable(true));
+            () -> {
+              drive.switchToQuest();
+            })
+        .ignoringDisable(true));
 
     panelButton9.onTrue(
-        Commands.runOnce(
-                () -> {
-                  drive.switchBackToCamera();
-                })
-            .ignoringDisable(true));
+      Commands.runOnce(
+        () -> {
+          leftHood.addAngleDeg(-Constants.manualHoodIncDegrees);
+          rightHood.addAngleDeg(-Constants.manualHoodIncDegrees);
+
+        }
+      ));
 
     panelButton11.onTrue(
-        Commands.runOnce(
-                () -> {
-                  drive.switchBackToCamera();
-                })
-            .ignoringDisable(true));
+      Commands.runOnce(
+        () -> {
+          leftHood.addAngleDeg(Constants.manualHoodIncDegrees);
+          rightHood.addAngleDeg(Constants.manualHoodIncDegrees);
 
-    // panelButton15.onTrue(
-    //     Commands.runOnce(
-    //             () -> {
-    //               leftShooter.stop();
-    //               rightShooter.stop();
-    //               leftHood.setHoodPosition(0.0);
-    //               rightHood.setHoodPosition(0.0);
-    //             })
-    //         .withName("set hoods down"));
-
-    // panelButton14.onTrue(
-    //     Commands.runOnce(
-    //             () -> {
-    //               leftShooter.setSpeed(2700);
-    //               rightShooter.setSpeed(2700);
-    //               leftHood.setHoodPosition(0.3);
-    //               rightHood.setHoodPosition(0.3);
-    //             })
-    //         .withName("ready shooters"));
+        }
+      ));
+    
+    panelButton12.onTrue(
+      Commands.runOnce(
+        () -> {
+          leftRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
+          rightRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
+        }
+      ));
+    
+    panelButton13.onTrue(
+      Commands.runOnce(
+        () -> {
+          leftRotater.addTurnPosition(Constants.manualRotationIncDegrees);
+          rightRotater.addTurnPosition(Constants.manualRotationIncDegrees);
+        }
+      ));
+    
+    panelButton14.onTrue(
+      Commands.runOnce(
+        () -> {
+          leftShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
+          rightShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
+        }
+      ));
+    
+    panelButton15.onTrue(
+      Commands.runOnce(
+        () -> {
+          leftShooter.addVelocityRPM(Constants.manualShooterIncRPM);
+          rightShooter.addVelocityRPM(Constants.manualShooterIncRPM);
+        }
+      ));
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(
