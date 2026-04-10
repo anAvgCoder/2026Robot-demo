@@ -264,8 +264,9 @@ public class RobotContainer {
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
     turretControlChooser = new LoggedDashboardChooser<>("Turret Control Type");
-    turretControlChooser.addDefaultOption("Manual", adaptiveHubAimingCommand());
-    turretControlChooser.addDefaultOption("Automatic", Commands.runOnce(() -> adaptiveHubAimingCommand().cancel()));
+    turretControlChooser.addDefaultOption("Automatic", adaptiveHubAimingCommand());
+    turretControlChooser.addOption(
+        "Manual", Commands.runOnce(() -> adaptiveHubAimingCommand().cancel()));
 
     configureButtonBindings();
   }
@@ -278,8 +279,6 @@ public class RobotContainer {
             () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
             () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
             () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
-
-    panelButton12.whileTrue(runRollers());
 
     rightJoy1Button.whileTrue(intakePickupHeldCommand());
     rightJoy1Button.onFalse(intakePickupReleaseCommand());
@@ -370,68 +369,60 @@ public class RobotContainer {
             .withName("Resume all"));
 
     panelButton7.onTrue(
-    Commands.runOnce(
-            () -> {
-              drive.switchToCamera();
-            })
-        .ignoringDisable(true));
+        Commands.runOnce(
+                () -> {
+                  drive.switchToCamera();
+                })
+            .ignoringDisable(true));
 
     panelButton8.onTrue(
         Commands.runOnce(
-            () -> {
-              drive.switchToQuest();
-            })
-        .ignoringDisable(true));
+                () -> {
+                  drive.switchToQuest();
+                })
+            .ignoringDisable(true));
 
     panelButton9.onTrue(
-      Commands.runOnce(
-        () -> {
-          leftHood.addAngleDeg(-Constants.manualHoodIncDegrees);
-          rightHood.addAngleDeg(-Constants.manualHoodIncDegrees);
-
-        }
-      ));
+        Commands.runOnce(
+            () -> {
+              leftHood.addAngleDeg(-Constants.manualHoodIncDegrees);
+              rightHood.addAngleDeg(-Constants.manualHoodIncDegrees);
+            }));
 
     panelButton11.onTrue(
-      Commands.runOnce(
-        () -> {
-          leftHood.addAngleDeg(Constants.manualHoodIncDegrees);
-          rightHood.addAngleDeg(Constants.manualHoodIncDegrees);
+        Commands.runOnce(
+            () -> {
+              leftHood.addAngleDeg(Constants.manualHoodIncDegrees);
+              rightHood.addAngleDeg(Constants.manualHoodIncDegrees);
+            }));
 
-        }
-      ));
-    
     panelButton12.onTrue(
-      Commands.runOnce(
-        () -> {
-          leftRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
-          rightRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
-        }
-      ));
-    
+        Commands.runOnce(
+            () -> {
+              leftRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
+              rightRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
+            }));
+
     panelButton13.onTrue(
-      Commands.runOnce(
-        () -> {
-          leftRotater.addTurnPosition(Constants.manualRotationIncDegrees);
-          rightRotater.addTurnPosition(Constants.manualRotationIncDegrees);
-        }
-      ));
-    
+        Commands.runOnce(
+            () -> {
+              leftRotater.addTurnPosition(Constants.manualRotationIncDegrees);
+              rightRotater.addTurnPosition(Constants.manualRotationIncDegrees);
+            }));
+
     panelButton14.onTrue(
-      Commands.runOnce(
-        () -> {
-          leftShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
-          rightShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
-        }
-      ));
-    
+        Commands.runOnce(
+            () -> {
+              leftShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
+              rightShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
+            }));
+
     panelButton15.onTrue(
-      Commands.runOnce(
-        () -> {
-          leftShooter.addVelocityRPM(Constants.manualShooterIncRPM);
-          rightShooter.addVelocityRPM(Constants.manualShooterIncRPM);
-        }
-      ));
+        Commands.runOnce(
+            () -> {
+              leftShooter.addVelocityRPM(Constants.manualShooterIncRPM);
+              rightShooter.addVelocityRPM(Constants.manualShooterIncRPM);
+            }));
 
     resetQuestPoseRedButton.onTrue(
         Commands.runOnce(

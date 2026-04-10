@@ -37,7 +37,7 @@ public class Rotater extends SubsystemBase {
   }
 
   public void addTurnPosition(double degrees) {
-    setTurnPosition(degrees + getPositionDeg());
+    setTurnPosition(degrees + targetDegrees);
   }
 
   public void setTurnPositionRad(double radians) {

@@ -38,7 +38,7 @@ public class Shooter extends SubsystemBase {
   }
 
   public void addVelocityRPM(double velocityRPM) {
-    setVelocityRPM(velocityRPM + getVelocityRPM());
+    setVelocityRPM(velocityRPM + getGoalVelocityRPM());
   }
 
   public void setOpenLoopPercent(double percent) {
