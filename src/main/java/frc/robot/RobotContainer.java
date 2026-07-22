@@ -25,7 +25,6 @@ import frc.robot.commands.belt.BeltIntakeCommand;
 import frc.robot.commands.belt.BeltOutakeCommand;
 import frc.robot.commands.diverter.DiverterCommand;
 import frc.robot.commands.intakepivot.IPIntakeCommand;
-import frc.robot.commands.intakepivot.IPStorageCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
 import frc.robot.commands.turret.AdaptiveHubAiming;
@@ -303,8 +302,8 @@ public class RobotContainer {
                 new IROutakeCommand(intakeRoller))
             .withName("Run Outtake"));
 
-    leftJoy2Button.onTrue(new IPStorageCommand(intakePivot));
-    leftJoy2Button.onFalse(new IPIntakeCommand(intakePivot));
+    // leftJoy2Button.onTrue(new IPStorageCommand(intakePivot));
+    // leftJoy2Button.onFalse(new IPIntakeCommand(intakePivot));
 
     panelButton2.onTrue(
         Commands.runOnce(
@@ -313,28 +312,28 @@ public class RobotContainer {
                   rightRotater.setTurnPosition(0);
                 })
             .withName("RotateTo:0"));
-    panelButton3.onTrue(
+    panelButton1.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(-60);
                   rightRotater.setTurnPosition(-60);
                 })
             .withName("RotateTo:-60"));
-    panelButton6.onTrue(
+    panelButton4.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(-90);
                   rightRotater.setTurnPosition(-90);
                 })
             .withName("RotateTo:-90"));
-    panelButton1.onTrue(
+    panelButton3.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(60);
                   rightRotater.setTurnPosition(60);
                 })
             .withName("RotateTo:60"));
-    panelButton4.onTrue(
+    panelButton6.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(90);
@@ -399,15 +398,15 @@ public class RobotContainer {
     panelButton12.onTrue(
         Commands.runOnce(
             () -> {
-              leftRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
-              rightRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
+              leftRotater.addTurnPosition(Constants.manualRotationIncDegrees);
+              rightRotater.addTurnPosition(Constants.manualRotationIncDegrees);
             }));
 
     panelButton13.onTrue(
         Commands.runOnce(
             () -> {
-              leftRotater.addTurnPosition(Constants.manualRotationIncDegrees);
-              rightRotater.addTurnPosition(Constants.manualRotationIncDegrees);
+              leftRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
+              rightRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
             }));
 
     panelButton14.onTrue(
@@ -492,7 +491,8 @@ public class RobotContainer {
   }
 
   private Command intakePickupOutCommand() {
-    return Commands.parallel(new IPIntakeCommand(intakePivot).withName("Run IntakePivot Out"));
+    // return Commands.parallel(new IPIntakeCommand(intakePivot).withName("Run IntakePivot Out"));
+    return Commands.runOnce(() -> {});
   }
 
   private Command intakePickupReleaseCommand() {

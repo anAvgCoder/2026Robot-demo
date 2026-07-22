@@ -6,9 +6,7 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
-import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkClosedLoopController;
-import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -67,45 +65,46 @@ public class IntakePivotIOReal implements IntakePivotIO {
   }
 
   public boolean seekHome() {
-    if (isSwitchOn()) {
-      enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
-      seekPosition(IntakePivotConstants.kMagSensorPositionRad);
-      return true;
-    } else {
-      motor.setVoltage(IntakePivotConstants.kStorageCreepVolts);
-      return false;
-    }
+    // if (isSwitchOn()) {
+    //   enc.setPosition(IntakePivotConstants.kMagSensorPositionRad);
+    //   seekPosition(IntakePivotConstants.kMagSensorPositionRad);
+    //   return true;
+    // } else {
+    //   motor.setVoltage(IntakePivotConstants.kStorageCreepVolts);
+    //   return false;
+    // }
+    return true;
   }
 
   @Override
   public void setVoltage(double volts) {
-    motor.setVoltage(volts);
+    // motor.setVoltage(volts);
   }
 
   @Override
   public void seekPosition(double goalRad) {
-    double posRad = enc.getPosition();
-    double errorRad = goalRad - posRad;
+    // double posRad = enc.getPosition();
+    // double errorRad = goalRad - posRad;
 
-    // Scale encoder range [0, -1] → physical angle [0, -π/2]
-    double ffAngleRad = posRad * (Math.PI / 2.0);
-    double gravityFFVolts = IntakePivotConstants.kG * Math.cos(ffAngleRad);
+    // // Scale encoder range [0, -1] → physical angle [0, -π/2]
+    // double ffAngleRad = posRad * (Math.PI / 2.0);
+    // double gravityFFVolts = IntakePivotConstants.kG * Math.cos(ffAngleRad);
 
-    // Static friction compensation — only applied when error exceeds tolerance
-    double ksFFVolts = 0.0; // It's unnecessary from when I last measured
-    if (Math.abs(errorRad) > IntakePivotConstants.kPosToleranceRad) {
-      ksFFVolts = Math.copySign(IntakePivotConstants.kS, errorRad);
-    }
+    // // Static friction compensation — only applied when error exceeds tolerance
+    // double ksFFVolts = 0.0; // It's unnecessary from when I last measured
+    // if (Math.abs(errorRad) > IntakePivotConstants.kPosToleranceRad) {
+    //   ksFFVolts = Math.copySign(IntakePivotConstants.kS, errorRad);
+    // }
 
-    double ffVolts = gravityFFVolts + ksFFVolts;
-    ffVolts =
-        MathUtil.clamp(ffVolts, -IntakePivotConstants.kMaxVolts, IntakePivotConstants.kMaxVolts);
+    // double ffVolts = gravityFFVolts + ksFFVolts;
+    // ffVolts =
+    //     MathUtil.clamp(ffVolts, -IntakePivotConstants.kMaxVolts, IntakePivotConstants.kMaxVolts);
 
-    // -----------------------------------------
-    // closed loop control to set the position
-    // -----------------------------------------
-    closedLoop.setSetpoint(
-        goalRad, SparkBase.ControlType.kPosition, kPidSlot, ffVolts, ArbFFUnits.kVoltage);
+    // // -----------------------------------------
+    // // closed loop control to set the position
+    // // -----------------------------------------
+    // closedLoop.setSetpoint(
+    //     goalRad, SparkBase.ControlType.kPosition, kPidSlot, ffVolts, ArbFFUnits.kVoltage);
   }
 
   @Override

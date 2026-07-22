@@ -14,7 +14,7 @@ public class IPStorageCommand extends Command {
 
   @Override
   public void initialize() {
-    intakePivot.setStoragePosition();
+    // intakePivot.setStoragePosition();
   }
 
   @Override

@@ -14,7 +14,7 @@ public class IPIntakeCommand extends Command {
 
   @Override
   public void initialize() {
-    intakePivot.setIntakeExtended();
+    // intakePivot.setIntakeExtended();
   }
 
   @Override

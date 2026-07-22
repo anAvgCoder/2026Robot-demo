@@ -25,24 +25,31 @@ public class ShotTable {
       new InterpolatingTreeMap<>(InverseInterpolator.forDouble(), shotInterpolator);
 
   static {
-    table.put(0.00, new ShotSetpoint(0.0, 2000));
-    table.put(1.55, new ShotSetpoint(0.0, 2150));
-    table.put(1.86, new ShotSetpoint(calculateHoodAngle(22), 2150));
-    table.put(2.14, new ShotSetpoint(calculateHoodAngle(22), 2250));
-    table.put(2.45, new ShotSetpoint(calculateHoodAngle(23), 2300));
-    table.put(2.73, new ShotSetpoint(calculateHoodAngle(23), 2410));
-    table.put(3.06, new ShotSetpoint(calculateHoodAngle(24), 2470));
-    table.put(3.42, new ShotSetpoint(calculateHoodAngle(24), 2550));
-    table.put(3.74, new ShotSetpoint(calculateHoodAngle(25), 2600));
-    table.put(4.05, new ShotSetpoint(calculateHoodAngle(28), 2600));
-    table.put(4.44, new ShotSetpoint(calculateHoodAngle(28), 2650));
-    table.put(4.90, new ShotSetpoint(calculateHoodAngle(32), 2700));
-    table.put(5.34, new ShotSetpoint(calculateHoodAngle(33), 2700));
-    table.put(7.50, new ShotSetpoint(calculateHoodAngle(36), 2900));
-    table.put(10.0, new ShotSetpoint(calculateHoodAngle(41), 3600));
-    table.put(11.5, new ShotSetpoint(calculateHoodAngle(41), 4250));
-    table.put(13.5, new ShotSetpoint(calculateHoodAngle(41), 4550));
-    table.put(15.0, new ShotSetpoint(calculateHoodAngle(41), 4550));
+    // Table for trashcan
+    table.put(0.00, new ShotSetpoint(0.0, 1600));
+    table.put(1.55, new ShotSetpoint(0.0, 1600));
+    table.put(1.86, new ShotSetpoint(calculateHoodAngle(22), 1600));
+    table.put(2.14, new ShotSetpoint(calculateHoodAngle(22), 1600));
+    table.put(2.45, new ShotSetpoint(calculateHoodAngle(23), 1600));
+    table.put(2.73, new ShotSetpoint(calculateHoodAngle(23), 1600));
+    // table.put(0.00, new ShotSetpoint(0.0, 2000));
+    // table.put(1.55, new ShotSetpoint(0.0, 2150));
+    // table.put(1.86, new ShotSetpoint(calculateHoodAngle(22), 2150));
+    // table.put(2.14, new ShotSetpoint(calculateHoodAngle(22), 2250));
+    // table.put(2.45, new ShotSetpoint(calculateHoodAngle(23), 2300));
+    // table.put(2.73, new ShotSetpoint(calculateHoodAngle(23), 2410));
+    // table.put(3.06, new ShotSetpoint(calculateHoodAngle(24), 2470));
+    // table.put(3.42, new ShotSetpoint(calculateHoodAngle(24), 2550));
+    // table.put(3.74, new ShotSetpoint(calculateHoodAngle(25), 2600));
+    // table.put(4.05, new ShotSetpoint(calculateHoodAngle(28), 2600));
+    // table.put(4.44, new ShotSetpoint(calculateHoodAngle(28), 2650));
+    // table.put(4.90, new ShotSetpoint(calculateHoodAngle(32), 2700));
+    // table.put(5.34, new ShotSetpoint(calculateHoodAngle(33), 2700));
+    // table.put(7.50, new ShotSetpoint(calculateHoodAngle(36), 2900));
+    // table.put(10.0, new ShotSetpoint(calculateHoodAngle(41), 3600));
+    // table.put(11.5, new ShotSetpoint(calculateHoodAngle(41), 4250));
+    // table.put(13.5, new ShotSetpoint(calculateHoodAngle(41), 4550));
+    // table.put(15.0, new ShotSetpoint(calculateHoodAngle(41), 4550));
   }
 
   public static ShotSetpoint get(double distanceMeters) {

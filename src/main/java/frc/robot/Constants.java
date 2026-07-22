@@ -33,5 +33,5 @@ public final class Constants {
 
   public static final double manualHoodIncDegrees = 5;
   public static final double manualRotationIncDegrees = 5;
-  public static final double manualShooterIncRPM = 500;
+  public static final double manualShooterIncRPM = 100;
 }
