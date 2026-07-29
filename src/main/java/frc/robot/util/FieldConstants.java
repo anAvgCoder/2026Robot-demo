@@ -48,6 +48,13 @@ public class FieldConstants {
           Units.inchesToMeters(0.0),
           new Rotation3d(0, 0, Units.degreesToRadians(0)));
 
+  public static final Pose3d TRASH_CAN_POSE3D =
+      new Pose3d(
+          Units.inchesToMeters(FIELD_HUB_TO_SIDE_INCHES),
+          Units.inchesToMeters(FIELD_WIDTH_INCHES / 2),
+          Units.inchesToMeters(0.0),
+          new Rotation3d(0, 0, Units.degreesToRadians(0)));
+
   public static final Pose3d RED_HUB_POSE3D =
       new Pose3d(
           Units.inchesToMeters(FIELD_LENGTH_INCHES - FIELD_HUB_TO_SIDE_INCHES),
