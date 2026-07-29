@@ -1,7 +1,6 @@
 package frc.robot;
 
 import static frc.robot.subsystems.questnav.QuestNavConstants.ROBOT_TO_QUEST;
-import static frc.robot.subsystems.questnav.QuestNavConstants.ROBOT_TO_QUEST_RED_HUB;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
@@ -19,7 +18,6 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
 import frc.robot.commands.belt.BeltOutakeCommand;
@@ -28,47 +26,22 @@ import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
 import frc.robot.commands.turret.AdaptiveHubAiming;
+import frc.robot.oi.LeftStick;
+import frc.robot.oi.OperatorPanel;
+import frc.robot.oi.RightStick;
 import frc.robot.subsystems.belt.Belt;
-import frc.robot.subsystems.belt.BeltConstants;
-import frc.robot.subsystems.belt.BeltIOReal;
-import frc.robot.subsystems.belt.BeltIOSim;
 import frc.robot.subsystems.diverter.Diverter;
-import frc.robot.subsystems.diverter.DiverterIOReal;
-import frc.robot.subsystems.diverter.DiverterIOSim;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.drive.GyroIO;
-import frc.robot.subsystems.drive.GyroIOPigeon2;
-import frc.robot.subsystems.drive.ModuleIO;
-import frc.robot.subsystems.drive.ModuleIOSim;
-import frc.robot.subsystems.drive.ModuleIOSpark;
 import frc.robot.subsystems.intakepivot.IntakePivot;
-import frc.robot.subsystems.intakepivot.IntakePivotConstants;
-import frc.robot.subsystems.intakepivot.IntakePivotIOReal;
-import frc.robot.subsystems.intakepivot.IntakePivotIOReplay;
-import frc.robot.subsystems.intakepivot.IntakePivotIOSim;
 import frc.robot.subsystems.intakeroller.IntakeRoller;
-import frc.robot.subsystems.intakeroller.IntakeRollerIO;
-import frc.robot.subsystems.intakeroller.IntakeRollerIOReal;
-import frc.robot.subsystems.intakeroller.IntakeRollerIOSim;
 import frc.robot.subsystems.questnav.QuestNavConstants;
 import frc.robot.subsystems.questnav.QuestNavSensor;
 import frc.robot.subsystems.turret.ShotTable;
 import frc.robot.subsystems.turret.hood.Hood;
-import frc.robot.subsystems.turret.hood.HoodConstants;
-import frc.robot.subsystems.turret.hood.HoodIO;
-import frc.robot.subsystems.turret.hood.HoodIOReal;
-import frc.robot.subsystems.turret.hood.HoodIOSim;
 import frc.robot.subsystems.turret.rotater.Rotater;
-import frc.robot.subsystems.turret.rotater.RotaterConstants;
-import frc.robot.subsystems.turret.rotater.RotaterIO;
-import frc.robot.subsystems.turret.rotater.RotaterIOReal;
-import frc.robot.subsystems.turret.rotater.RotaterIOSim;
 import frc.robot.subsystems.turret.shooter.Shooter;
-import frc.robot.subsystems.turret.shooter.ShooterIOReal;
-import frc.robot.subsystems.turret.shooter.ShooterIOSim;
-import frc.robot.subsystems.vision.PhotonVisionIO;
-import frc.robot.subsystems.vision.PhotonVisionSimIO;
 import frc.robot.subsystems.vision.Vision;
+import frc.robot.util.FieldConstants;
 import java.util.Map;
 import java.util.Set;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
@@ -94,51 +67,10 @@ public class RobotContainer {
 
   private final ShotTable shotTable;
 
-  // Joysticks
-  private static final Joystick leftJoy = new Joystick(0);
-  private static final Joystick rightJoy = new Joystick(1);
-  private static final Joystick buttonPanel = new Joystick(2);
-
-  // Buttons
-  private static final JoystickButton rightJoy1Button = new JoystickButton(rightJoy, 1);
-  private static final JoystickButton rightJoy2Button = new JoystickButton(rightJoy, 2);
-  private static final JoystickButton rightJoy3Button = new JoystickButton(rightJoy, 3);
-  private static final JoystickButton rightJoy4Button = new JoystickButton(rightJoy, 4);
-  private static final JoystickButton rightJoy5Button = new JoystickButton(rightJoy, 5);
-  private static final JoystickButton rightJoy6Button = new JoystickButton(rightJoy, 6);
-  private static final JoystickButton rightJoy7Button = new JoystickButton(rightJoy, 7);
-  private static final JoystickButton rightJoy8Button = new JoystickButton(rightJoy, 8);
-  private static final JoystickButton rightJoy9Button = new JoystickButton(rightJoy, 9);
-  private static final JoystickButton rightJoy10Button = new JoystickButton(rightJoy, 10);
-
-  private static final JoystickButton outakeButton = new JoystickButton(leftJoy, 1);
-  private static final JoystickButton leftJoy2Button = new JoystickButton(leftJoy, 2);
-  private static final JoystickButton leftJoy3Button = new JoystickButton(leftJoy, 3);
-  private static final JoystickButton leftJoy4Button = new JoystickButton(leftJoy, 4);
-
-  private static final JoystickButton leftJoy14Button = new JoystickButton(leftJoy, 14);
-  private static final JoystickButton leftJoy13Button = new JoystickButton(leftJoy, 13);
-
-  private static final JoystickButton resetQuestPoseRedButton = new JoystickButton(leftJoy, 11);
-  private static final JoystickButton resetQuestPoseRedHubButton = new JoystickButton(leftJoy, 5);
-
-  private static final JoystickButton resetQuestPoseBlueButton = new JoystickButton(rightJoy, 11);
-  private static final JoystickButton resetQuestPoseBlueHubButton = new JoystickButton(rightJoy, 5);
-
-  private static final JoystickButton panelButton1 = new JoystickButton(buttonPanel, 1);
-  private static final JoystickButton panelButton2 = new JoystickButton(buttonPanel, 2);
-  private static final JoystickButton panelButton3 = new JoystickButton(buttonPanel, 3);
-  private static final JoystickButton panelButton4 = new JoystickButton(buttonPanel, 4);
-  private static final JoystickButton panelButton5 = new JoystickButton(buttonPanel, 5);
-  private static final JoystickButton panelButton6 = new JoystickButton(buttonPanel, 6);
-  private static final JoystickButton panelButton7 = new JoystickButton(buttonPanel, 7);
-  private static final JoystickButton panelButton8 = new JoystickButton(buttonPanel, 8);
-  private static final JoystickButton panelButton9 = new JoystickButton(buttonPanel, 9);
-  private static final JoystickButton panelButton11 = new JoystickButton(buttonPanel, 11);
-  private static final JoystickButton panelButton12 = new JoystickButton(buttonPanel, 12);
-  private static final JoystickButton panelButton13 = new JoystickButton(buttonPanel, 13);
-  private static final JoystickButton panelButton14 = new JoystickButton(buttonPanel, 14);
-  private static final JoystickButton panelButton15 = new JoystickButton(buttonPanel, 15);
+  // Operator interface
+  private final LeftStick leftStick = new LeftStick();
+  private final RightStick rightStick = new RightStick();
+  private final OperatorPanel operatorPanel = new OperatorPanel();
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -165,95 +97,20 @@ public class RobotContainer {
   public RobotContainer() {
     questSensor = new QuestNavSensor();
 
-    switch (Constants.currentMode) {
-      case REAL:
-        drive =
-            new Drive(
-                new GyroIOPigeon2(),
-                questSensor,
-                new ModuleIOSpark(0),
-                new ModuleIOSpark(1),
-                new ModuleIOSpark(2),
-                new ModuleIOSpark(3));
-        vision = new Vision(new PhotonVisionIO(drive));
-
-        diverter = new Diverter(new DiverterIOReal());
-
-        leftBelt = new Belt(new BeltIOReal(BeltConstants.CanIdLeft), "BeltLeft");
-
-        rightBelt = new Belt(new BeltIOReal(BeltConstants.CanIdRight), "BeltRight");
-        intakePivot =
-            new IntakePivot(
-                new IntakePivotIOReal(
-                    IntakePivotConstants.kCanId, IntakePivotConstants.kSwitchDIOChannel));
-        intakeRoller = new IntakeRoller(new IntakeRollerIOReal());
-
-        leftShooter = new Shooter(new ShooterIOReal(45), "ShooterLeft");
-        leftRotater =
-            new Rotater(
-                new RotaterIOReal(RotaterConstants.kCanIdLeft, RotaterConstants.kCanIdLeftCoder),
-                "RotaterLeft");
-        leftHood = new Hood(new HoodIOReal(HoodConstants.kLeftCanId), "HoodLeft");
-
-        rightShooter = new Shooter(new ShooterIOReal(44), "ShooterRight");
-        rightRotater =
-            new Rotater(
-                new RotaterIOReal(RotaterConstants.kCanIdRight, RotaterConstants.kCanIdRightCoder),
-                "RotaterRight");
-        rightHood = new Hood(new HoodIOReal(HoodConstants.kRightCanId), "HoodRight");
-        break;
-
-      case SIM:
-        drive =
-            new Drive(
-                new GyroIO() {},
-                questSensor,
-                new ModuleIOSim(),
-                new ModuleIOSim(),
-                new ModuleIOSim(),
-                new ModuleIOSim());
-        vision = new Vision(new PhotonVisionSimIO());
-        diverter = new Diverter(new DiverterIOSim());
-        leftBelt = new Belt(new BeltIOSim(), "BeltLeft");
-        rightBelt = new Belt(new BeltIOSim(), "BeltRight");
-        intakePivot = new IntakePivot(new IntakePivotIOSim());
-        intakeRoller = new IntakeRoller(new IntakeRollerIOSim());
-
-        leftShooter = new Shooter(new ShooterIOSim());
-        leftRotater = new Rotater(new RotaterIOSim(), "LeftRotater");
-        leftHood = new Hood(new HoodIOSim(), "LeftHood");
-
-        rightShooter = new Shooter(new ShooterIOSim());
-        rightRotater = new Rotater(new RotaterIOSim(), "RightRotater");
-        rightHood = new Hood(new HoodIOSim(), "RightHood");
-        break;
-
-      default:
-        drive =
-            new Drive(
-                new GyroIO() {},
-                questSensor,
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {},
-                new ModuleIO() {});
-        vision = new Vision(new PhotonVisionSimIO());
-
-        diverter = new Diverter(new DiverterIOSim());
-        leftBelt = new Belt(new BeltIOSim() {}, "BeltLeft");
-        rightBelt = new Belt(new BeltIOSim() {}, "BeltRIght");
-        intakePivot = new IntakePivot(new IntakePivotIOReplay());
-        intakeRoller = new IntakeRoller(new IntakeRollerIO() {});
-
-        leftShooter = new Shooter(new ShooterIOSim());
-        leftRotater = new Rotater(new RotaterIO() {}, "LeftRotater");
-        leftHood = new Hood(new HoodIO() {}, "LeftHood");
-
-        rightShooter = new Shooter(new ShooterIOSim());
-        rightRotater = new Rotater(new RotaterIO() {}, "RightRotater");
-        rightHood = new Hood(new HoodIO() {}, "RightHood");
-        break;
-    }
+    Subsystems subsystems = SubsystemFactory.create(Constants.currentMode, questSensor);
+    drive = subsystems.drive();
+    vision = subsystems.vision();
+    diverter = subsystems.diverter();
+    leftBelt = subsystems.leftBelt();
+    rightBelt = subsystems.rightBelt();
+    intakePivot = subsystems.intakePivot();
+    intakeRoller = subsystems.intakeRoller();
+    leftRotater = subsystems.leftRotater();
+    leftShooter = subsystems.leftShooter();
+    leftHood = subsystems.leftHood();
+    rightRotater = subsystems.rightRotater();
+    rightShooter = subsystems.rightShooter();
+    rightHood = subsystems.rightHood();
 
     shotTable = new ShotTable();
 
@@ -271,77 +128,114 @@ public class RobotContainer {
   }
 
   private void configureButtonBindings() {
-
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0,
-            () -> getClampedTurn(leftJoy) ? -leftJoy.getX() : 0.0));
+            () -> getClampedDrive(rightStick.joystick) ? -rightStick.joystick.getY() : 0.0,
+            () -> getClampedDrive(rightStick.joystick) ? -rightStick.joystick.getX() : 0.0,
+            () -> getClampedTurn(leftStick.joystick) ? -leftStick.joystick.getX() : 0.0));
 
-    rightJoy1Button.whileTrue(intakePickupHeldCommand());
-    rightJoy1Button.onFalse(intakePickupReleaseCommand());
+    configureDriveBindings();
+    configureIntakeBindings();
+    configureTurretPresetBindings();
+    configureTurretAimBindings();
+    configurePauseResumeBindings();
+    configurePoseSourceBindings();
+    configureManualNudgeBindings();
+    configurePoseResetBindings();
+  }
 
-    rightJoy2Button.whileTrue(
+  private void configureDriveBindings() {
+    // Right Joystick Button 2: lock drive heading while held
+    rightStick.lockHeadingButton.whileTrue(
         DriveCommands.joystickDriveAtAngle(
             drive,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getY() : 0.0,
-            () -> getClampedDrive(rightJoy) ? -rightJoy.getX() : 0.0));
+            () -> getClampedDrive(rightStick.joystick) ? -rightStick.joystick.getY() : 0.0,
+            () -> getClampedDrive(rightStick.joystick) ? -rightStick.joystick.getX() : 0.0));
 
-    rightJoy3Button.whileTrue(Commands.runOnce(drive::setSpeedFull).withName("set speed full"));
-    rightJoy3Button.onFalse(Commands.runOnce(drive::setSpeedNormal).withName("set speed normal"));
+    // Right Joystick Button 3: full drive speed while held, back to normal on release
+    rightStick.fullSpeedButton.whileTrue(
+        Commands.runOnce(drive::setSpeedFull).withName("set speed full"));
+    rightStick.fullSpeedButton.onFalse(
+        Commands.runOnce(drive::setSpeedNormal).withName("set speed normal"));
 
-    rightJoy4Button.whileTrue(Commands.runOnce(drive::setSpeedIntake).withName("setSpeedIntake"));
-    rightJoy4Button.onFalse(Commands.runOnce(drive::setSpeedNormal).withName("setSpeedNormal"));
+    // Right Joystick Button 4: intake drive speed while held, back to normal on release
+    rightStick.intakeSpeedButton.whileTrue(
+        Commands.runOnce(drive::setSpeedIntake).withName("setSpeedIntake"));
+    rightStick.intakeSpeedButton.onFalse(
+        Commands.runOnce(drive::setSpeedNormal).withName("setSpeedNormal"));
+  }
 
-    outakeButton.whileTrue(
+  private void configureIntakeBindings() {
+    // Right Joystick Button 1: run full intake sequence while held, stop it on release
+    rightStick.intakeButton.whileTrue(intakePickupHeldCommand());
+    rightStick.intakeButton.onFalse(intakePickupReleaseCommand());
+
+    // Left Joystick Button 1: run belts/diverter/roller in reverse to eject fuel while held
+    leftStick.outtakeButton.whileTrue(
         Commands.parallel(
                 new BeltOutakeCommand(rightBelt),
                 new BeltOutakeCommand(leftBelt),
                 new DiverterCommand(diverter),
                 new IROutakeCommand(intakeRoller))
             .withName("Run Outtake"));
+  }
 
-    // leftJoy2Button.onTrue(new IPStorageCommand(intakePivot));
-    // leftJoy2Button.onFalse(new IPIntakeCommand(intakePivot));
-
-    panelButton2.onTrue(
+  private void configureTurretPresetBindings() {
+    // Panel Button 2: point turret straight forward (0 deg)
+    operatorPanel.rotateTo0Button.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(0);
                   rightRotater.setTurnPosition(0);
                 })
             .withName("RotateTo:0"));
-    panelButton1.onTrue(
+
+    // Panel Button 1: point turret to -60 deg
+    operatorPanel.rotateToNeg60Button.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(-60);
                   rightRotater.setTurnPosition(-60);
                 })
             .withName("RotateTo:-60"));
-    panelButton4.onTrue(
+
+    // Panel Button 4: point turret to -90 deg
+    operatorPanel.rotateToNeg90Button.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(-90);
                   rightRotater.setTurnPosition(-90);
                 })
             .withName("RotateTo:-90"));
-    panelButton3.onTrue(
+
+    // Panel Button 3: point turret to 60 deg
+    operatorPanel.rotateTo60Button.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(60);
                   rightRotater.setTurnPosition(60);
                 })
             .withName("RotateTo:60"));
-    panelButton6.onTrue(
+
+    // Panel Button 6: point turret to 90 deg
+    operatorPanel.rotateTo90Button.onTrue(
         Commands.runOnce(
                 () -> {
                   leftRotater.setTurnPosition(90);
                   rightRotater.setTurnPosition(90);
                 })
             .withName("RotateTo:90"));
+  }
 
-    panelButton5.onTrue(
+  private void configureTurretAimBindings() {
+    // Left Joystick Button 5: toggle automatic hub-aiming turret control
+    leftStick.toggleAutoAimButton.toggleOnTrue(adaptiveHubAimingCommand());
+  }
+
+  private void configurePauseResumeBindings() {
+    // Panel Button 5: pause hoods/belts/diverter/roller while held
+    operatorPanel.pauseAllButton.onTrue(
         Commands.runOnce(
                 () -> {
                   isPaused = true;
@@ -354,7 +248,8 @@ public class RobotContainer {
                 })
             .withName("Pause all"));
 
-    panelButton5.onFalse(
+    // Panel Button 5: resume hoods/belts/diverter/roller on release
+    operatorPanel.pauseAllButton.onFalse(
         Commands.runOnce(
                 () -> {
                   isPaused = false;
@@ -366,64 +261,79 @@ public class RobotContainer {
                   intakeRoller.resume();
                 })
             .withName("Resume all"));
+  }
 
-    panelButton7.onTrue(
+  private void configurePoseSourceBindings() {
+    // Panel Button 7: switch drive pose estimation to camera vision
+    operatorPanel.switchToCameraButton.onTrue(
         Commands.runOnce(
                 () -> {
                   drive.switchToCamera();
                 })
             .ignoringDisable(true));
 
-    panelButton8.onTrue(
+    // Panel Button 8: switch drive pose estimation to QuestNav
+    operatorPanel.switchToQuestButton.onTrue(
         Commands.runOnce(
                 () -> {
                   drive.switchToQuest();
                 })
             .ignoringDisable(true));
+  }
 
-    panelButton9.onTrue(
+  private void configureManualNudgeBindings() {
+    // Panel Button 9: nudge both hoods down by one manual increment
+    operatorPanel.hoodDownButton.onTrue(
         Commands.runOnce(
             () -> {
               leftHood.addAngleDeg(-Constants.manualHoodIncDegrees);
               rightHood.addAngleDeg(-Constants.manualHoodIncDegrees);
             }));
 
-    panelButton11.onTrue(
+    // Panel Button 11: nudge both hoods up by one manual increment
+    operatorPanel.hoodUpButton.onTrue(
         Commands.runOnce(
             () -> {
               leftHood.addAngleDeg(Constants.manualHoodIncDegrees);
               rightHood.addAngleDeg(Constants.manualHoodIncDegrees);
             }));
 
-    panelButton12.onTrue(
+    // Panel Button 12: nudge turret rotation positive by one manual increment
+    operatorPanel.turretNudgePositiveButton.onTrue(
         Commands.runOnce(
             () -> {
               leftRotater.addTurnPosition(Constants.manualRotationIncDegrees);
               rightRotater.addTurnPosition(Constants.manualRotationIncDegrees);
             }));
 
-    panelButton13.onTrue(
+    // Panel Button 13: nudge turret rotation negative by one manual increment
+    operatorPanel.turretNudgeNegativeButton.onTrue(
         Commands.runOnce(
             () -> {
               leftRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
               rightRotater.addTurnPosition(-Constants.manualHoodIncDegrees);
             }));
 
-    panelButton14.onTrue(
+    // Panel Button 14: nudge both shooter velocities down by one manual increment
+    operatorPanel.shooterNudgeDownButton.onTrue(
         Commands.runOnce(
             () -> {
               leftShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
               rightShooter.addVelocityRPM(-Constants.manualShooterIncRPM);
             }));
 
-    panelButton15.onTrue(
+    // Panel Button 15: nudge both shooter velocities up by one manual increment
+    operatorPanel.shooterNudgeUpButton.onTrue(
         Commands.runOnce(
             () -> {
               leftShooter.addVelocityRPM(Constants.manualShooterIncRPM);
               rightShooter.addVelocityRPM(Constants.manualShooterIncRPM);
             }));
+  }
 
-    resetQuestPoseRedButton.onTrue(
+  private void configurePoseResetBindings() {
+    // Left Joystick Button 11: reset drive pose to the red alliance QuestNav reference point
+    leftStick.resetQuestPoseRedButton.onTrue(
         Commands.runOnce(
                 () ->
                     drive.setPose(
@@ -431,7 +341,8 @@ public class RobotContainer {
             .ignoringDisable(true)
             .withName("ResetPoseRed"));
 
-    resetQuestPoseBlueButton.onTrue(
+    // Right Joystick Button 11: reset drive pose to the blue alliance QuestNav reference point
+    rightStick.resetQuestPoseBlueButton.onTrue(
         Commands.runOnce(
                 () ->
                     drive.setPose(
@@ -440,20 +351,21 @@ public class RobotContainer {
             .ignoringDisable(true)
             .withName("ResetPoseBlue"));
 
-    resetQuestPoseBlueHubButton.onTrue(
+    // Right Joystick Button 5: reset drive pose to the blue hub QuestNav reference point
+    rightStick.resetQuestPoseBlueHubButton.onTrue(
+        Commands.runOnce(() -> drive.setPose(FieldConstants.TRASH_CAN_POSE3D))
+            .ignoringDisable(true)
+            .withName("ResetPoseBlue"));
+
+    // Right Joystick Button 7: reset drive pose to the blue hub QuestNav reference point
+    rightStick.resetPoseBlueHubButton.onTrue(
         Commands.runOnce(
                 () ->
                     drive.setPose(
                         QuestNavConstants.ROBOT_TO_QUEST_BLUE_HUB.transformBy(
                             ROBOT_TO_QUEST.inverse())))
             .ignoringDisable(true)
-            .withName("ResetPoseBlue"));
-
-    resetQuestPoseRedHubButton.onTrue(
-        Commands.runOnce(
-                () -> drive.setPose(ROBOT_TO_QUEST_RED_HUB.transformBy(ROBOT_TO_QUEST.inverse())))
-            .ignoringDisable(true)
-            .withName("ResetPoseBlue"));
+            .withName("ResetPoseBlueHub"));
   }
 
   public boolean getClampedTurn(Joystick joy) {
