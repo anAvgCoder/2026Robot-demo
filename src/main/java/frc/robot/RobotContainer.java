@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.commands.DriveCommands;
 import frc.robot.commands.belt.BeltIntakeCommand;
 import frc.robot.commands.belt.BeltOutakeCommand;
@@ -26,6 +27,7 @@ import frc.robot.commands.intakepivot.IPIntakeCommand;
 import frc.robot.commands.intakeroller.IRIntakeCommand;
 import frc.robot.commands.intakeroller.IROutakeCommand;
 import frc.robot.commands.turret.AdaptiveHubAiming;
+import frc.robot.commands.turret.ManualShotTuning;
 import frc.robot.oi.LeftStick;
 import frc.robot.oi.OperatorPanel;
 import frc.robot.oi.RightStick;
@@ -45,6 +47,7 @@ import frc.robot.util.FieldConstants;
 import java.util.Map;
 import java.util.Set;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
+import org.littletonrobotics.junction.networktables.LoggedNetworkNumber;
 
 public class RobotContainer {
   // Subsystems
@@ -75,6 +78,12 @@ public class RobotContainer {
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
   private final LoggedDashboardChooser<Command> turretControlChooser;
+  private final LoggedNetworkNumber manualShotTuningEnabled =
+      new LoggedNetworkNumber("/ShotTuning/Enabled", 0.0);
+  private final LoggedNetworkNumber manualShotRPM =
+      new LoggedNetworkNumber("/ShotTuning/ShooterRPM", 1600.0);
+  private final LoggedNetworkNumber manualShotHoodDeg =
+      new LoggedNetworkNumber("/ShotTuning/HoodAngleDeg", 0.0);
   private int activePathToken = 0;
   private Command activePathCommand = null;
 
@@ -139,6 +148,7 @@ public class RobotContainer {
     configureIntakeBindings();
     configureTurretPresetBindings();
     configureTurretAimBindings();
+    configureShotTuningBindings();
     configurePauseResumeBindings();
     configurePoseSourceBindings();
     configureManualNudgeBindings();
@@ -231,6 +241,13 @@ public class RobotContainer {
   private void configureTurretAimBindings() {
     // Left Joystick Button 5: toggle automatic hub-aiming turret control
     leftStick.toggleAutoAimButton.toggleOnTrue(adaptiveHubAimingCommand());
+  }
+
+  private void configureShotTuningBindings() {
+    // Shuffleboard "/ShotTuning/Enabled" (1 = on, 0 = off): drive both shooters/hoods to the
+    // hand-entered "/ShotTuning/ShooterRPM" and "/ShotTuning/HoodAngleDeg" values, for building a
+    // new shot table.
+    new Trigger(() -> manualShotTuningEnabled.get() >= 1.0).whileTrue(manualShotTuningCommand());
   }
 
   private void configurePauseResumeBindings() {
@@ -442,6 +459,11 @@ public class RobotContainer {
         rightHood,
         leftRotater,
         leftHood);
+  }
+
+  private Command manualShotTuningCommand() {
+    return new ManualShotTuning(
+        rightShooter, leftShooter, rightHood, leftHood, manualShotRPM::get, manualShotHoodDeg::get);
   }
 
   private Command runTeleopPath(String name) {

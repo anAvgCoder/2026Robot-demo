@@ -150,7 +150,8 @@ public class AdaptiveHubAiming extends Command {
       targetChoice = Target.HUB;
       Logger.recordOutput("AimDebug/FieldZone", "hub");
     } else if (normalizedX < Units.inchesToMeters(200)) {
-      targetChoice = Target.NONE;
+      // targetChoice = Target.NONE;
+      targetChoice = Target.HUB;
       Logger.recordOutput("AimDebug/FieldZone", "close trench zone");
     } else {
       boolean inOutpostSide =
@@ -159,10 +160,12 @@ public class AdaptiveHubAiming extends Command {
               : robotPose.getY() >= Units.inchesToMeters(FieldConstants.FIELD_WIDTH_INCHES / 2);
 
       if (inOutpostSide) {
-        targetChoice = Target.OUTPOST;
+        // targetChoice = Target.OUTPOST;
+        targetChoice = Target.HUB;
         Logger.recordOutput("AimDebug/FieldZone", "outpost");
       } else {
-        targetChoice = Target.DEPOT;
+        // targetChoice = Target.DEPOT;
+        targetChoice = Target.HUB;
         Logger.recordOutput("AimDebug/FieldZone", "depot");
       }
     }
