@@ -30,12 +30,12 @@ public class Belt extends SubsystemBase {
 
   public void convey() {
     motor.set(0.7);
-    motor1.set(-0.7);
+    // motor1.set(0.7);
   }
 
   public void unconvey() {
     motor.set(-0.7);
-    motor1.set(0.7);
+    // motor1.set(-0.7);
   }
 
   public void stop() {

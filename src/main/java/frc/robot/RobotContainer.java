@@ -17,7 +17,8 @@ public class RobotContainer {
   private final Drive drive;
   private final Intake intake;
   private final Belt belt;
-  private final Shooter shooter;
+  private final Shooter shooterRight;
+  private final Shooter shooterLeft;
 
   // Operator interface
   private final Joystick leftStick = new Joystick(0);
@@ -35,6 +36,7 @@ public class RobotContainer {
   private final JoystickButton button8 = new JoystickButton(buttonPanel, 8);
   private final JoystickButton button9 = new JoystickButton(buttonPanel, 9);
   private final JoystickButton button11 = new JoystickButton(buttonPanel, 11);
+  private final JoystickButton button12 = new JoystickButton(buttonPanel, 12);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
@@ -45,7 +47,8 @@ public class RobotContainer {
     drive = subsystems.drive();
     intake = new Intake(10);
     belt = new Belt(30, 31);
-    shooter = new Shooter(44);
+    shooterRight = new Shooter(44);
+    shooterLeft = new Shooter(45);
 
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
@@ -68,8 +71,27 @@ public class RobotContainer {
     button6.onTrue(Commands.runOnce(() -> belt.convey()));
     button7.onTrue(Commands.runOnce(() -> belt.unconvey()));
     button8.onTrue(Commands.runOnce(() -> belt.stop()));
-    button9.onTrue(Commands.runOnce(() -> shooter.spit(3500)));
-    button11.onTrue(Commands.runOnce(() -> shooter.nope()));
+
+    button9.onTrue(
+        Commands.runOnce(
+            () -> {
+              shooterRight.spit(2500);
+              shooterLeft.spit(2500);
+            }));
+
+    button11.onTrue(
+        Commands.runOnce(
+            () -> {
+              shooterRight.nope();
+              shooterLeft.nope();
+            }));
+
+    button12.onTrue(
+        Commands.runOnce(
+            () -> {
+              shooterRight.changeUp(100);
+              shooterLeft.changeUp(100);
+            }));
   }
 
   public boolean getClampedTurn(Joystick joy) {
