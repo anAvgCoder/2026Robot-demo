@@ -19,10 +19,8 @@ import edu.wpi.first.hal.FRCNetComm.tInstances;
 import edu.wpi.first.hal.FRCNetComm.tResourceType;
 import edu.wpi.first.hal.HAL;
 import edu.wpi.first.math.Matrix;
-import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -35,14 +33,11 @@ import edu.wpi.first.wpilibj.Alert;
 import edu.wpi.first.wpilibj.Alert.AlertType;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.Mode;
-import frc.robot.subsystems.questnav.QuestNavConstants;
-import frc.robot.subsystems.questnav.QuestNavSensor;
 import frc.robot.util.LocalADStarAK;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -52,12 +47,6 @@ import org.littletonrobotics.junction.Logger;
 public class Drive extends SubsystemBase {
   static final Lock odometryLock = new ReentrantLock();
 
-  // How tightly to trust Quest pose measurements when fusing into the estimator.
-  // These are intentionally tight (2 cm XY, ~2 deg heading) because the Quest
-  // is our primary localisation source.
-  private static final Matrix<N3, N1> QUEST_STD_DEVS = VecBuilder.fill(0.02, 0.02, 0.035);
-
-  private final QuestNavSensor quest;
   private final GyroIO gyroIO;
   private final GyroIOInputsAutoLogged gyroInputs = new GyroIOInputsAutoLogged();
   private final Module[] modules = new Module[4]; // FL, FR, BL, BR
@@ -86,14 +75,12 @@ public class Drive extends SubsystemBase {
 
   public Drive(
       GyroIO gyroIO,
-      QuestNavSensor quest,
       ModuleIO flModuleIO,
       ModuleIO frModuleIO,
       ModuleIO blModuleIO,
       ModuleIO brModuleIO) {
 
     this.gyroIO = gyroIO;
-    this.quest = quest;
     modules[0] = new Module(flModuleIO, 0);
     modules[1] = new Module(frModuleIO, 1);
     modules[2] = new Module(blModuleIO, 2);
@@ -135,7 +122,6 @@ public class Drive extends SubsystemBase {
   private int loopCounterSpeed = 0;
   private double deltaPerInterval = 0;
   private boolean firstTime = true;
-  private boolean overrideQuestForCamera = false;
 
   @Override
   public void periodic() {
@@ -161,8 +147,6 @@ public class Drive extends SubsystemBase {
         }
       }
     }
-
-    quest.runPeriodicUpdates();
 
     if (DriverStation.isDisabled()) {
       for (var module : modules) {
@@ -207,32 +191,11 @@ public class Drive extends SubsystemBase {
         poseEstimator.updateWithTime(sampleTimestamps[i], rawGyroRotation, modulePositions);
       }
 
-      if (quest.isWorking()) {
-        if (overrideQuestForCamera == false) {
-          poseEstimator.addVisionMeasurement(
-              quest.getRobotPose(), Timer.getFPGATimestamp(), QUEST_STD_DEVS);
-        }
-      }
-
     } finally {
       odometryLock.unlock();
     }
 
-    Logger.recordOutput("QuestNav/isWorking", quest.isWorking());
-    Logger.recordOutput("QuestNav/overrideToCamera", overrideQuestForCamera);
     gyroDisconnectedAlert.set(!gyroInputs.connected && Constants.currentMode != Mode.SIM);
-  }
-
-  public void switchToCamera() {
-
-    overrideQuestForCamera = true;
-    System.out.println("switching to cameras from quest");
-  }
-
-  public void switchToQuest() {
-
-    overrideQuestForCamera = false;
-    System.out.println("switching to quest from cameras");
   }
 
   public void runVelocity(ChassisSpeeds speeds) {
@@ -365,17 +328,13 @@ public class Drive extends SubsystemBase {
     return getPose().getRotation();
   }
 
-  public void setPose(Pose3d robotPose) {
+  public void setPose(Pose2d robotPose) {
     odometryLock.lock();
     try {
-      Pose2d robotPose2d = robotPose.toPose2d();
-
-      rawGyroRotation = robotPose2d.getRotation();
+      rawGyroRotation = robotPose.getRotation();
       gyroIO.setYaw(rawGyroRotation);
 
-      quest.zeroQuestPose(robotPose.transformBy(QuestNavConstants.ROBOT_TO_QUEST));
-
-      poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), robotPose2d);
+      poseEstimator.resetPosition(rawGyroRotation, getModulePositions(), robotPose);
     } finally {
       odometryLock.unlock();
     }
@@ -390,20 +349,10 @@ public class Drive extends SubsystemBase {
     }
   }
 
-  public void resetQuestPose(Pose3d pose) {
-    quest.zeroQuestPose(pose);
-  }
-
   public void addVisionMeasurement(
       Pose2d visionRobotPoseMeters,
       double timestampSeconds,
       Matrix<N3, N1> visionMeasurementStdDevs) {
-
-    if (quest.isWorking()) {
-      if (overrideQuestForCamera == false) {
-        return;
-      }
-    }
 
     odometryLock.lock();
     try {
@@ -420,10 +369,6 @@ public class Drive extends SubsystemBase {
 
   public double getMaxAngularSpeedRadPerSec() {
     return (maxSpeedMetersPerSec / driveBaseRadius) * speedScale;
-  }
-
-  public QuestNavSensor getQuestNavSensor() {
-    return quest;
   }
 
   public void setSpeedIntake() {
