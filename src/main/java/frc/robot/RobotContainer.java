@@ -23,7 +23,7 @@ public class RobotContainer {
   // Operator interface
   private final Joystick leftStick = new Joystick(0);
   private final Joystick rightStick = new Joystick(1);
-  private final Joystick buttonPanel = new Joystick(2);
+  private final Joystick buttonPadsafdsnel = new Joystick(2);
 
   // Buttons
   private final JoystickButton button1 = new JoystickButton(buttonPanel, 1);
